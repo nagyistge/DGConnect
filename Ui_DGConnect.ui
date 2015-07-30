@@ -1,63 +1,143 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>DGConnect</class>
- <widget class="QDialog" name="DGConnect" >
-  <property name="geometry" >
+ <widget class="QDialog" name="DGConnect">
+  <property name="geometry">
    <rect>
-    <x>200</x>
-    <y>200</y>
-    <width>400</width>
-    <height>300</height>
+    <x>0</x>
+    <y>0</y>
+    <width>918</width>
+    <height>221</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>DGConnect</string>
   </property>
-  <widget class="QDialogButtonBox" name="buttonBox" >
-   <property name="geometry" >
-    <rect>
-     <x>30</x>
-     <y>240</y>
-     <width>341</width>
-     <height>32</height>
-    </rect>
+  <layout class="QFormLayout" name="formLayout">
+   <property name="fieldGrowthPolicy">
+    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
    </property>
-   <property name="orientation" >
-    <enum>Qt::Horizontal</enum>
-   </property>
-   <property name="standardButtons" >
-    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-   </property>
-  </widget>
+   <item row="0" column="0">
+    <widget class="QLabel" name="gdb_username_label">
+     <property name="text">
+      <string>GDB Username</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QLineEdit" name="gdb_username"/>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="gdb_password_label">
+     <property name="text">
+      <string>GDB Password</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QLineEdit" name="gdb_password"/>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="gdb_api_key_label">
+     <property name="text">
+      <string>GDB API Key</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QLineEdit" name="gdb_api_key"/>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="insightcloud_username_label">
+     <property name="text">
+      <string>InsightCloud Username</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QLineEdit" name="insightcloud_username"/>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="insightcloud_password_label">
+     <property name="text">
+      <string>InsightCloud Password</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QLineEdit" name="insightcloud_password"/>
+   </item>
+   <item row="5" column="1">
+    <widget class="QDialogButtonBox" name="yes_no_box">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <layout class="QHBoxLayout" name="settings_layout">
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QPushButton" name="load_settings_button">
+       <property name="text">
+        <string>Load Settings</string>
+       </property>
+       <property name="checkable">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="save_settings_button">
+       <property name="text">
+        <string>Save Settings</string>
+       </property>
+       <property name="checkable">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections>
   <connection>
-   <sender>buttonBox</sender>
+   <sender>yes_no_box</sender>
    <signal>accepted()</signal>
    <receiver>DGConnect</receiver>
    <slot>accept()</slot>
    <hints>
-    <hint type="sourcelabel" >
+    <hint type="sourcelabel">
      <x>248</x>
      <y>254</y>
     </hint>
-    <hint type="destinationlabel" >
+    <hint type="destinationlabel">
      <x>157</x>
      <y>274</y>
     </hint>
    </hints>
   </connection>
   <connection>
-   <sender>buttonBox</sender>
+   <sender>yes_no_box</sender>
    <signal>rejected()</signal>
    <receiver>DGConnect</receiver>
    <slot>reject()</slot>
    <hints>
-    <hint type="sourcelabel" >
+    <hint type="sourcelabel">
      <x>316</x>
      <y>260</y>
     </hint>
-    <hint type="destinationlabel" >
+    <hint type="destinationlabel">
      <x>286</x>
      <y>274</y>
     </hint>

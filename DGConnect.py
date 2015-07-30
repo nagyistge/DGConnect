@@ -31,6 +31,7 @@ class DGConnect:
         # Save reference to the QGIS interface
         self.iface = iface
         self.action = None
+        self.dlg = None
 
     def initGui(self):
         # Create action that will start plugin configuration
@@ -54,10 +55,10 @@ class DGConnect:
     # run method that performs all the real work
     def run(self):
         # create and show the dialog
-        dlg = DGConnectDialog()
+        self.dlg = DGConnectDialog()
         # show the dialog
-        dlg.show()
-        result = dlg.exec_()
+        self.dlg.show()
+        result = self.dlg.exec_()
         # See if OK was pressed
         if result == 1:
             # do something useful (delete the line containing pass and
