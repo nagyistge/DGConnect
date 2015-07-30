@@ -1,0 +1,19 @@
+; metadata file for DGConnect
+
+[general]
+name=DGConnect
+email=michael.trotter@digitalglobe.com
+author=Michael Trotter/DigitalGlobe
+qgisMinimumVersion=2.0
+description=This QGIS plugin allows you to search an AOI in QGIS and retrieve statistics about the data in GBD and UVI
+about=This QGIS plugin allows you to search an AOI in QGIS and retrieve statistics about the data in GBD and UVI
+version=version 1.0
+tracker=https://github.com/DigitalGlobe/DGConnect/issues
+repository=https://github.com/DigitalGlobe/DGConnect
+
+category=Vector
+
+homepage=https://github.com/DigitalGlobe/DGConnect
+icon=icon.png
+
+experimental=True
