@@ -7,12 +7,19 @@ import Ui_DGConnect
 import sys
 
 from qgis.core import QgsProject
+from qgis.gui import QgsMapCanvas
 
 from PyQt4.QtGui import QApplication
 from PyQt4.QtTest import QTest
 from PyQt4.QtCore import Qt
 
 class QgisInterfaceDummy(object):
+    def __init__(self):
+        self.canvas = QgsMapCanvas()
+
+    def mapCanvas(self):
+        return self.canvas
+
     def __getattr__(self, item):
         # return a function that accepts any args and does nothing
         def dummy(*args, **kwargs):
@@ -22,12 +29,11 @@ class QgisInterfaceDummy(object):
 class UITest(unittest.TestCase):
     def __init__(self, methodName='runTest'):
         super(UITest, self).__init__(methodName)
-        self.app = None
+        self.app = QApplication(sys.argv)
         self.iface = QgisInterfaceDummy()
         self.connect = None
 
     def setUp(self):
-        self.app = QApplication(sys.argv)
         self.connect = DGConnect.DGConnect(self.iface)
 
         # self.connect.run()

@@ -20,6 +20,7 @@ email                : michael.trotter@digitalglobe.com
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
+from BBoxTool import BBoxTool
 # Initialize Qt resources from file resources.py
 import resources
 # Import the code for the dialog
@@ -32,6 +33,7 @@ class DGConnect:
         self.iface = iface
         self.action = None
         self.dlg = None
+        self.bbox = None
 
     def initGui(self):
         # Create action that will start plugin configuration
@@ -47,20 +49,24 @@ class DGConnect:
         self.iface.addToolBarIcon(self.action)
         self.iface.addPluginToMenu("&DGConnect", self.action)
 
+        # create and show the dialog
+        self.dlg = DGConnectDialog()
+
+        # create the bbox tool
+        self.bbox = BBoxTool(self.iface.mapCanvas(), self.dlg)
+
     def unload(self):
         # Remove the plugin menu item and icon
         self.iface.removePluginMenu("&DGConnect", self.action)
         self.iface.removeToolBarIcon(self.action)
 
+        # remove the bbox
+        self.iface.mapCanvas().unsetMapTool(self.bbox)
+
     # run method that performs all the real work
     def run(self):
-        # create and show the dialog
-        self.dlg = DGConnectDialog()
+        # add the bbox
+        self.iface.mapCanvas().setMapTool(self.bbox)
         # show the dialog
         self.dlg.show()
-        result = self.dlg.exec_()
-        # See if OK was pressed
-        if result == 1:
-            # do something useful (delete the line containing pass and
-            # substitute with your code
-            pass
+        self.dlg.exec_()
