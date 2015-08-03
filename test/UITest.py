@@ -2,7 +2,7 @@ __author__ = 'mtrotter'
 
 import unittest
 import DGConnect
-import Ui_DGConnect
+import DGConnectProcessForm
 
 import sys
 
@@ -48,12 +48,12 @@ class UITest(unittest.TestCase):
         proj = QgsProject.instance()
 
         # clear entries
-        proj.writeEntry(Ui_DGConnect.PLUGIN_NAME, Ui_DGConnect.GDB_API_KEY, '')
-        proj.writeEntry(Ui_DGConnect.PLUGIN_NAME, Ui_DGConnect.GDB_USERNAME, '')
-        proj.writeEntry(Ui_DGConnect.PLUGIN_NAME, Ui_DGConnect.GDB_PASSWORD, '')
+        proj.writeEntry(DGConnectProcessForm.PLUGIN_NAME, DGConnectProcessForm.GDB_API_KEY, '')
+        proj.writeEntry(DGConnectProcessForm.PLUGIN_NAME, DGConnectProcessForm.GDB_USERNAME, '')
+        proj.writeEntry(DGConnectProcessForm.PLUGIN_NAME, DGConnectProcessForm.GDB_PASSWORD, '')
 
-        proj.writeEntry(Ui_DGConnect.PLUGIN_NAME, Ui_DGConnect.INSIGHTCLOUD_USERNAME, '')
-        proj.writeEntry(Ui_DGConnect.PLUGIN_NAME, Ui_DGConnect.INSIGHTCLOUD_PASSWORD, '')
+        proj.writeEntry(DGConnectProcessForm.PLUGIN_NAME, DGConnectProcessForm.INSIGHTCLOUD_USERNAME, '')
+        proj.writeEntry(DGConnectProcessForm.PLUGIN_NAME, DGConnectProcessForm.INSIGHTCLOUD_PASSWORD, '')
 
     def test_ui_launch_defaults(self):
         self.assertEqual(self.connect.dlg.ui.gdb_api_key.text(), '')
@@ -65,15 +65,18 @@ class UITest(unittest.TestCase):
     def test_update_gdb_api_key(self):
         proj = QgsProject.instance()
 
-        proj.writeEntry(Ui_DGConnect.PLUGIN_NAME, Ui_DGConnect.GDB_API_KEY, 'ABCDEF')
+        proj.writeEntry(DGConnectProcessForm.PLUGIN_NAME, DGConnectProcessForm.GDB_API_KEY, 'ABCDEF')
 
-        self.connect.dlg.ui.load_settings_clicked()
+        self.connect.dlg.ui.load_settings_button.click()
 
         self.assertEqual(self.connect.dlg.ui.gdb_api_key.text(), 'ABCDEF')
         self.assertEqual(self.connect.dlg.ui.gdb_username.text(), '')
         self.assertEqual(self.connect.dlg.ui.gdb_password.text(), '')
         self.assertEqual(self.connect.dlg.ui.insightcloud_username.text(), '')
         self.assertEqual(self.connect.dlg.ui.insightcloud_password.text(), '')
+
+    def test_click_ok_bad(self):
+        DGConnectProcessForm.ok_clicked(self.connect.dlg.ui)
 
 if __name__ == '__main__':
     unittest.main()

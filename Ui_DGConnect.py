@@ -63,13 +63,13 @@ class Ui_DGConnect(object):
         self.bottom_layout = None
         self.line = None
         self.line_2 = None
-        self.ui = None
+        self.dialog = None
 
     def setupUi(self, dialog):
         dialog.setObjectName(_fromUtf8("DGConnect"))
         dialog.resize(918, 221)
 
-        self.ui = dialog
+        self.dialog = dialog
 
         self.formLayout = QtGui.QFormLayout(dialog)
         self.formLayout.setFieldGrowthPolicy(QtGui.QFormLayout.AllNonFixedFieldsGrow)

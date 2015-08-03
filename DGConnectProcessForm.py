@@ -5,6 +5,7 @@ from qgis.core import QgsProject
 from os.path import expanduser
 
 from GBDQuery import GBDQuery
+from InsightCloudQuery import InsightCloudQuery
 
 import re
 
@@ -24,101 +25,128 @@ SELECT_FILTER = "CSV Files(*.csv)"
 # simple regex validator for data; make sure there's something there
 ENDS_WITH_SUFFIX_REGEX = re.compile(".+\." + DEFAULT_SUFFIX + "$")
 
-def ok_clicked(dialog):
+def ok_clicked(ui):
     """
     Action performed when the ok button is clicked
-    :param dialog: The UI dialog where this occurs
+    :param ui: The UI ui where this occurs
     :return: None
     """
-    dialog.ui.accept()
+    if validate_ok(ui):
+        print("No errors")
+        ui.dialog.accept()
+    else:
+        ui.dialog.show()
 
-def cancel_clicked(dialog):
+def cancel_clicked(ui):
     """
     Action performed when the cancel button is clicked
-    :param dialog:  The UI dialog when this occurs
+    :param ui:  The UI ui when this occurs
     :return: None
     """
-    dialog.ui.reject()
+    ui.dialog.reject()
 
-def load_settings_clicked(dialog):
+def load_settings_clicked(ui):
     """
 
-    :param dialog:
+    :param ui:
     :return:
     """
     proj = QgsProject.instance()
 
     # read values
-    dialog.gdb_api_key.setText(proj.readEntry(PLUGIN_NAME, GDB_API_KEY)[0])
-    dialog.gdb_username.setText(proj.readEntry(PLUGIN_NAME, GDB_USERNAME)[0])
-    dialog.gdb_password.setText(proj.readEntry(PLUGIN_NAME, GDB_PASSWORD)[0])
+    ui.gdb_api_key.setText(proj.readEntry(PLUGIN_NAME, GDB_API_KEY)[0])
+    ui.gdb_username.setText(proj.readEntry(PLUGIN_NAME, GDB_USERNAME)[0])
+    ui.gdb_password.setText(proj.readEntry(PLUGIN_NAME, GDB_PASSWORD)[0])
 
-    dialog.insightcloud_username.setText(proj.readEntry(PLUGIN_NAME, INSIGHTCLOUD_USERNAME)[0])
-    dialog.insightcloud_password.setText(proj.readEntry(PLUGIN_NAME, INSIGHTCLOUD_PASSWORD)[0])
+    ui.insightcloud_username.setText(proj.readEntry(PLUGIN_NAME, INSIGHTCLOUD_USERNAME)[0])
+    ui.insightcloud_password.setText(proj.readEntry(PLUGIN_NAME, INSIGHTCLOUD_PASSWORD)[0])
 
-    dialog.select_file.setText(proj.readEntry(PLUGIN_NAME, SELECT_FILE)[0])
+    ui.select_file.setText(proj.readEntry(PLUGIN_NAME, SELECT_FILE)[0])
 
-def save_settings_clicked(dialog):
+def save_settings_clicked(ui):
     proj = QgsProject.instance()
 
     # store values
-    proj.writeEntry(PLUGIN_NAME, GDB_API_KEY, dialog.gdb_api_key.text())
-    proj.writeEntry(PLUGIN_NAME, GDB_USERNAME, dialog.gdb_username.text())
-    proj.writeEntry(PLUGIN_NAME, GDB_PASSWORD, dialog.gdb_password.text())
+    proj.writeEntry(PLUGIN_NAME, GDB_API_KEY, ui.gdb_api_key.text())
+    proj.writeEntry(PLUGIN_NAME, GDB_USERNAME, ui.gdb_username.text())
+    proj.writeEntry(PLUGIN_NAME, GDB_PASSWORD, ui.gdb_password.text())
 
-    proj.writeEntry(PLUGIN_NAME, INSIGHTCLOUD_USERNAME, dialog.insightcloud_username.text())
-    proj.writeEntry(PLUGIN_NAME, INSIGHTCLOUD_PASSWORD, dialog.insightcloud_password.text())
+    proj.writeEntry(PLUGIN_NAME, INSIGHTCLOUD_USERNAME, ui.insightcloud_username.text())
+    proj.writeEntry(PLUGIN_NAME, INSIGHTCLOUD_PASSWORD, ui.insightcloud_password.text())
 
-    proj.writeEntry(PLUGIN_NAME, SELECT_FILE, dialog.select_file.text())
+    proj.writeEntry(PLUGIN_NAME, SELECT_FILE, ui.select_file.text())
 
-def select_file_clicked(dialog):
-    # open file dialog
-    file_dialog = QtGui.QFileDialog()
-    file_name = file_dialog.getSaveFileName(None, "Choose output file", str(expanduser("~")), SELECT_FILTER)
-    dialog.select_file.setText(file_name)
+def select_file_clicked(ui):
+    # open file ui
+    file_ui = QtGui.QFileDialog()
+    file_name = file_ui.getSaveFileName(None, "Choose output file", str(expanduser("~")), SELECT_FILTER)
+    ui.select_file.setText(file_name)
 
 def is_field_empty(field):
-    text = field.text()[0]
+    text = field.text()
     return text is None or len(text) == 0
 
-def validate_save_settings(dialog):
-    errors = []
-    validate_gdb_info(dialog, errors)
-    validate_output_path(dialog, errors)
+def show_errors(errors):
+    return "The following errors have occurred:<br />" + "<br />".join(errors)
+
+def validate_save_settings(ui, errors):
+    validate_gdb_info(ui, errors)
+    validate_output_path(ui, errors)
     return errors
 
-def validate_ok(dialog):
-    errors = validate_save_settings(dialog)
+def validate_ok(ui):
+    errors = []
+    validate_save_settings(ui, errors)
+    validate_output_path(ui, errors)
+    validate_insightcloud_info(ui, errors)
+    if len(errors) > 0:
+        error_dialog = QtGui.QErrorMessage(ui.dialog)
+        error_dialog.showMessage(show_errors(errors))
+        return False
+    return True
 
-
-def validate_gdb_info(dialog, errors):
+def validate_gdb_info(ui, errors):
     # check gbd info
     is_gdb_info_good = True
-    if is_field_empty(dialog.gdb_api_key):
+    if is_field_empty(ui.gdb_api_key):
         is_gdb_info_good = False
         errors.append("No GBD Api Key provided.")
-    if is_field_empty(dialog.gdb_username):
+    if is_field_empty(ui.gdb_username):
         is_gdb_info_good = False
         errors.append("No GDB Username provided.")
-    if is_field_empty(dialog.gdb_password):
+    if is_field_empty(ui.gdb_password):
         is_gdb_info_good = False
         errors.append("No GBD Password provided.")
     # validate credentials by hitting validate page
     if is_gdb_info_good:
-        order = GBDQuery(auth_token=dialog.gdb_api_key.text()[0], username=dialog.gdb_username.text()[0],
-                         password=dialog.gdb_password.text()[0])
-        order.log_in()
-        order.hit_test_endpoint()
-        if not order.is_login_successful:
-            errors.append("Unable to verify credentials. See logs for more detail.")
+        query = GBDQuery(auth_token=ui.gdb_api_key.text()[0], username=ui.gdb_username.text()[0],
+                         password=ui.gdb_password.text()[0])
+        query.log_in()
+        query.hit_test_endpoint()
+        if not query.is_login_successful:
+            errors.append("Unable to verify GBD credentials. See logs for more detail.")
 
-def validate_output_path(dialog, errors):
+def validate_output_path(ui, errors):
     # check if empty
-    if is_field_empty(dialog.select_file):
+    if is_field_empty(ui.select_file):
         errors.append("No output file provided.")
     # check if regex matches
-    elif re.match(ENDS_WITH_SUFFIX_REGEX, dialog.select_file.text()[0]) is None:
+    elif re.match(ENDS_WITH_SUFFIX_REGEX, ui.select_file.text()[0]) is None:
         errors.append("Output file must be a csv file.")
 
-def validate_uvi_info(dialog, errors):
-    yield
+def validate_insightcloud_info(ui, errors):
+    # check insightcloud credentials
+    is_insightcloud_info_good = True
+    if is_field_empty(ui.insightcloud_username):
+        is_insightcloud_info_good = False
+        errors.append("No InsightCloud username provided.")
+    if is_field_empty(ui.insightcloud_password):
+        is_insightcloud_info_good = False
+        errors.append("No InsightCloud password provided.")
+    # validate credentials by hitting monocle-3
+    if is_insightcloud_info_good:
+        query = InsightCloudQuery(username=ui.insightcloud_username.text()[0],
+                                  password=ui.insightcloud_password.text()[0])
+        query.log_into_monocle_3()
+        if not query.is_login_successful:
+            errors.append("Unable to verify InsightCloud credentials. See logs for more details.")
