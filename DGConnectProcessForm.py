@@ -11,9 +11,9 @@ import re
 
 # constants for plugin settings
 PLUGIN_NAME = "DGConnect"
-gbd_USERNAME = "gbd.username"
-gbd_PASSWORD = "gbd.password"
-gbd_API_KEY = "gbd.api.key"
+GBD_USERNAME = "gbd.username"
+GBD_PASSWORD = "gbd.password"
+GBD_API_KEY = "gbd.api.key"
 INSIGHTCLOUD_USERNAME = "insightcloud.username"
 INSIGHTCLOUD_PASSWORD = "insightcloud.password"
 SELECT_FILE = "select.file"
@@ -54,9 +54,9 @@ def load_settings_clicked(ui):
     proj = QgsProject.instance()
 
     # read values
-    ui.gbd_api_key.setText(proj.readEntry(PLUGIN_NAME, gbd_API_KEY)[0])
-    ui.gbd_username.setText(proj.readEntry(PLUGIN_NAME, gbd_USERNAME)[0])
-    ui.gbd_password.setText(proj.readEntry(PLUGIN_NAME, gbd_PASSWORD)[0])
+    ui.gbd_api_key.setText(proj.readEntry(PLUGIN_NAME, GBD_API_KEY)[0])
+    ui.gbd_username.setText(proj.readEntry(PLUGIN_NAME, GBD_USERNAME)[0])
+    ui.gbd_password.setText(proj.readEntry(PLUGIN_NAME, GBD_PASSWORD)[0])
 
     ui.insightcloud_username.setText(proj.readEntry(PLUGIN_NAME, INSIGHTCLOUD_USERNAME)[0])
     ui.insightcloud_password.setText(proj.readEntry(PLUGIN_NAME, INSIGHTCLOUD_PASSWORD)[0])
@@ -67,9 +67,9 @@ def save_settings_clicked(ui):
     proj = QgsProject.instance()
 
     # store values
-    proj.writeEntry(PLUGIN_NAME, gbd_API_KEY, ui.gbd_api_key.text())
-    proj.writeEntry(PLUGIN_NAME, gbd_USERNAME, ui.gbd_username.text())
-    proj.writeEntry(PLUGIN_NAME, gbd_PASSWORD, ui.gbd_password.text())
+    proj.writeEntry(PLUGIN_NAME, GBD_API_KEY, ui.gbd_api_key.text())
+    proj.writeEntry(PLUGIN_NAME, GBD_USERNAME, ui.gbd_username.text())
+    proj.writeEntry(PLUGIN_NAME, GBD_PASSWORD, ui.gbd_password.text())
 
     proj.writeEntry(PLUGIN_NAME, INSIGHTCLOUD_USERNAME, ui.insightcloud_username.text())
     proj.writeEntry(PLUGIN_NAME, INSIGHTCLOUD_PASSWORD, ui.insightcloud_password.text())

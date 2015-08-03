@@ -48,30 +48,30 @@ class UITest(unittest.TestCase):
         proj = QgsProject.instance()
 
         # clear entries
-        proj.writeEntry(DGConnectProcessForm.PLUGIN_NAME, DGConnectProcessForm.GDB_API_KEY, '')
-        proj.writeEntry(DGConnectProcessForm.PLUGIN_NAME, DGConnectProcessForm.GDB_USERNAME, '')
-        proj.writeEntry(DGConnectProcessForm.PLUGIN_NAME, DGConnectProcessForm.GDB_PASSWORD, '')
+        proj.writeEntry(DGConnectProcessForm.PLUGIN_NAME, DGConnectProcessForm.GBD_API_KEY, '')
+        proj.writeEntry(DGConnectProcessForm.PLUGIN_NAME, DGConnectProcessForm.GBD_USERNAME, '')
+        proj.writeEntry(DGConnectProcessForm.PLUGIN_NAME, DGConnectProcessForm.GBD_PASSWORD, '')
 
         proj.writeEntry(DGConnectProcessForm.PLUGIN_NAME, DGConnectProcessForm.INSIGHTCLOUD_USERNAME, '')
         proj.writeEntry(DGConnectProcessForm.PLUGIN_NAME, DGConnectProcessForm.INSIGHTCLOUD_PASSWORD, '')
 
     def test_ui_launch_defaults(self):
-        self.assertEqual(self.connect.dlg.ui.gdb_api_key.text(), '')
-        self.assertEqual(self.connect.dlg.ui.gdb_username.text(), '')
-        self.assertEqual(self.connect.dlg.ui.gdb_password.text(), '')
+        self.assertEqual(self.connect.dlg.ui.gbd_api_key.text(), '')
+        self.assertEqual(self.connect.dlg.ui.gbd_username.text(), '')
+        self.assertEqual(self.connect.dlg.ui.gbd_password.text(), '')
         self.assertEqual(self.connect.dlg.ui.insightcloud_username.text(), '')
         self.assertEqual(self.connect.dlg.ui.insightcloud_password.text(), '')
 
-    def test_update_gdb_api_key(self):
+    def test_update_gbd_api_key(self):
         proj = QgsProject.instance()
 
-        proj.writeEntry(DGConnectProcessForm.PLUGIN_NAME, DGConnectProcessForm.GDB_API_KEY, 'ABCDEF')
+        proj.writeEntry(DGConnectProcessForm.PLUGIN_NAME, DGConnectProcessForm.GBD_API_KEY, 'ABCDEF')
 
         self.connect.dlg.ui.load_settings_button.click()
 
-        self.assertEqual(self.connect.dlg.ui.gdb_api_key.text(), 'ABCDEF')
-        self.assertEqual(self.connect.dlg.ui.gdb_username.text(), '')
-        self.assertEqual(self.connect.dlg.ui.gdb_password.text(), '')
+        self.assertEqual(self.connect.dlg.ui.gbd_api_key.text(), 'ABCDEF')
+        self.assertEqual(self.connect.dlg.ui.gbd_username.text(), '')
+        self.assertEqual(self.connect.dlg.ui.gbd_password.text(), '')
         self.assertEqual(self.connect.dlg.ui.insightcloud_username.text(), '')
         self.assertEqual(self.connect.dlg.ui.insightcloud_password.text(), '')
 
