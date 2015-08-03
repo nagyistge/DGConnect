@@ -36,8 +36,27 @@ KEY_TOKEN_TYPE = 'token_type'
 # http headers
 HEADER_AUTHORIZATION = 'Authorization'
 HEADER_USER_AGENT = 'User-Agent'
+HEADER_CONTENT_TYPE = 'Content-Type'
 
-class OrderParams:
+CONTENT_TYPE_JSON = 'application/json'
+
+# data keys and some values
+KEY_DATA_SEARCH_AREA_WKT = 'searchAreaWkt'
+KEY_DATA_START_DATE = 'startDate'
+KEY_DATA_END_DATE = 'endDate'
+KEY_DATA_FILTERS = 'filters'
+VALUE_DATA_FILTERS = []
+KEY_DATA_TAG_RESULTS = 'tagResults'
+VALUE_DATA_TAG_RESULTS = False
+KEY_DATA_TYPES = 'types'
+VALUE_DATA_TYPES = ['DigitalGlobeAcquisition']
+
+# JSON Keys
+KEY_JSON_RESULTS = u'results'
+KEY_JSON_PROPERTIES = u'properties'
+KEY_JSON_TIMESTAMP = u'timestamp'
+
+class GBDOrderParams:
     def __init__(self, top, bottom, left, right):
         self.top = top
         self.bottom = bottom
@@ -101,3 +120,51 @@ class GBDQuery:
         except Exception, e:
             log.error("Exception detected during endpoint text: " + str(e))
             self.is_login_successful = False
+
+    def do_aoi_search(self, order_params, begin_date, end_date, csv_element):
+        data = {
+            KEY_DATA_SEARCH_AREA_WKT: order_params.polygon,
+            KEY_DATA_START_DATE: begin_date.isoformat() + 'Z',
+            KEY_DATA_END_DATE: end_date.isoformat() + 'Z',
+            KEY_DATA_FILTERS: VALUE_DATA_FILTERS,
+            KEY_DATA_TAG_RESULTS: VALUE_DATA_TAG_RESULTS,
+            KEY_DATA_TYPES: VALUE_DATA_TYPES
+        }
+        json_data = json.dumps(data)
+        headers = self.headers.copy()
+        headers[HEADER_CONTENT_TYPE] = CONTENT_TYPE_JSON
+        try:
+            request = urllib2.Request(GBD_SEARCH_AOI_AND_TIME_URL, json_data, headers)
+            response = self.opener.open(request)
+            response_data = response.read()
+            result_data = json.loads(response_data)
+            self.update_csv_data(end_date, result_data, csv_element)
+        except Exception, e:
+            log.error("Exception detected during aoi search: " + str(e))
+
+    @classmethod
+    def update_csv_data(cls, end_date, json_data, csv_element):
+        # don't bother with empty data
+        if not json_data or KEY_JSON_RESULTS not in json_data or len(json_data[KEY_JSON_RESULTS]) <= 0:
+            return
+        # explore the results
+        for result in json_data[KEY_JSON_RESULTS]:
+            # skip over records w/o timestamps (probably not an issue but whatevs)
+            if KEY_JSON_PROPERTIES not in result or KEY_JSON_TIMESTAMP not in result[KEY_JSON_PROPERTIES]:
+                continue
+            timestamp_str = result[KEY_JSON_PROPERTIES][KEY_JSON_TIMESTAMP].encode(JSON_ENCODING)
+            timestamp = datetime.strptime(timestamp_str, ISO_FORMAT)
+
+            # get the time delta
+            delta = end_date - timestamp
+
+            if delta.days <= 1:
+                csv_element.num_gbd_1_day += 1
+            elif delta.days <= 3:
+                csv_element.num_gbd_3_day += 1
+            elif delta.days <= 7:
+                csv_element.num_gbd_7_day += 1
+            elif delta.days <= 30:
+                csv_element.num_gbd_30_day += 1
+            else:
+                csv_element.num_gbd_60_day += 1

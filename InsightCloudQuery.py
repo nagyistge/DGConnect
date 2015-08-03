@@ -8,14 +8,16 @@ import urllib
 import urllib2
 import cookielib
 
+import json
+
 import logging as log
 
 from CASHTMLParser import CASFormHTMLParser
 
 MONOCLE_3_URL = "https://iipbeta.digitalglobe.com/monocle-3/"
 VECTOR_TYPE_QUERY = Template(MONOCLE_3_URL + "app/broker/vector/api/vectors/OSM/types?left=$left&right=$right&upper=$upper&lower=$lower")
-TWITTER_QUERY = Template(MONOCLE_3_URL + "app/broker/sma/sma/twitter/tweets?bbox=$left,$lower,$right,$upper&daterange=$time_begin-$time_end&dimensionality=stats")
-RSS_QUERY = Template(MONOCLE_3_URL + "app/broker/sma/sma/rss/sentences?bbox=$left,$lower,$right,$upper&daterange=$time_begin-$time_end&dimensionality=stats")
+TWITTER_QUERY = Template(MONOCLE_3_URL + "app/broker/sma/sma/twitter/tweets?bbox=$left,$lower,$right,$upper")
+RSS_QUERY = Template(MONOCLE_3_URL + "app/broker/sma/sma/rss/sentences?bbox=$left,$lower,$right,$upper")
 
 URL_CAS_LOGIN_SEGMENT = "login"
 
@@ -24,6 +26,9 @@ KEY_HEADER_REFERRER = 'Referer'
 FIELD_USERNAME = "username"
 FIELD_PASSWORD = "password"
 URL_MATCH = re.compile('(.*://[^/]*)')
+
+JSON_OSM_DATA_KEY = u'data'
+JSON_OSM_COUNT_KEY = u'count'
 
 class InsightCloudParams:
     def __init__(self, top, right, bottom, left, time_begin=None, time_end=None):
@@ -92,3 +97,28 @@ class InsightCloudQuery:
         if response and self.is_login_successful:
             return response.read()
         return None
+
+    def query_osm(self, order_params, csv_element):
+        osm_url = VECTOR_TYPE_QUERY.substitute(top=str(order_params.top), right=str(order_params.right),
+                                               bottom=str(order_params.bottom), left=str(order_params.left))
+        response = None
+        try:
+            request = urllib2.Request(osm_url)
+            response = self.opener.open(request)
+            if self.is_on_login_page(response):
+                response = self.login_to_app(response)
+        except Exception, e:
+            self.is_login_successful = False
+            log.error("Unable to hit the osm end point due to: " + str(e))
+        if response and self.is_login_successful:
+            self.process_osm_data(response.read(), csv_element)
+
+    def process_osm_data(self, response, csv_element):
+        json_data = json.loads(response)
+        # skip over empty fields
+        if not json_data or JSON_OSM_DATA_KEY not in json_data:
+            return
+        for entry in json_data[JSON_OSM_DATA_KEY]:
+            # check that count entry exists
+            if JSON_OSM_COUNT_KEY in entry:
+                csv_element.num_osm += entry[JSON_OSM_COUNT_KEY]
