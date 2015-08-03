@@ -8,21 +8,7 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt4 import QtCore, QtGui
-from qgis.core import QgsProject
-from os.path import expanduser
-
-# constants for plugin settings
-PLUGIN_NAME = "DGConnect"
-GDB_USERNAME = "gdb.username"
-GDB_PASSWORD = "gdb.password"
-GDB_API_KEY = "gdb.api.key"
-INSIGHTCLOUD_USERNAME = "insightcloud.username"
-INSIGHTCLOUD_PASSWORD = "insightcloud.password"
-SELECT_FILE = "select.file"
-
-# file filter
-DEFAULT_SUFFIX = "csv"
-SELECT_FILTER = "CSV Files(*.csv)"
+import DGConnectProcessForm
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -218,11 +204,11 @@ class Ui_DGConnect(object):
         QtCore.QMetaObject.connectSlotsByName(dialog)
 
         # set up handlers
-        self.yes_no_box.accepted.connect(self.ok_clicked)
-        self.yes_no_box.rejected.connect(self.cancel_clicked)
-        self.save_settings_button.clicked.connect(self.save_settings_clicked)
-        self.load_settings_button.clicked.connect(self.load_settings_clicked)
-        self.select_file_button.clicked.connect(self.select_file_clicked)
+        self.yes_no_box.accepted.connect(lambda: DGConnectProcessForm.ok_clicked(self))
+        self.yes_no_box.rejected.connect(lambda: DGConnectProcessForm.cancel_clicked(self))
+        self.save_settings_button.clicked.connect(lambda: DGConnectProcessForm.save_settings_clicked(self))
+        self.load_settings_button.clicked.connect(lambda: DGConnectProcessForm.load_settings_clicked(self))
+        self.select_file_button.clicked.connect(lambda: DGConnectProcessForm.select_file_clicked(self))
 
         QtCore.QMetaObject.connectSlotsByName(dialog)
 
@@ -242,56 +228,17 @@ class Ui_DGConnect(object):
         self.right_label.setText(_translate("DGConnect", "Right", None))
         self.bottom_label.setText(_translate("DGConnect", "Bottom", None))
 
-    def ok_clicked(self):
-        self.ui.accept()
-
-    def cancel_clicked(self):
-        self.ui.reject()
-
-    def load_settings_clicked(self):
-        proj = QgsProject.instance()
-
-        # read values
-        self.gdb_api_key.setText(proj.readEntry(PLUGIN_NAME, GDB_API_KEY)[0])
-        self.gdb_username.setText(proj.readEntry(PLUGIN_NAME, GDB_USERNAME)[0])
-        self.gdb_password.setText(proj.readEntry(PLUGIN_NAME, GDB_PASSWORD)[0])
-
-        self.insightcloud_username.setText(proj.readEntry(PLUGIN_NAME, INSIGHTCLOUD_USERNAME)[0])
-        self.insightcloud_password.setText(proj.readEntry(PLUGIN_NAME, INSIGHTCLOUD_PASSWORD)[0])
-
-        self.select_file.setText(proj.readEntry(PLUGIN_NAME, SELECT_FILE)[0])
-
-    def save_settings_clicked(self):
-        proj = QgsProject.instance()
-
-        # store values
-        proj.writeEntry(PLUGIN_NAME, GDB_API_KEY, self.gdb_api_key.text())
-        proj.writeEntry(PLUGIN_NAME, GDB_USERNAME, self.gdb_username.text())
-        proj.writeEntry(PLUGIN_NAME, GDB_PASSWORD, self.gdb_password.text())
-
-        proj.writeEntry(PLUGIN_NAME, INSIGHTCLOUD_USERNAME, self.insightcloud_username.text())
-        proj.writeEntry(PLUGIN_NAME, INSIGHTCLOUD_PASSWORD, self.insightcloud_password.text())
-
-        proj.writeEntry(PLUGIN_NAME, SELECT_FILE, self.select_file.text())
-
-    def select_file_clicked(self):
-        # open file dialog
-        file_dialog = QtGui.QFileDialog()
-        file_name = file_dialog.getSaveFileName(None, "Choose output file", str(expanduser("~")), SELECT_FILTER)
-        self.select_file.setText(file_name)
-
     def set_top_text(self, text):
         self.top.setText(text)
 
     def set_left_text(self, text):
         self.left.setText(text)
-
+    
     def set_right_text(self, text):
         self.right.setText(text)
-
+    
     def set_bottom_text(self, text):
         self.bottom.setText(text)
-
 
 
 

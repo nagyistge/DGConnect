@@ -1,4 +1,4 @@
-__author__ = 'mtrotter'
+__author__ = 'Michael Trotter <michael.trotter@digitalglobe.com>'
 
 from qgis.gui import *
 from qgis.core import *
