@@ -30,12 +30,12 @@ class Ui_DGConnect(object):
 
     def __init__(self):
         self.formLayout = None
-        self.gdb_api_key = None
-        self.gdb_api_key_label = None
-        self.gdb_password = None
-        self.gdb_password_label = None
-        self.gdb_username = None
-        self.gdb_username_label = None
+        self.gbd_api_key = None
+        self.gbd_api_key_label = None
+        self.gbd_password = None
+        self.gbd_password_label = None
+        self.gbd_username = None
+        self.gbd_username_label = None
         self.insightcloud_password = None
         self.insightcloud_password_label = None
         self.insightcloud_username = None
@@ -74,24 +74,25 @@ class Ui_DGConnect(object):
         self.formLayout = QtGui.QFormLayout(dialog)
         self.formLayout.setFieldGrowthPolicy(QtGui.QFormLayout.AllNonFixedFieldsGrow)
         self.formLayout.setObjectName(_fromUtf8("formLayout"))
-        self.gdb_username_label = QtGui.QLabel(dialog)
-        self.gdb_username_label.setObjectName(_fromUtf8("gdb_username_label"))
-        self.formLayout.setWidget(0, QtGui.QFormLayout.LabelRole, self.gdb_username_label)
-        self.gdb_username = QtGui.QLineEdit(dialog)
-        self.gdb_username.setObjectName(_fromUtf8("gdb_username"))
-        self.formLayout.setWidget(0, QtGui.QFormLayout.FieldRole, self.gdb_username)
-        self.gdb_password_label = QtGui.QLabel(dialog)
-        self.gdb_password_label.setObjectName(_fromUtf8("gdb_password_label"))
-        self.formLayout.setWidget(1, QtGui.QFormLayout.LabelRole, self.gdb_password_label)
-        self.gdb_password = QtGui.QLineEdit(dialog)
-        self.gdb_password.setObjectName(_fromUtf8("gdb_password"))
-        self.formLayout.setWidget(1, QtGui.QFormLayout.FieldRole, self.gdb_password)
-        self.gdb_api_key_label = QtGui.QLabel(dialog)
-        self.gdb_api_key_label.setObjectName(_fromUtf8("gdb_api_key_label"))
-        self.formLayout.setWidget(2, QtGui.QFormLayout.LabelRole, self.gdb_api_key_label)
-        self.gdb_api_key = QtGui.QLineEdit(dialog)
-        self.gdb_api_key.setObjectName(_fromUtf8("gdb_api_key"))
-        self.formLayout.setWidget(2, QtGui.QFormLayout.FieldRole, self.gdb_api_key)
+        self.gbd_username_label = QtGui.QLabel(dialog)
+        self.gbd_username_label.setObjectName(_fromUtf8("gbd_username_label"))
+        self.formLayout.setWidget(0, QtGui.QFormLayout.LabelRole, self.gbd_username_label)
+        self.gbd_username = QtGui.QLineEdit(dialog)
+        self.gbd_username.setObjectName(_fromUtf8("gbd_username"))
+        self.formLayout.setWidget(0, QtGui.QFormLayout.FieldRole, self.gbd_username)
+        self.gbd_password_label = QtGui.QLabel(dialog)
+        self.gbd_password_label.setObjectName(_fromUtf8("gbd_password_label"))
+        self.formLayout.setWidget(1, QtGui.QFormLayout.LabelRole, self.gbd_password_label)
+        self.gbd_password = QtGui.QLineEdit(dialog)
+        self.gbd_password.setEchoMode(QtGui.QLineEdit.Password)
+        self.gbd_password.setObjectName(_fromUtf8("gbd_password"))
+        self.formLayout.setWidget(1, QtGui.QFormLayout.FieldRole, self.gbd_password)
+        self.gbd_api_key_label = QtGui.QLabel(dialog)
+        self.gbd_api_key_label.setObjectName(_fromUtf8("gbd_api_key_label"))
+        self.formLayout.setWidget(2, QtGui.QFormLayout.LabelRole, self.gbd_api_key_label)
+        self.gbd_api_key = QtGui.QLineEdit(dialog)
+        self.gbd_api_key.setObjectName(_fromUtf8("gbd_api_key"))
+        self.formLayout.setWidget(2, QtGui.QFormLayout.FieldRole, self.gbd_api_key)
         self.insightcloud_username_label = QtGui.QLabel(dialog)
         self.insightcloud_username_label.setObjectName(_fromUtf8("insightcloud_username_label"))
         self.formLayout.setWidget(3, QtGui.QFormLayout.LabelRole, self.insightcloud_username_label)
@@ -102,6 +103,7 @@ class Ui_DGConnect(object):
         self.insightcloud_password_label.setObjectName(_fromUtf8("insightcloud_password_label"))
         self.formLayout.setWidget(4, QtGui.QFormLayout.LabelRole, self.insightcloud_password_label)
         self.insightcloud_password = QtGui.QLineEdit(dialog)
+        self.insightcloud_password.setEchoMode(QtGui.QLineEdit.Password)
         self.insightcloud_password.setObjectName(_fromUtf8("insightcloud_password"))
         self.formLayout.setWidget(4, QtGui.QFormLayout.FieldRole, self.insightcloud_password)
         self.select_file_label = QtGui.QLabel(dialog)
@@ -212,11 +214,13 @@ class Ui_DGConnect(object):
 
         QtCore.QMetaObject.connectSlotsByName(dialog)
 
+        DGConnectProcessForm.load_settings_clicked(self)
+
     def retranslateUi(self, DGConnect):
         DGConnect.setWindowTitle(_translate("DGConnect", "DGConnect", None))
-        self.gdb_username_label.setText(_translate("DGConnect", "GDB Username", None))
-        self.gdb_password_label.setText(_translate("DGConnect", "GDB Password", None))
-        self.gdb_api_key_label.setText(_translate("DGConnect", "GDB API Key", None))
+        self.gbd_username_label.setText(_translate("DGConnect", "GBD Username", None))
+        self.gbd_password_label.setText(_translate("DGConnect", "GBD Password", None))
+        self.gbd_api_key_label.setText(_translate("DGConnect", "GBD API Key", None))
         self.insightcloud_username_label.setText(_translate("DGConnect", "InsightCloud Username", None))
         self.insightcloud_password_label.setText(_translate("DGConnect", "InsightCloud Password", None))
         self.select_file_label.setText(_translate("DGConnect", "Output File", None))

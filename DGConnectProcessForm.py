@@ -11,9 +11,9 @@ import re
 
 # constants for plugin settings
 PLUGIN_NAME = "DGConnect"
-GDB_USERNAME = "gdb.username"
-GDB_PASSWORD = "gdb.password"
-GDB_API_KEY = "gdb.api.key"
+gbd_USERNAME = "gbd.username"
+gbd_PASSWORD = "gbd.password"
+gbd_API_KEY = "gbd.api.key"
 INSIGHTCLOUD_USERNAME = "insightcloud.username"
 INSIGHTCLOUD_PASSWORD = "insightcloud.password"
 SELECT_FILE = "select.file"
@@ -54,9 +54,9 @@ def load_settings_clicked(ui):
     proj = QgsProject.instance()
 
     # read values
-    ui.gdb_api_key.setText(proj.readEntry(PLUGIN_NAME, GDB_API_KEY)[0])
-    ui.gdb_username.setText(proj.readEntry(PLUGIN_NAME, GDB_USERNAME)[0])
-    ui.gdb_password.setText(proj.readEntry(PLUGIN_NAME, GDB_PASSWORD)[0])
+    ui.gbd_api_key.setText(proj.readEntry(PLUGIN_NAME, gbd_API_KEY)[0])
+    ui.gbd_username.setText(proj.readEntry(PLUGIN_NAME, gbd_USERNAME)[0])
+    ui.gbd_password.setText(proj.readEntry(PLUGIN_NAME, gbd_PASSWORD)[0])
 
     ui.insightcloud_username.setText(proj.readEntry(PLUGIN_NAME, INSIGHTCLOUD_USERNAME)[0])
     ui.insightcloud_password.setText(proj.readEntry(PLUGIN_NAME, INSIGHTCLOUD_PASSWORD)[0])
@@ -67,9 +67,9 @@ def save_settings_clicked(ui):
     proj = QgsProject.instance()
 
     # store values
-    proj.writeEntry(PLUGIN_NAME, GDB_API_KEY, ui.gdb_api_key.text())
-    proj.writeEntry(PLUGIN_NAME, GDB_USERNAME, ui.gdb_username.text())
-    proj.writeEntry(PLUGIN_NAME, GDB_PASSWORD, ui.gdb_password.text())
+    proj.writeEntry(PLUGIN_NAME, gbd_API_KEY, ui.gbd_api_key.text())
+    proj.writeEntry(PLUGIN_NAME, gbd_USERNAME, ui.gbd_username.text())
+    proj.writeEntry(PLUGIN_NAME, gbd_PASSWORD, ui.gbd_password.text())
 
     proj.writeEntry(PLUGIN_NAME, INSIGHTCLOUD_USERNAME, ui.insightcloud_username.text())
     proj.writeEntry(PLUGIN_NAME, INSIGHTCLOUD_PASSWORD, ui.insightcloud_password.text())
@@ -90,8 +90,7 @@ def show_errors(errors):
     return "The following errors have occurred:<br />" + "<br />".join(errors)
 
 def validate_save_settings(ui, errors):
-    validate_gdb_info(ui, errors)
-    validate_output_path(ui, errors)
+    validate_gbd_info(ui, errors)
     return errors
 
 def validate_ok(ui):
@@ -105,22 +104,22 @@ def validate_ok(ui):
         return False
     return True
 
-def validate_gdb_info(ui, errors):
+def validate_gbd_info(ui, errors):
     # check gbd info
-    is_gdb_info_good = True
-    if is_field_empty(ui.gdb_api_key):
-        is_gdb_info_good = False
+    is_gbd_info_good = True
+    if is_field_empty(ui.gbd_api_key):
+        is_gbd_info_good = False
         errors.append("No GBD Api Key provided.")
-    if is_field_empty(ui.gdb_username):
-        is_gdb_info_good = False
-        errors.append("No GDB Username provided.")
-    if is_field_empty(ui.gdb_password):
-        is_gdb_info_good = False
+    if is_field_empty(ui.gbd_username):
+        is_gbd_info_good = False
+        errors.append("No GBD Username provided.")
+    if is_field_empty(ui.gbd_password):
+        is_gbd_info_good = False
         errors.append("No GBD Password provided.")
     # validate credentials by hitting validate page
-    if is_gdb_info_good:
-        query = GBDQuery(auth_token=ui.gdb_api_key.text()[0], username=ui.gdb_username.text()[0],
-                         password=ui.gdb_password.text()[0])
+    if is_gbd_info_good:
+        query = GBDQuery(auth_token=ui.gbd_api_key.text(), username=ui.gbd_username.text(),
+                         password=ui.gbd_password.text())
         query.log_in()
         query.hit_test_endpoint()
         if not query.is_login_successful:
@@ -145,8 +144,8 @@ def validate_insightcloud_info(ui, errors):
         errors.append("No InsightCloud password provided.")
     # validate credentials by hitting monocle-3
     if is_insightcloud_info_good:
-        query = InsightCloudQuery(username=ui.insightcloud_username.text()[0],
-                                  password=ui.insightcloud_password.text()[0])
+        query = InsightCloudQuery(username=ui.insightcloud_username.text(),
+                                  password=ui.insightcloud_password.text())
         query.log_into_monocle_3()
         if not query.is_login_successful:
             errors.append("Unable to verify InsightCloud credentials. See logs for more details.")

@@ -18,9 +18,9 @@
     <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
    </property>
    <item row="0" column="0">
-    <widget class="QLabel" name="gdb_username_label">
+    <widget class="QLabel" name="gbd_username_label">
      <property name="text">
-      <string>GDB Username</string>
+      <string>GBD Username</string>
      </property>
     </widget>
    </item>
@@ -28,9 +28,9 @@
     <widget class="QLineEdit" name="gdb_username"/>
    </item>
    <item row="1" column="0">
-    <widget class="QLabel" name="gdb_password_label">
+    <widget class="QLabel" name="gbd_password_label">
      <property name="text">
-      <string>GDB Password</string>
+      <string>GBD Password</string>
      </property>
     </widget>
    </item>
@@ -38,14 +38,14 @@
     <widget class="QLineEdit" name="gdb_password"/>
    </item>
    <item row="2" column="0">
-    <widget class="QLabel" name="gdb_api_key_label">
+    <widget class="QLabel" name="gbd_api_key_label">
      <property name="text">
-      <string>GDB API Key</string>
+      <string>GBD API Key</string>
      </property>
     </widget>
    </item>
    <item row="2" column="1">
-    <widget class="QLineEdit" name="gdb_api_key"/>
+    <widget class="QLineEdit" name="gbd_api_key"/>
    </item>
    <item row="3" column="0">
     <widget class="QLabel" name="insightcloud_username_label">
@@ -178,7 +178,7 @@
        <item>
         <widget class="QLineEdit" name="top">
          <property name="readOnly">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -199,7 +199,7 @@
        <item>
         <widget class="QLineEdit" name="left">
          <property name="readOnly">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -217,7 +217,7 @@
        <item>
         <widget class="QLineEdit" name="right">
          <property name="readOnly">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -264,7 +264,7 @@
        <item>
         <widget class="QLineEdit" name="bottom">
          <property name="readOnly">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>

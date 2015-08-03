@@ -12,7 +12,7 @@ import logging as log
 
 from CASHTMLParser import CASFormHTMLParser
 
-MONOCLE_3_URL = "https://iipbeta.digitalglboe.com/monocle-3/"
+MONOCLE_3_URL = "https://iipbeta.digitalglobe.com/monocle-3/"
 VECTOR_TYPE_QUERY = Template(MONOCLE_3_URL + "app/broker/vector/api/vectors/OSM/types?left=$left&right=$right&upper=$upper&lower=$lower")
 TWITTER_QUERY = Template(MONOCLE_3_URL + "app/broker/sma/sma/twitter/tweets?bbox=$left,$lower,$right,$upper&daterange=$time_begin-$time_end&dimensionality=stats")
 RSS_QUERY = Template(MONOCLE_3_URL + "app/broker/sma/sma/rss/sentences?bbox=$left,$lower,$right,$upper&daterange=$time_begin-$time_end&dimensionality=stats")
@@ -82,7 +82,8 @@ class InsightCloudQuery:
     def log_into_monocle_3(self):
         response = None
         try:
-            response = self.opener.open(MONOCLE_3_URL)
+            request = urllib2.Request(MONOCLE_3_URL)
+            response = self.opener.open(request)
             if self.is_on_login_page(response):
                 response = self.login_to_app(response)
         except Exception, e:
