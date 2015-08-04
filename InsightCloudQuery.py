@@ -34,6 +34,10 @@ JSON_SMA_HITS_KEY = u'hits'
 JSON_SMA_TOTAL_KEY = u'total'
 
 class InsightCloudParams:
+    """
+    Class for holding query params for InsightCloud queries
+    """
+
     def __init__(self, top, right, bottom, left, time_begin=None, time_end=None):
         self.top = top
         self.right = right
@@ -43,6 +47,10 @@ class InsightCloudParams:
         self.time_end = time_end
 
 class InsightCloudQuery:
+    """
+    Class for handling queries to InsightCloud vector data
+    """
+
     def __init__(self, username, password):
         self.username = username
         self.password = password
@@ -51,10 +59,21 @@ class InsightCloudQuery:
 
     @classmethod
     def is_on_login_page(cls, response):
+        """
+        Check to see if the current response is for the CAS log in page
+        :param response: The HTTP response received
+        :return: True if the responses' url points to the log in page; else False
+        """
         return URL_CAS_LOGIN_SEGMENT in response.geturl()
 
     @classmethod
     def build_form_info(cls, response_url, form_data):
+        """
+        Parses the CAS page and pulls out the relevant information
+        :param response_url: The url of the current page
+        :param form_data: The HTML code of the page as a str
+        :return: A tuple containing ( the url to post the CAS info to , a map of data to post to CAS )
+        """
         parser = CASFormHTMLParser()
         parser.feed(form_data)
         action = parser.action
@@ -64,6 +83,12 @@ class InsightCloudQuery:
         return None
 
     def post_login_credentials_to_app(self, url_data, redirect_header):
+        """
+        Posts the data to CAS as part of the log in sequence
+        :param url_data: Additional CAS form data to post
+        :param redirect_header: url to redirect from CAS
+        :return: A new HTTP response as a result of the POST
+        """
         # post the credentials
         response = None
         try:
@@ -77,6 +102,11 @@ class InsightCloudQuery:
         return response
 
     def login_to_app(self, response):
+        """
+        Attempts to log into the InsightCloud platform based on the current HTTP response
+        :param response: The current HTTP response
+        :return: An update HTTP response from the CAS log in
+        """
         url_data = self.build_form_info(response.geturl(), response.read())
         response = self.post_login_credentials_to_app(url_data, response.geturl())
         if isinstance(response, basestring):
@@ -88,6 +118,11 @@ class InsightCloudQuery:
         return response
 
     def log_into_monocle_3(self):
+        """
+        Attempts to log into Monocle-3; used to validate credentials and intialize the log-in so that future
+        communication doesn't need to log on
+        :return: The HTML page as a str if successful; None otherwise
+        """
         response = None
         try:
             request = urllib2.Request(MONOCLE_3_URL)
@@ -102,6 +137,12 @@ class InsightCloudQuery:
         return None
 
     def query_osm(self, order_params, csv_element):
+        """
+        Queries OSM data for stats and updates the CSV element for output
+        :param order_params: InsightCloud params to query for
+        :param csv_element: The CSV row to update
+        :return: None
+        """
         osm_url = VECTOR_TYPE_QUERY.substitute(upper=str(order_params.top), right=str(order_params.right),
                                                lower=str(order_params.bottom), left=str(order_params.left))
         response = None
@@ -117,6 +158,12 @@ class InsightCloudQuery:
             self.process_osm_data(response.read(), csv_element)
 
     def process_osm_data(self, response, csv_element):
+        """
+        Updates the CSV row with the OSM stats
+        :param response: The string response from the server with data for the csv row
+        :param csv_element: The csv row to update
+        :return: None
+        """
         json_data = json.loads(response, strict=False)
         # skip over empty fields
         if not json_data or JSON_OSM_DATA_KEY not in json_data:
@@ -127,6 +174,12 @@ class InsightCloudQuery:
                 csv_element.num_osm += entry[JSON_OSM_COUNT_KEY]
 
     def query_twitter(self, order_params, csv_element):
+        """
+        Queries for Twitter data and updates the CSV row with the stats
+        :param order_params: The InsightCloud params for the query
+        :param csv_element: The CSV element to update
+        :return: None
+        """
         twitter_url = TWITTER_QUERY.substitute(upper=str(order_params.top), lower=str(order_params.bottom),
                                                left=str(order_params.left), right=str(order_params.right))
         response = None
@@ -142,6 +195,12 @@ class InsightCloudQuery:
             self.process_twitter_data(response.read(), csv_element)
 
     def query_rss(self, order_params, csv_element):
+        """
+        Queries RSS for data and updates the CSV row with the stats
+        :param order_params: The InsightCloud params for the query
+        :param csv_element: The CSV element to update
+        :return: None
+        """
         rss_url = RSS_QUERY.substitute(upper=str(order_params.top), lower=str(order_params.bottom),
                                        left=str(order_params.left), right=str(order_params.right))
         response = None
@@ -157,14 +216,31 @@ class InsightCloudQuery:
             self.process_rss_data(response.read(), csv_element)
 
     def process_sma_data(self, response):
+        """
+        Processes OSM data (including RSS and Twitter) and returns the stats field
+        :param response: The str response from the server
+        :return: 0 if there are no stats; else the stats
+        """
         json_data = json.loads(response, strict=False)
         # skip over empty fields
         if not json_data or JSON_SMA_HITS_KEY not in json_data or JSON_SMA_TOTAL_KEY not in json_data[JSON_SMA_HITS_KEY]:
-            return None
+            return 0
         return json_data[JSON_SMA_HITS_KEY][JSON_SMA_TOTAL_KEY]
 
     def process_twitter_data(self, response, csv_element):
+        """
+        Updates the CSV row with the stats from the Twitter query
+        :param response: The str response containing the JSON data from the query
+        :param csv_element: The CSV row to update
+        :return: None
+        """
         csv_element.num_twitter = self.process_sma_data(response)
 
     def process_rss_data(self, response, csv_element):
+        """
+        Updates the CSV row with the stats from the RSS query
+        :param response: The str response containing JSON data from the query
+        :param csv_element: The CSV row to update
+        :return: None
+        """
         csv_element.num_rss = self.process_sma_data(response)

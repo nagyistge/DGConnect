@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from GBDQuery import GBDOrderParams
 from InsightCloudQuery import InsightCloudParams
 
-from PyQt4.QtGui import QProgressDialog
+from PyQt4.QtGui import QProgressDialog, QMessageBox
 
 INCREMENTAL_INTERVAL = 1.0
 
@@ -107,3 +107,6 @@ def generate_csv(left, top, right, bottom, gbd_query, insightcloud_query, csv_fi
         current_x = next_x
 
     csv_file.close()
+
+    message = QMessageBox()
+    message.information(None, "CSV Write Complete", "CSV output to " + csv_filename + " is complete")

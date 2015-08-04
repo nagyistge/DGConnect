@@ -14,12 +14,23 @@ KEY_VALUE = 'value'
 VALUE_HIDDEN = 'hidden'
 
 class CASFormHTMLParser(HTMLParser):
+    """
+    HTML parser for CAS pages
+    """
+
     def __init__(self):
         HTMLParser.__init__(self)
         self.action = None
         self.hidden_data = {}
 
     def handle_starttag(self, tag, attrs):
+        """
+        Callback function for each new start tag on the HTML page
+        Used to extract the page post target and the hidden data
+        :param tag: The HTML element's tag name
+        :param attrs: The attributes for the HTML element
+        :return: None
+        """
         if tag == TAG_FORM:
             for key, value in attrs:
                 if key == KEY_ACTION:

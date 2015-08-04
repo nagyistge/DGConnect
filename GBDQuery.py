@@ -58,6 +58,10 @@ KEY_JSON_PROPERTIES = u'properties'
 KEY_JSON_TIMESTAMP = u'timestamp'
 
 class GBDOrderParams:
+    """
+    Class for managing GBD params
+    """
+
     def __init__(self, top, bottom, left, right, time_begin, time_end):
         self.top = top
         self.bottom = bottom
@@ -68,10 +72,18 @@ class GBDOrderParams:
         self.polygon = self.build_polygon()
 
     def build_polygon(self):
+        """
+        Builds the polygon field from the POLYGON_TEMPLATE
+        :return: The polygon field
+        """
         return POLYGON_TEMPLATE.substitute(top=str(self.top), right=(str(self.right)), bottom=str(self.bottom),
                                            left=str(self.left))
 
 class GBDQuery:
+    """
+    Class for querying GBD raster data
+    """
+
     def __init__(self, auth_token, username, password, grant_type='password'):
         self.auth_token = auth_token
         self.username = username
@@ -87,6 +99,10 @@ class GBDQuery:
         self.is_login_successful = False
 
     def log_in(self):
+        """
+        Log in to GBD using the credentials provided to the constructor
+        :return: None
+        """
         # prep data
         data = {
             'username': self.username,
@@ -112,9 +128,18 @@ class GBDQuery:
             self.is_login_successful = False
 
     def update_headers_with_access_info(self):
+        """
+        Helper method for updating the authorization header after log-in
+        :return:
+        """
         self.headers[HEADER_AUTHORIZATION] = "%s %s" % (self.token_type, self.access_token)
 
     def hit_test_endpoint(self):
+        """
+        Hits the test end point for checking if the credentials provided are valid;
+        Must be done after logging in first
+        :return: None
+        """
         try:
             request = urllib2.Request(GBD_TEST_LOGIN_URL, headers=self.headers)
             response = self.opener.open(request)
@@ -125,6 +150,12 @@ class GBDQuery:
             self.is_login_successful = False
 
     def do_aoi_search(self, order_params, csv_element):
+        """
+        Performs an AOI search for strips in GBD and generates stats from them
+        :param order_params: The order params for the GBD query
+        :param csv_element: The entry in the CSV row to update
+        :return:
+        """
         data = {
             KEY_DATA_SEARCH_AREA_WKT: order_params.polygon,
             KEY_DATA_START_DATE: order_params.time_begin.isoformat() + 'Z',
@@ -147,6 +178,13 @@ class GBDQuery:
 
     @classmethod
     def update_csv_data(cls, end_date, json_data, csv_element):
+        """
+        Writes the data obtain from the GBD to the CSV element
+        :param end_date: End date of the query (usually the time when the query was kicked off)
+        :param json_data: The data retrieved from GBD
+        :param csv_element: The element to update
+        :return: None
+        """
         # don't bother with empty data
         if not json_data or KEY_JSON_RESULTS not in json_data or len(json_data[KEY_JSON_RESULTS]) <= 0:
             return
