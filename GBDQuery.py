@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 __author__ = 'Michael Trotter <michael.trotter@digitalglobe.com>'
 
 from string import Template
@@ -100,7 +101,7 @@ class GBDQuery:
             request = urllib2.Request(GBD_LOGIN_URL, encoded_data, headers=self.headers)
             response = self.opener.open(request)
             response_data = response.read()
-            json_data = json.loads(response_data)
+            json_data = json.loads(response_data, strict=False)
             self.access_token = json_data[KEY_ACCESS_TOKEN].encode(JSON_ENCODING)
             self.token_type = json_data[KEY_TOKEN_TYPE].encode(JSON_ENCODING)
             self.update_headers_with_access_info()
@@ -137,7 +138,7 @@ class GBDQuery:
             request = urllib2.Request(GBD_SEARCH_AOI_AND_TIME_URL, json_data, headers)
             response = self.opener.open(request)
             response_data = response.read()
-            result_data = json.loads(response_data)
+            result_data = json.loads(response_data, strict=False)
             self.update_csv_data(end_date, result_data, csv_element)
         except Exception, e:
             log.error("Exception detected during aoi search: " + str(e))

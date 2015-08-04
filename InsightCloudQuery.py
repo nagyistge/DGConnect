@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 __author__ = 'Michael Trotter <michael.trotter@digitalglobe.com>'
 
 from string import Template
@@ -29,6 +30,8 @@ URL_MATCH = re.compile('(.*://[^/]*)')
 
 JSON_OSM_DATA_KEY = u'data'
 JSON_OSM_COUNT_KEY = u'count'
+JSON_TWITTER_HITS_KEY = u'hits'
+JSON_TWITTER_TOTAL_KEY = u'total'
 
 class InsightCloudParams:
     def __init__(self, top, right, bottom, left, time_begin=None, time_end=None):
@@ -114,7 +117,7 @@ class InsightCloudQuery:
             self.process_osm_data(response.read(), csv_element)
 
     def process_osm_data(self, response, csv_element):
-        json_data = json.loads(response)
+        json_data = json.loads(response, strict=False)
         # skip over empty fields
         if not json_data or JSON_OSM_DATA_KEY not in json_data:
             return
@@ -122,3 +125,25 @@ class InsightCloudQuery:
             # check that count entry exists
             if JSON_OSM_COUNT_KEY in entry:
                 csv_element.num_osm += entry[JSON_OSM_COUNT_KEY]
+
+    def query_twitter(self, order_params, csv_element):
+        twitter_url = TWITTER_QUERY.substitute(upper=str(order_params.top), lower=str(order_params.bottom),
+                                               left=str(order_params.left), right=str(order_params.right))
+        response = None
+        try:
+            request = urllib2.Request(twitter_url)
+            response = self.opener.open(request)
+            if self.is_on_login_page(response):
+                response = self.login_to_app(response)
+        except Exception, e:
+            self.is_login_successful = False
+            log.error("Unable to hit the twitter end point due to: " + str(e))
+        if response and self.is_login_successful:
+            self.process_twitter_data(response.read(), csv_element)
+
+    def process_twitter_data(self, response, csv_element):
+        json_data = json.loads(response, strict=False)
+        # skip over empty fields
+        if not json_data or JSON_TWITTER_HITS_KEY not in json_data or JSON_TWITTER_TOTAL_KEY not in json_data[JSON_TWITTER_HITS_KEY]:
+            return
+        csv_element.num_twitter = json_data[JSON_TWITTER_HITS_KEY][JSON_TWITTER_TOTAL_KEY]

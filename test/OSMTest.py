@@ -7,7 +7,7 @@ import CSVOutput
 
 class JSONOSMTest(unittest.TestCase):
     def test_osm_json_parse(self):
-        osm_str = """{
+        osm_str = r"""{
    "data":[
       {
          "name":"Road",
