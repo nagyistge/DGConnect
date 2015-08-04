@@ -214,7 +214,7 @@ class Ui_DGConnect(object):
 
         QtCore.QMetaObject.connectSlotsByName(dialog)
 
-        DGConnectProcessForm.load_settings_clicked(self)
+        DGConnectProcessForm.load_settings(self)
 
     def retranslateUi(self, DGConnect):
         DGConnect.setWindowTitle(_translate("DGConnect", "DGConnect", None))

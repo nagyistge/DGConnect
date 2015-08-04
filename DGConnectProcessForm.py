@@ -1,7 +1,7 @@
 __author__ = 'Michael Trotter <michael.trotter@digitalglobe.com>'
 
 from PyQt4 import QtGui
-from qgis.core import QgsProject
+from PyQt4.QtCore import QSettings
 from os.path import expanduser
 
 from GBDQuery import GBDQuery
@@ -59,36 +59,50 @@ def cancel_clicked(ui):
     """
     ui.dialog.reject()
 
+def read_setting(key, object_type=str):
+    s = QSettings()
+    if s.contains(key):
+        return s.value(key, type=object_type)
+    return ""
+
+def write_setting(key, value):
+    s = QSettings()
+    s.setValue(key, value)
+
 def load_settings_clicked(ui):
+    load_settings(ui)
+
+    # write sucess message
+    message = QtGui.QMessageBox
+    message.information(None, "Credentials Loaded!", "Credentials Loaded!")
+
+def load_settings(ui):
     """
 
-    :param ui:
-    :return:
-    """
-    proj = QgsProject.instance()
-
+   :param ui:
+   :return:
+   """
     # read values
-    ui.gbd_api_key.setText(proj.readEntry(PLUGIN_NAME, GBD_API_KEY)[0])
-    ui.gbd_username.setText(proj.readEntry(PLUGIN_NAME, GBD_USERNAME)[0])
-    ui.gbd_password.setText(proj.readEntry(PLUGIN_NAME, GBD_PASSWORD)[0])
+    ui.gbd_api_key.setText(read_setting(PLUGIN_NAME + "/" + GBD_API_KEY))
+    ui.gbd_username.setText(read_setting(PLUGIN_NAME + "/" + GBD_USERNAME))
+    ui.gbd_password.setText(read_setting(PLUGIN_NAME + "/" + GBD_PASSWORD))
 
-    ui.insightcloud_username.setText(proj.readEntry(PLUGIN_NAME, INSIGHTCLOUD_USERNAME)[0])
-    ui.insightcloud_password.setText(proj.readEntry(PLUGIN_NAME, INSIGHTCLOUD_PASSWORD)[0])
+    ui.insightcloud_username.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME))
+    ui.insightcloud_password.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD))
 
-    ui.select_file.setText(proj.readEntry(PLUGIN_NAME, SELECT_FILE)[0])
+    ui.select_file.setText(read_setting(PLUGIN_NAME + "/" + SELECT_FILE))
 
 def save_settings_clicked(ui):
-    proj = QgsProject.instance()
 
     # store values
-    proj.writeEntry(PLUGIN_NAME, GBD_API_KEY, ui.gbd_api_key.text())
-    proj.writeEntry(PLUGIN_NAME, GBD_USERNAME, ui.gbd_username.text())
-    proj.writeEntry(PLUGIN_NAME, GBD_PASSWORD, ui.gbd_password.text())
+    write_setting(PLUGIN_NAME + "/" + GBD_API_KEY, ui.gbd_api_key.text())
+    write_setting(PLUGIN_NAME + "/" + GBD_USERNAME, ui.gbd_username.text())
+    write_setting(PLUGIN_NAME + "/" + GBD_PASSWORD, ui.gbd_password.text())
 
-    proj.writeEntry(PLUGIN_NAME, INSIGHTCLOUD_USERNAME, ui.insightcloud_username.text())
-    proj.writeEntry(PLUGIN_NAME, INSIGHTCLOUD_PASSWORD, ui.insightcloud_password.text())
+    write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME, ui.insightcloud_username.text())
+    write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD, ui.insightcloud_password.text())
 
-    proj.writeEntry(PLUGIN_NAME, SELECT_FILE, ui.select_file.text())
+    write_setting(PLUGIN_NAME + "/" + SELECT_FILE, ui.select_file.text())
 
     # write success message
     message = QtGui.QMessageBox()
