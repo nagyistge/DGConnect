@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Ui_DGConnect.ui'
 #
-# Created: Fri Jul 31 12:53:06 2015
+# Created: Tue Aug  4 15:16:57 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -79,7 +79,6 @@ class Ui_DGConnect(object):
         self.formLayout.setWidget(0, QtGui.QFormLayout.LabelRole, self.gbd_username_label)
         self.gbd_username = QtGui.QLineEdit(dialog)
         self.gbd_username.setObjectName(_fromUtf8("gbd_username"))
-        self.gbd_username_label.setBuddy(self.gbd_username)
         self.formLayout.setWidget(0, QtGui.QFormLayout.FieldRole, self.gbd_username)
         self.gbd_password_label = QtGui.QLabel(dialog)
         self.gbd_password_label.setObjectName(_fromUtf8("gbd_password_label"))
@@ -87,22 +86,19 @@ class Ui_DGConnect(object):
         self.gbd_password = QtGui.QLineEdit(dialog)
         self.gbd_password.setEchoMode(QtGui.QLineEdit.Password)
         self.gbd_password.setObjectName(_fromUtf8("gbd_password"))
-        self.gbd_password_label.setBuddy(self.gbd_password)
         self.formLayout.setWidget(1, QtGui.QFormLayout.FieldRole, self.gbd_password)
         self.gbd_api_key_label = QtGui.QLabel(dialog)
         self.gbd_api_key_label.setObjectName(_fromUtf8("gbd_api_key_label"))
         self.formLayout.setWidget(2, QtGui.QFormLayout.LabelRole, self.gbd_api_key_label)
         self.gbd_api_key = QtGui.QLineEdit(dialog)
-        self.gbd_api_key.setObjectName(_fromUtf8("gbd_api_key"))
         self.gbd_api_key.setEchoMode(QtGui.QLineEdit.Password)
-        self.gbd_api_key_label.setBuddy(self.gbd_api_key)
+        self.gbd_api_key.setObjectName(_fromUtf8("gbd_api_key"))
         self.formLayout.setWidget(2, QtGui.QFormLayout.FieldRole, self.gbd_api_key)
         self.insightcloud_username_label = QtGui.QLabel(dialog)
         self.insightcloud_username_label.setObjectName(_fromUtf8("insightcloud_username_label"))
         self.formLayout.setWidget(3, QtGui.QFormLayout.LabelRole, self.insightcloud_username_label)
         self.insightcloud_username = QtGui.QLineEdit(dialog)
         self.insightcloud_username.setObjectName(_fromUtf8("insightcloud_username"))
-        self.insightcloud_username_label.setBuddy(self.insightcloud_username)
         self.formLayout.setWidget(3, QtGui.QFormLayout.FieldRole, self.insightcloud_username)
         self.insightcloud_password_label = QtGui.QLabel(dialog)
         self.insightcloud_password_label.setObjectName(_fromUtf8("insightcloud_password_label"))
@@ -110,7 +106,6 @@ class Ui_DGConnect(object):
         self.insightcloud_password = QtGui.QLineEdit(dialog)
         self.insightcloud_password.setEchoMode(QtGui.QLineEdit.Password)
         self.insightcloud_password.setObjectName(_fromUtf8("insightcloud_password"))
-        self.insightcloud_password_label.setBuddy(self.insightcloud_password)
         self.formLayout.setWidget(4, QtGui.QFormLayout.FieldRole, self.insightcloud_password)
         self.select_file_label = QtGui.QLabel(dialog)
         self.select_file_label.setObjectName(_fromUtf8("select_file_label"))
@@ -167,7 +162,6 @@ class Ui_DGConnect(object):
         self.top.setReadOnly(True)
         self.top.setObjectName(_fromUtf8("top"))
         self.top_layout.addWidget(self.top)
-        self.top_label.setBuddy(self.top)
         self.bbox_layout.addLayout(self.top_layout, 0, 1, 1, 1)
         self.left_layout = QtGui.QHBoxLayout()
         self.left_layout.setContentsMargins(-1, -1, -1, 0)
@@ -178,7 +172,6 @@ class Ui_DGConnect(object):
         self.left = QtGui.QLineEdit(dialog)
         self.left.setReadOnly(True)
         self.left.setObjectName(_fromUtf8("left"))
-        self.left_label.setBuddy(self.left)
         self.left_layout.addWidget(self.left)
         self.bbox_layout.addLayout(self.left_layout, 1, 0, 1, 1)
         self.right_layout = QtGui.QHBoxLayout()
@@ -189,7 +182,6 @@ class Ui_DGConnect(object):
         self.right = QtGui.QLineEdit(dialog)
         self.right.setReadOnly(True)
         self.right.setObjectName(_fromUtf8("right"))
-        self.right_label.setBuddy(self.right)
         self.right_layout.addWidget(self.right)
         self.bbox_layout.addLayout(self.right_layout, 1, 2, 1, 1)
         spacer_item_1 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
@@ -206,9 +198,18 @@ class Ui_DGConnect(object):
         self.bottom.setReadOnly(True)
         self.bottom.setObjectName(_fromUtf8("bottom"))
         self.bottom_layout.addWidget(self.bottom)
-        self.bottom_label.setBuddy(self.bottom)
         self.bbox_layout.addLayout(self.bottom_layout, 2, 1, 1, 1)
         self.formLayout.setLayout(12, QtGui.QFormLayout.SpanningRole, self.bbox_layout)
+        self.gbd_username_label.setBuddy(self.gbd_username)
+        self.gbd_password_label.setBuddy(self.gbd_password)
+        self.gbd_api_key_label.setBuddy(self.gbd_api_key)
+        self.insightcloud_username_label.setBuddy(self.insightcloud_username)
+        self.insightcloud_password_label.setBuddy(self.insightcloud_password)
+        self.select_file_label.setBuddy(self.select_file)
+        self.top_label.setBuddy(self.top)
+        self.left_label.setBuddy(self.left)
+        self.right_label.setBuddy(self.right)
+        self.bottom_label.setBuddy(self.bottom)
 
         self.retranslateUi(dialog)
         QtCore.QObject.connect(self.yes_no_box, QtCore.SIGNAL(_fromUtf8("accepted()")), dialog.accept)
@@ -247,10 +248,10 @@ class Ui_DGConnect(object):
 
     def set_left_text(self, text):
         self.left.setText(text)
-    
+
     def set_right_text(self, text):
         self.right.setText(text)
-    
+
     def set_bottom_text(self, text):
         self.bottom.setText(text)
 
