@@ -102,8 +102,8 @@ class InsightCloudQuery:
         return None
 
     def query_osm(self, order_params, csv_element):
-        osm_url = VECTOR_TYPE_QUERY.substitute(top=str(order_params.top), right=str(order_params.right),
-                                               bottom=str(order_params.bottom), left=str(order_params.left))
+        osm_url = VECTOR_TYPE_QUERY.substitute(upper=str(order_params.top), right=str(order_params.right),
+                                               lower=str(order_params.bottom), left=str(order_params.left))
         response = None
         try:
             request = urllib2.Request(osm_url)

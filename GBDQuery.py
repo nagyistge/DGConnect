@@ -18,7 +18,7 @@ USER_AGENT_STRING = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, 
                     'Ubuntu Chromium/41.0.2272.76 Chrome/41.0.2272.76 Safari/537.36'
 
 # polygon template for gbd ordering
-POLYGON_TEMPLATE = Template("POLGON (($left $bottom, $left $top, $right $top, $right $bottom $left $bottom))")
+POLYGON_TEMPLATE = Template("POLYGON (($left $bottom, $left $top, $right $top, $right $bottom, $left $bottom))")
 
 # gbd urls
 GBD_TOP_LEVEL_URL = 'https://geobigdata.io/'
@@ -27,7 +27,7 @@ GBD_TEST_LOGIN_URL = GBD_TOP_LEVEL_URL + "workflows/v1/authtest"
 GBD_SEARCH_AOI_AND_TIME_URL = GBD_TOP_LEVEL_URL + "catalog/v1/search"
 
 # data format for parsing
-ISO_FORMAT = '%Y-%m-%dT%H:%M%S.%fZ'
+ISO_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 # json keys
 JSON_ENCODING = 'utf8'
@@ -58,12 +58,14 @@ KEY_JSON_PROPERTIES = u'properties'
 KEY_JSON_TIMESTAMP = u'timestamp'
 
 class GBDOrderParams:
-    def __init__(self, top, bottom, left, right):
+    def __init__(self, top, bottom, left, right, time_begin, time_end):
         self.top = top
         self.bottom = bottom
         self.left = left
         self.right = right
-        self.template = self.build_polygon()
+        self.time_begin = time_begin
+        self.time_end = time_end
+        self.polygon = self.build_polygon()
 
     def build_polygon(self):
         return POLYGON_TEMPLATE.substitute(top=str(self.top), right=(str(self.right)), bottom=str(self.bottom),
@@ -122,11 +124,11 @@ class GBDQuery:
             log.error("Exception detected during endpoint text: " + str(e))
             self.is_login_successful = False
 
-    def do_aoi_search(self, order_params, begin_date, end_date, csv_element):
+    def do_aoi_search(self, order_params, csv_element):
         data = {
             KEY_DATA_SEARCH_AREA_WKT: order_params.polygon,
-            KEY_DATA_START_DATE: begin_date.isoformat() + 'Z',
-            KEY_DATA_END_DATE: end_date.isoformat() + 'Z',
+            KEY_DATA_START_DATE: order_params.time_begin.isoformat() + 'Z',
+            KEY_DATA_END_DATE: order_params.time_end.isoformat() + 'Z',
             KEY_DATA_FILTERS: VALUE_DATA_FILTERS,
             KEY_DATA_TAG_RESULTS: VALUE_DATA_TAG_RESULTS,
             KEY_DATA_TYPES: VALUE_DATA_TYPES
@@ -139,7 +141,7 @@ class GBDQuery:
             response = self.opener.open(request)
             response_data = response.read()
             result_data = json.loads(response_data, strict=False)
-            self.update_csv_data(end_date, result_data, csv_element)
+            self.update_csv_data(order_params.time_end, result_data, csv_element)
         except Exception, e:
             log.error("Exception detected during aoi search: " + str(e))
 

@@ -7,6 +7,8 @@ from os.path import expanduser
 from GBDQuery import GBDQuery
 from InsightCloudQuery import InsightCloudQuery
 
+import CSVOutput
+
 import re
 
 # constants for plugin settings
@@ -32,8 +34,20 @@ def ok_clicked(ui):
     :return: None
     """
     if validate_ok(ui):
-        print("No errors")
-        ui.dialog.accept()
+        # build gbd query
+        gbd_query = GBDQuery(auth_token=ui.gbd_api_key.text(), username=ui.gbd_username.text(),
+                         password=ui.gbd_password.text())
+        gbd_query.log_in()
+        gbd_query.hit_test_endpoint()
+
+        # build insightcloud query
+        insightcloud_query = InsightCloudQuery(username=ui.insightcloud_username.text(),
+                                  password=ui.insightcloud_password.text())
+        insightcloud_query.log_into_monocle_3()
+        CSVOutput.generate_csv(top=float(ui.top.text()), left=float(ui.left.text()),
+                               bottom=float(ui.bottom.text()), right=float(ui.right.text()),
+                               gbd_query=gbd_query, insightcloud_query=insightcloud_query,
+                               csv_filename=ui.select_file.text())
     else:
         ui.dialog.show()
 
@@ -75,6 +89,10 @@ def save_settings_clicked(ui):
     proj.writeEntry(PLUGIN_NAME, INSIGHTCLOUD_PASSWORD, ui.insightcloud_password.text())
 
     proj.writeEntry(PLUGIN_NAME, SELECT_FILE, ui.select_file.text())
+
+    # write success message
+    message = QtGui.QMessageBox()
+    message.information(None, "Credentials Saved!", "Credentials Saved!")
 
 def select_file_clicked(ui):
     # open file ui
@@ -130,7 +148,7 @@ def validate_output_path(ui, errors):
     if is_field_empty(ui.select_file):
         errors.append("No output file provided.")
     # check if regex matches
-    elif re.match(ENDS_WITH_SUFFIX_REGEX, ui.select_file.text()[0]) is None:
+    elif re.match(ENDS_WITH_SUFFIX_REGEX, ui.select_file.text()) is None:
         errors.append("Output file must be a csv file.")
 
 def validate_insightcloud_info(ui, errors):
