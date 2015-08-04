@@ -44,7 +44,7 @@ class CSVOutput:
     def get_csv_header(cls):
         return "Serial Number,Top,Right,Bottom,Left,Polygon,Num GBD (Age <= 1 Days Old)," \
                "Num GBD (1 < Age <= 3 Days Old),Num GBD (3 < Age <= 7 Days Old)," \
-               "Num GBD (7 < Age <= 30 Days Old), Num GBD (30 < Age <= 60 Days Old)"
+               "Num GBD (7 < Age <= 30 Days Old),Num GBD (30 < Age <= 60 Days Old),Num OSM,Num Twitter,Num RSS"
 
 
 def drange(start, stop, step):
