@@ -30,8 +30,8 @@ URL_MATCH = re.compile('(.*://[^/]*)')
 
 JSON_OSM_DATA_KEY = u'data'
 JSON_OSM_COUNT_KEY = u'count'
-JSON_TWITTER_HITS_KEY = u'hits'
-JSON_TWITTER_TOTAL_KEY = u'total'
+JSON_SMA_HITS_KEY = u'hits'
+JSON_SMA_TOTAL_KEY = u'total'
 
 class InsightCloudParams:
     def __init__(self, top, right, bottom, left, time_begin=None, time_end=None):
@@ -141,9 +141,30 @@ class InsightCloudQuery:
         if response and self.is_login_successful:
             self.process_twitter_data(response.read(), csv_element)
 
-    def process_twitter_data(self, response, csv_element):
+    def query_rss(self, order_params, csv_element):
+        rss_url = RSS_QUERY.substitute(upper=str(order_params.top), lower=str(order_params.bottom),
+                                       left=str(order_params.left), right=str(order_params.right))
+        response = None
+        try:
+            request = urllib2.Request(rss_url)
+            response = self.opener.open(request)
+            if self.is_on_login_page(response):
+                response = self.login_to_app(response)
+        except Exception, e:
+            self.is_login_successful = False
+            log.error("Unable to hit the rss end point due to: " + str(e))
+        if response and self.is_login_successful:
+            self.process_rss_data(response.read(), csv_element)
+
+    def process_sma_data(self, response):
         json_data = json.loads(response, strict=False)
         # skip over empty fields
-        if not json_data or JSON_TWITTER_HITS_KEY not in json_data or JSON_TWITTER_TOTAL_KEY not in json_data[JSON_TWITTER_HITS_KEY]:
-            return
-        csv_element.num_twitter = json_data[JSON_TWITTER_HITS_KEY][JSON_TWITTER_TOTAL_KEY]
+        if not json_data or JSON_SMA_HITS_KEY not in json_data or JSON_SMA_TOTAL_KEY not in json_data[JSON_SMA_HITS_KEY]:
+            return None
+        return json_data[JSON_SMA_HITS_KEY][JSON_SMA_TOTAL_KEY]
+
+    def process_twitter_data(self, response, csv_element):
+        csv_element.num_twitter = self.process_sma_data(response)
+
+    def process_rss_data(self, response, csv_element):
+        csv_element.num_rss = self.process_sma_data(response)
