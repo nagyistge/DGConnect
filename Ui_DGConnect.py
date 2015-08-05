@@ -8,7 +8,10 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt4 import QtCore, QtGui
+from PyQt4.QtCore import pyqtSlot
+from qgis.core import QgsRectangle
 import DGConnectProcessForm
+import logging as log
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -159,7 +162,7 @@ class Ui_DGConnect(object):
         self.top_label.setObjectName(_fromUtf8("top_label"))
         self.top_layout.addWidget(self.top_label)
         self.top = QtGui.QLineEdit(dialog)
-        self.top.setReadOnly(True)
+        self.top.setReadOnly(False)
         self.top.setObjectName(_fromUtf8("top"))
         self.top_layout.addWidget(self.top)
         self.bbox_layout.addLayout(self.top_layout, 0, 1, 1, 1)
@@ -170,7 +173,7 @@ class Ui_DGConnect(object):
         self.left_label.setObjectName(_fromUtf8("left_label"))
         self.left_layout.addWidget(self.left_label)
         self.left = QtGui.QLineEdit(dialog)
-        self.left.setReadOnly(True)
+        self.left.setReadOnly(False)
         self.left.setObjectName(_fromUtf8("left"))
         self.left_layout.addWidget(self.left)
         self.bbox_layout.addLayout(self.left_layout, 1, 0, 1, 1)
@@ -180,7 +183,7 @@ class Ui_DGConnect(object):
         self.right_label.setObjectName(_fromUtf8("right_label"))
         self.right_layout.addWidget(self.right_label)
         self.right = QtGui.QLineEdit(dialog)
-        self.right.setReadOnly(True)
+        self.right.setReadOnly(False)
         self.right.setObjectName(_fromUtf8("right"))
         self.right_layout.addWidget(self.right)
         self.bbox_layout.addLayout(self.right_layout, 1, 2, 1, 1)
@@ -195,7 +198,7 @@ class Ui_DGConnect(object):
         self.bottom_label.setObjectName(_fromUtf8("bottom_label"))
         self.bottom_layout.addWidget(self.bottom_label)
         self.bottom = QtGui.QLineEdit(dialog)
-        self.bottom.setReadOnly(True)
+        self.bottom.setReadOnly(False)
         self.bottom.setObjectName(_fromUtf8("bottom"))
         self.bottom_layout.addWidget(self.bottom)
         self.bbox_layout.addLayout(self.bottom_layout, 2, 1, 1, 1)
@@ -243,17 +246,23 @@ class Ui_DGConnect(object):
         self.right_label.setText(_translate("DGConnect", "Right", None))
         self.bottom_label.setText(_translate("DGConnect", "Bottom", None))
 
-    def set_top_text(self, text):
-        self.top.setText(text)
+    @pyqtSlot(str)
+    def on_new_top(self, new_top):
+        if self.top.text() != new_top:
+            self.top.setText(new_top)
 
-    def set_left_text(self, text):
-        self.left.setText(text)
+    @pyqtSlot(str)
+    def on_new_bottom(self, new_bottom):
+        if self.bottom.text() != new_bottom:
+            self.bottom.setText(new_bottom)
 
-    def set_right_text(self, text):
-        self.right.setText(text)
+    @pyqtSlot(str)
+    def on_new_left(self, new_left):
+        if self.left.text() != new_left:
+            self.left.setText(new_left)
 
-    def set_bottom_text(self, text):
-        self.bottom.setText(text)
-
-
+    @pyqtSlot(str)
+    def on_new_right(self, new_right):
+        if self.right.text() != new_right:
+            self.right.setText(new_right)
 

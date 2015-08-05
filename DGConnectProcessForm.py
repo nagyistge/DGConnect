@@ -24,6 +24,11 @@ SELECT_FILE = "select.file"
 DEFAULT_SUFFIX = "csv"
 SELECT_FILTER = "CSV Files(*.csv)"
 
+VALIDATION_LAT_LOWER = -90.0
+VALIDATION_LAT_UPPER = 90.0
+VALIDATION_LONG_LOWER = -180.0
+VALIDATION_LONG_UPPER = 180.0
+
 # simple regex validator for data; make sure there's something there
 ENDS_WITH_SUFFIX_REGEX = re.compile(".+\." + DEFAULT_SUFFIX + "$")
 
@@ -182,6 +187,7 @@ def validate_ok(ui):
     validate_gbd_info(ui, errors)
     validate_output_path(ui, errors)
     validate_insightcloud_info(ui, errors)
+    validate_bbox(ui, errors)
     if len(errors) > 0:
         error_dialog = QtGui.QErrorMessage(ui.dialog)
         error_dialog.showMessage(show_errors(errors))
@@ -251,3 +257,69 @@ def validate_insightcloud_info(ui, errors):
         query.log_into_monocle_3()
         if not query.is_login_successful:
             errors.append("Unable to verify InsightCloud credentials. See logs for more details.")
+
+def validate_bbox(ui, errors):
+    """
+    Validates the boundary box fields (top, left, right, bottom)
+    :param ui: The GUI containing the fields
+    :param errors: The list of errors occurred thus far
+    :return: None
+    """
+    validate_bbox_fields(ui.left.text(), ui.right.text(), ui.top.text(), ui.bottom.text(), errors)
+
+def validate_bbox_fields(left, right, top, bottom, errors):
+    """
+    Validates the boundary box fields (top, left, right, bottom)
+    :param left: The left value of the box
+    :param right: The right value of the box
+    :param top: The top value of the box
+    :param bottom: The bottom value of the box
+    :param errors: THe list of error occurred thus far
+    :return: True if there are no errors; False otherwise
+    """
+    is_left_valid = validate_bbox_field(left, "Left", VALIDATION_LONG_LOWER, VALIDATION_LONG_UPPER, errors)
+    is_right_valid = validate_bbox_field(right, "Right", VALIDATION_LONG_LOWER, VALIDATION_LONG_UPPER, errors)
+    is_top_valid = validate_bbox_field(top, "Top", VALIDATION_LAT_LOWER, VALIDATION_LAT_UPPER, errors)
+    is_bottom_valid = validate_bbox_field(bottom, "Bottom", VALIDATION_LAT_LOWER, VALIDATION_LAT_UPPER, errors)
+
+    is_valid = is_left_valid and is_right_valid and is_top_valid and is_bottom_valid
+
+    # check that right > left
+    if is_left_valid and is_right_valid and float(left) > float(right):
+        errors.append("Provided left (%s) is greater than right (%s)" % (left, right))
+        is_valid = False
+
+    if is_top_valid and is_bottom_valid and float(bottom) > float(top):
+        errors.append("Provided top (%s) is greater than bottom (%s)" % (top, bottom))
+        is_valid = False
+
+    return is_valid
+
+def validate_bbox_field(field_value, field_name, lower_bound, upper_bound, errors):
+    """
+    Performs value validation on a given box field
+    :param field_value: The text value of the field
+    :param field_name: The name of the field
+    :param lower_bound: The lower bound of values for the field
+    :param upper_bound: The upper bound of values for the field
+    :param errors: List of errors that have occurred so far
+    :return: True if there are no errors; False otherwise
+    """
+    is_field_valid = True
+    if field_value is None or len(field_value) <= 0:
+        is_field_valid = False
+        errors.append("No %s provided." % field_name)
+    else:
+        # try parsing field value
+        try:
+            float_value = float(field_value)
+            if float_value < lower_bound:
+                is_field_valid = False
+                errors.append("Provided %s (%s) is below threshold of %s."  % (field_name, field_value, lower_bound))
+            elif float_value > upper_bound:
+                is_field_valid = False
+                errors.append("Provided %s (%s) is above threshold of %s." % (field_name, field_value, upper_bound))
+        except ValueError, e:
+            is_field_valid = False
+            errors.append("Provided %s (%s) is not a number" % (field_name, field_value))
+    return is_field_valid

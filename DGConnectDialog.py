@@ -25,3 +25,4 @@ class DGConnectDialog(QtGui.QDialog):
         # Set up the user interface from Designer.
         self.ui = Ui_DGConnect()
         self.ui.setupUi(self)
+        self.bbox = None

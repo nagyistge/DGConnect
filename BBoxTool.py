@@ -4,8 +4,14 @@ from qgis.gui import *
 from qgis.core import *
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
+import DGConnectProcessForm
 
 class BBoxTool(QgsMapToolEmitPoint):
+    new_top = pyqtSignal(str)
+    new_bottom = pyqtSignal(str)
+    new_left = pyqtSignal(str)
+    new_right = pyqtSignal(str)
+
     """
     Tool to draw rectangles on a map and update the Ui_DGConnect GUI
     """
@@ -21,6 +27,22 @@ class BBoxTool(QgsMapToolEmitPoint):
         self.is_emitting = False
         self.wgs_84 = QgsCoordinateReferenceSystem(4326)
         self.ui = dlg.ui
+        dlg.bbox = self
+        # slots for the text fields
+        self.top = None
+        self.bottom = None
+        self.left = None
+        self.right = None
+        # connect the signals and slot
+        self.new_top.connect(self.ui.on_new_top)
+        self.new_bottom.connect(self.ui.on_new_bottom)
+        self.new_left.connect(self.ui.on_new_left)
+        self.new_right.connect(self.ui.on_new_right)
+        # and vice versa
+        self.ui.top.textChanged.connect(self.on_top)
+        self.ui.bottom.textChanged.connect(self.on_bottom)
+        self.ui.left.textChanged.connect(self.on_left)
+        self.ui.right.textChanged.connect(self.on_right)
 
     def reset(self):
         """
@@ -30,6 +52,10 @@ class BBoxTool(QgsMapToolEmitPoint):
         self.start_point = self.end_point = None
         self.is_emitting = False
         self.rubber_band.reset()
+        self.top = None
+        self.bottom = None
+        self.left = None
+        self.right = None
 
     def canvasPressEvent(self, mouse_event):
         """
@@ -37,6 +63,10 @@ class BBoxTool(QgsMapToolEmitPoint):
         :param mouse_event: The mouse event holding the cursor information
         :return: None
         """
+        self.top = None
+        self.bottom = None
+        self.left = None
+        self.right = None
         self.start_point = self.toMapCoordinates(mouse_event.pos())
         self.end_point = self.start_point
         self.is_emitting = True
@@ -49,16 +79,7 @@ class BBoxTool(QgsMapToolEmitPoint):
         :return: None
         """
         self.is_emitting = False
-        r = self.rectangle()
-        if r is not None:
-            upper_left = self.transform_point_to_wgs_84(r.xMinimum(), r.yMaximum())
-            lower_right = self.transform_point_to_wgs_84(r.xMaximum(), r.yMinimum())
-
-            self.ui.set_top_text(str(upper_left.y()))
-            self.ui.set_left_text(str(upper_left.x()))
-            self.ui.set_right_text(str(lower_right.x()))
-            self.ui.set_bottom_text(str(lower_right.y()))
-        self.reset()
+        # self.reset()
 
     def canvasMoveEvent(self, mouse_event):
         """
@@ -88,6 +109,28 @@ class BBoxTool(QgsMapToolEmitPoint):
         point_3 = QgsPoint(end_point.x(), end_point.y())
         point_4 = QgsPoint(end_point.x(), start_point.y())
 
+        x_start_point = self.transform_point_to_wgs_84(start_point.x(), start_point.y())
+        x_end_point = self.transform_point_to_wgs_84(end_point.x(), end_point.y())
+
+        if x_start_point.y() > x_end_point.y():
+            self.top = str(x_start_point.y())
+            self.bottom = str(x_end_point.y())
+        else:
+            self.top = str(x_end_point.y())
+            self.bottom = str(x_start_point.y())
+
+        if x_start_point.x() > x_end_point.x():
+            self.left = str(x_end_point.x())
+            self.right = str(x_start_point.x())
+        else:
+            self.left = str(x_start_point.x())
+            self.right = str(x_end_point.x())
+
+        self.new_top.emit(self.top)
+        self.new_bottom.emit(self.bottom)
+        self.new_right.emit(self.right)
+        self.new_left.emit(self.left)
+
         self.rubber_band.addPoint(point_1, False)
         self.rubber_band.addPoint(point_2, False)
         self.rubber_band.addPoint(point_3, False)
@@ -105,7 +148,8 @@ class BBoxTool(QgsMapToolEmitPoint):
         # or if rectangle == a point/line
         elif self.start_point.x() == self.end_point.x() or self.start_point.y() == self.end_point.y():
             return None
-        return QgsRectangle(self.start_point, self.end_point)
+        rect = QgsRectangle(self.start_point, self.end_point)
+        return rect
 
     def transform_point_to_wgs_84(self, x, y):
         """
@@ -121,3 +165,75 @@ class BBoxTool(QgsMapToolEmitPoint):
             x_form = QgsCoordinateTransform(src_crs, self.wgs_84)
             return x_form.transform(point)
         return point
+
+    def transform_point_from_wgs_84(self, x, y):
+        """
+        Transforms the current coordinates from WGS84
+        :param x: The X coordinate (longitude)
+        :param y: The Y coordinate (latitude)
+        :return: A converted point in WGS84 form
+        """
+        point = QgsPoint(x, y)
+        dest_crs = self.canvas.mapRenderer().destinationCrs()
+        # only transform points if necessary
+        if dest_crs.toWkt() != self.wgs_84.toWkt():
+            x_form = QgsCoordinateTransform(self.wgs_84, dest_crs)
+            return x_form.transform(point)
+        return point
+
+    def draw_new_rect(self):
+        """
+        Redraws the rectangle when the coordinates are changed manually
+        :return: None
+        """
+        # all points must be valid
+        if not DGConnectProcessForm.validate_bbox_fields(self.left, self.right, self.top, self.bottom, []):
+            return
+        # convert points from wgs84
+        x_upper_left = self.transform_point_from_wgs_84(float(self.left), float(self.top))
+        x_lower_right = self.transform_point_from_wgs_84(float(self.right), float(self.bottom))
+        self.show_rect(x_upper_left, x_lower_right)
+
+    @pyqtSlot(str)
+    def on_top(self, new_top):
+        """
+        Slot for new top coordinates
+        :param new_top: The new top coordinate
+        :return: None
+        """
+        if self.top != new_top:
+            self.top = new_top
+            self.draw_new_rect()
+
+    @pyqtSlot(str)
+    def on_bottom(self, new_bottom):
+        """
+        Slot for the new bottom coordinate
+        :param new_bottom: The new bottom coordinate
+        :return: None
+        """
+        if self.bottom != new_bottom:
+            self.bottom = new_bottom
+            self.draw_new_rect()
+
+    @pyqtSlot(str)
+    def on_left(self, new_left):
+        """
+        Slot for the new left coordinate
+        :param new_left: The new left coordinate
+        :return: None
+        """
+        if self.left != new_left:
+            self.left = new_left
+            self.draw_new_rect()
+
+    @pyqtSlot(str)
+    def on_right(self, new_right):
+        """
+        Slot for the new right coordinate
+        :param new_right: The new right coordinate
+        :return: None
+        """
+        if self.right != new_right:
+            self.right = new_right
+            self.draw_new_rect()
