@@ -6,6 +6,8 @@ from GBDQuery import GBDOrderParams
 from InsightCloudQuery import InsightCloudParams
 
 from PyQt4.QtGui import QProgressDialog, QMessageBox
+from PyQt4.QtCore import Qt
+
 
 INCREMENTAL_INTERVAL = 1.0
 
@@ -52,7 +54,7 @@ def drange(start, stop, step):
         yield r
         r += step
 
-def generate_csv(left, top, right, bottom, gbd_query, insightcloud_query, csv_filename, days_to_query=60):
+def generate_csv(left, top, right, bottom, gbd_query, insightcloud_query, csv_filename, ui, days_to_query=60):
     csv_file = open(csv_filename, 'w')
     # write the header
     csv_file.write(CSVOutput.get_csv_header())
@@ -68,10 +70,11 @@ def generate_csv(left, top, right, bottom, gbd_query, insightcloud_query, csv_fi
 
     # throw up a progress dialog
     min_progress = 0
-    max_progress = right * top - left*bottom
+    max_progress = ((right - left) * (top - bottom)) / INCREMENTAL_INTERVAL
     current_progress = min_progress
 
-    progress_dialog = QProgressDialog("Building up CSV file", "Abort", int(min_progress), int(max_progress), None)
+    progress_dialog = QProgressDialog("Building up CSV file", "Abort", int(min_progress), int(max_progress), ui.dialog)
+    progress_dialog.setWindowModality(Qt.WindowModal)
     progress_dialog.setValue(int(current_progress))
 
     for next_x in drange(left + INCREMENTAL_INTERVAL, right, INCREMENTAL_INTERVAL):
@@ -106,6 +109,6 @@ def generate_csv(left, top, right, bottom, gbd_query, insightcloud_query, csv_fi
         current_x = next_x
 
     csv_file.close()
-
+    progress_dialog.close()
     message = QMessageBox()
     message.information(None, "CSV Write Complete", "CSV output to " + csv_filename + " is complete")

@@ -74,7 +74,7 @@ def ok_clicked(ui):
         CSVOutput.generate_csv(top=float(ui.top.text()), left=float(ui.left.text()),
                                bottom=float(ui.bottom.text()), right=float(ui.right.text()),
                                gbd_query=gbd_query, insightcloud_query=insightcloud_query,
-                               csv_filename=ui.select_file.text())
+                               csv_filename=ui.select_file.text(), ui=ui)
     else:
         ui.dialog.show()
 
