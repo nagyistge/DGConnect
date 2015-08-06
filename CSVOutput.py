@@ -68,8 +68,8 @@ def generate_csv(left, top, right, bottom, gbd_query, insightcloud_query, csv_fi
     current_y = bottom
 
     # throw up a progress dialog
-    min_progress = left * bottom
-    max_progress = right * top
+    min_progress = 0
+    max_progress = right * top - left*bottom
     current_progress = min_progress
 
     progress_dialog = QProgressDialog("Building up CSV file", "Abort", int(min_progress), int(max_progress), None)

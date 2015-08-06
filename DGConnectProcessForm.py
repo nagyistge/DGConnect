@@ -323,3 +323,15 @@ def validate_bbox_field(field_value, field_name, lower_bound, upper_bound, error
             is_field_valid = False
             errors.append("Provided %s (%s) is not a number" % (field_name, field_value))
     return is_field_valid
+
+def validate_is_float(str_value):
+    """
+    Checks if a string can be converted to a float
+    :param str_value: The string value
+    :return: True if yes; False if no
+    """
+    try:
+        float_value = float(str_value)
+        return True
+    except ValueError, e:
+        return False
