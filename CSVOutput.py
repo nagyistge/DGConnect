@@ -118,9 +118,9 @@ class CSVGenerator(QApplication):
         open(self.csv_lock_filename, 'a').close()
 
         # throw up a progress dialog
-        min_progress = 0
+        min_progress = 0.0
         max_progress = ((self.right - self.left) * (self.top - self.bottom)) / INCREMENTAL_INTERVAL
-        self.current_progress = .1 * max_progress
+        self.current_progress = min_progress
 
         self.progress_dialog = QProgressDialog("Building up CSV file", "Abort", int(min_progress), int(max_progress),
                                                None)
@@ -128,9 +128,11 @@ class CSVGenerator(QApplication):
         self.progress_dialog.setWindowTitle("CSV Output")
         self.progress_dialog.setLabelText("Building up CSV file")
         self.progress_dialog.setMinimumDuration(0)
+        self.progress_dialog.setModal(True)
         self.progress_dialog.setValue(int(self.current_progress))
         self.progress_dialog.forceShow()
-        self.processEvents()
+        # hack to force it to render
+        self.progress_dialog.setValue(int(self.current_progress))
 
         self.csv_elements = []
 
@@ -192,6 +194,7 @@ class CSVGenerator(QApplication):
 
         self.progress_dialog.close()
         message = QMessageBox()
+        message.setModal(True)
         message.information(None, "CSV Write Complete", "CSV output to " + self.csv_filename + " is complete")
 
     def callback(self, csv_element):

@@ -184,6 +184,7 @@ def validate_save_settings(ui):
     validate_output_path(ui, errors)
     if len(errors) > 0:
         error_dialog = QtGui.QErrorMessage(ui.dialog)
+        error_dialog.set
         error_dialog.showMessage(show_errors(errors))
         return False
     return True
