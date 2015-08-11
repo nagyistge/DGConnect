@@ -33,6 +33,10 @@ JSON_OSM_COUNT_KEY = u'count'
 JSON_SMA_HITS_KEY = u'hits'
 JSON_SMA_TOTAL_KEY = u'total'
 
+TIMEOUT_IN_SECONDS = 30
+
+NUM_TIMES_TO_TRY = 10
+
 class InsightCloudParams:
     """
     Class for holding query params for InsightCloud queries
@@ -64,7 +68,7 @@ class InsightCloudQuery:
         :param response: The HTTP response received
         :return: True if the responses' url points to the log in page; else False
         """
-        return URL_CAS_LOGIN_SEGMENT in response.geturl()
+        return response and URL_CAS_LOGIN_SEGMENT in response.geturl()
 
     @classmethod
     def build_form_info(cls, response_url, form_data):
@@ -95,7 +99,7 @@ class InsightCloudQuery:
             unencoded_data = dict({FIELD_USERNAME : self.username, FIELD_PASSWORD : self.password}.items() + url_data[1].items())
             data = urllib.urlencode(unencoded_data)
             request = urllib2.Request(url=url_data[0], data=data, headers={KEY_HEADER_REFERRER: redirect_header})
-            response = self.opener.open(request, data)
+            response = self.opener.open(request, data, timeout=TIMEOUT_IN_SECONDS)
         except Exception, e:
             self.is_login_successful = False
             log.error("Unable to post login credentials due to: " + str(e))
@@ -126,7 +130,7 @@ class InsightCloudQuery:
         response = None
         try:
             request = urllib2.Request(MONOCLE_3_URL)
-            response = self.opener.open(request)
+            response = self.opener.open(request, timeout=TIMEOUT_IN_SECONDS)
             if self.is_on_login_page(response):
                 response = self.login_to_app(response)
         except Exception, e:
@@ -145,17 +149,20 @@ class InsightCloudQuery:
         """
         osm_url = VECTOR_TYPE_QUERY.substitute(upper=str(order_params.top), right=str(order_params.right),
                                                lower=str(order_params.bottom), left=str(order_params.left))
-        response = None
-        try:
-            request = urllib2.Request(osm_url)
-            response = self.opener.open(request)
-            if self.is_on_login_page(response):
-                response = self.login_to_app(response)
-        except Exception, e:
-            self.is_login_successful = False
-            log.error("Unable to hit the osm end point due to: " + str(e))
-        if response and self.is_login_successful:
-            self.process_osm_data(response.read(), csv_element)
+        for i in range(1, NUM_TIMES_TO_TRY):
+            response = None
+            try:
+                request = urllib2.Request(osm_url)
+                response = self.opener.open(request, timeout=TIMEOUT_IN_SECONDS)
+                if self.is_on_login_page(response):
+                    response = self.login_to_app(response)
+            except Exception, e:
+                self.is_login_successful = False
+                log.error("Unable to hit the osm end point due to: " + str(e) + "; trying " + str(NUM_TIMES_TO_TRY - i)
+                          + " more times.")
+            if response and self.is_login_successful:
+                self.process_osm_data(response.read(), csv_element)
+                break
 
     def process_osm_data(self, response, csv_element):
         """
@@ -182,17 +189,20 @@ class InsightCloudQuery:
         """
         twitter_url = TWITTER_QUERY.substitute(upper=str(order_params.top), lower=str(order_params.bottom),
                                                left=str(order_params.left), right=str(order_params.right))
-        response = None
-        try:
-            request = urllib2.Request(twitter_url)
-            response = self.opener.open(request)
-            if self.is_on_login_page(response):
-                response = self.login_to_app(response)
-        except Exception, e:
-            self.is_login_successful = False
-            log.error("Unable to hit the twitter end point due to: " + str(e))
-        if response and self.is_login_successful:
-            self.process_twitter_data(response.read(), csv_element)
+        for i in range(1, NUM_TIMES_TO_TRY):
+            response = None
+            try:
+                request = urllib2.Request(twitter_url)
+                response = self.opener.open(request, timeout=TIMEOUT_IN_SECONDS)
+                if self.is_on_login_page(response):
+                    response = self.login_to_app(response)
+            except Exception, e:
+                self.is_login_successful = False
+                log.error("Unable to hit the twitter end point due to: " + str(e) + "; trying " +
+                          str(NUM_TIMES_TO_TRY - i) + " more times.")
+            if response and self.is_login_successful:
+                self.process_twitter_data(response.read(), csv_element)
+                break
 
     def query_rss(self, order_params, csv_element):
         """
@@ -203,17 +213,20 @@ class InsightCloudQuery:
         """
         rss_url = RSS_QUERY.substitute(upper=str(order_params.top), lower=str(order_params.bottom),
                                        left=str(order_params.left), right=str(order_params.right))
-        response = None
-        try:
-            request = urllib2.Request(rss_url)
-            response = self.opener.open(request)
-            if self.is_on_login_page(response):
-                response = self.login_to_app(response)
-        except Exception, e:
-            self.is_login_successful = False
-            log.error("Unable to hit the rss end point due to: " + str(e))
-        if response and self.is_login_successful:
-            self.process_rss_data(response.read(), csv_element)
+        for i in range(1, NUM_TIMES_TO_TRY):
+            response = None
+            try:
+                request = urllib2.Request(rss_url)
+                response = self.opener.open(request, timeout=TIMEOUT_IN_SECONDS)
+                if self.is_on_login_page(response):
+                    response = self.login_to_app(response)
+            except Exception, e:
+                self.is_login_successful = False
+                log.error("Unable to hit the rss end point due to: " + str(e) + "; trying " + str(NUM_TIMES_TO_TRY - i)
+                          + " more times.")
+            if response and self.is_login_successful:
+                self.process_rss_data(response.read(), csv_element)
+                break
 
     def process_sma_data(self, response):
         """

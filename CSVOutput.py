@@ -5,19 +5,46 @@ from datetime import datetime, timedelta
 from GBDQuery import GBDOrderParams
 from InsightCloudQuery import InsightCloudParams
 
-from PyQt4.QtGui import QProgressDialog, QMessageBox
-from PyQt4.QtCore import Qt, QObject, pyqtSlot
+from PyQt4.QtGui import QProgressDialog, QMessageBox, QApplication
 
-
+import sys
+import getopt
 
 from GBDQuery import GBDQuery
 from InsightCloudQuery import InsightCloudQuery
 
 from multiprocessing import Pool
 
+import os
+
 import logging as log
 
 INCREMENTAL_INTERVAL = 1.0
+
+ARG_TOP = "top"
+ARG_RIGHT = "right"
+ARG_BOTTOM = "bottom"
+ARG_LEFT = "left"
+
+ARG_CSV_FILENAME = "csv_filename"
+
+ARG_GBD_API_KEY = "gbd_api_key"
+ARG_GBD_USERNAME = "gbd_username"
+ARG_GBD_PASSWORD = "gbd_password"
+
+ARG_INSIGHTCLOUD_USERNAME = "insightcloud_username"
+ARG_INSIGHTCLOUD_PASSWORD = "insightcloud_password"
+
+ARG_DAYS_TO_QUERY = "days_to_query"
+
+LOCK_SUFFIX = ".lock"
+
+USAGE = "CSVOutput.py --" + ARG_TOP + " <" + ARG_TOP + "> --" + ARG_RIGHT + " <" + ARG_RIGHT + "> --" + ARG_BOTTOM +\
+        " <" + ARG_BOTTOM + "> --" + ARG_LEFT + " <" + ARG_LEFT +"> --" + ARG_CSV_FILENAME + " <" + ARG_CSV_FILENAME +\
+        "> --" + ARG_GBD_API_KEY + " <" + ARG_GBD_API_KEY + "> --" + ARG_GBD_USERNAME + " <" + ARG_GBD_USERNAME + \
+        "> --" + ARG_GBD_PASSWORD + " <" + ARG_GBD_PASSWORD +"> --" + ARG_INSIGHTCLOUD_USERNAME + \
+        " <" + ARG_INSIGHTCLOUD_USERNAME +"> --" + ARG_INSIGHTCLOUD_PASSWORD + " <" + ARG_INSIGHTCLOUD_PASSWORD +"> " \
+        "--" + ARG_DAYS_TO_QUERY + " <" + ARG_DAYS_TO_QUERY + ">"
 
 class CSVOutput:
     serial_no_counter = 1
@@ -67,35 +94,47 @@ def drange(start, stop, step):
         r += step
 
 
-class CSVGenerator(QObject):
-    @pyqtSlot()
-    def on_canceled(self):
-        self.pool.terminate()
+class CSVGenerator(QApplication):
 
-    def __init__(self, left, top, right, bottom, csv_filename, ui, days_to_query=60, qparent=None):
-        QObject.__init__(self, qparent)
+    def __init__(self, left, top, right, bottom, csv_filename, gbd_api_key, gbd_username,
+                 gbd_password, insightcloud_username, insightcloud_password, days_to_query=60):
+        QApplication.__init__(self, [])
         self.left = left
         self.top = top
         self.right = right
         self.bottom = bottom
         self.csv_filename = csv_filename
-        self.ui = ui
+        self.csv_lock_filename = csv_filename + LOCK_SUFFIX
         self.days_to_query = days_to_query
+
+        self.gbd_api_key = gbd_api_key
+        self.gbd_username = gbd_username
+        self.gbd_password = gbd_password
+
+        self.insightcloud_username = insightcloud_username
+        self.insightcloud_password = insightcloud_password
+
+        # create lock file
+        open(self.csv_lock_filename, 'a').close()
+
         # throw up a progress dialog
         min_progress = 0
         max_progress = ((self.right - self.left) * (self.top - self.bottom)) / INCREMENTAL_INTERVAL
-        self.current_progress = min_progress
+        self.current_progress = .1 * max_progress
 
         self.progress_dialog = QProgressDialog("Building up CSV file", "Abort", int(min_progress), int(max_progress),
                                                None)
-        self.progress_dialog.setWindowModality(Qt.WindowModal)
+        self.progress_dialog.setCancelButton(None)
+        self.progress_dialog.setWindowTitle("CSV Output")
+        self.progress_dialog.setLabelText("Building up CSV file")
+        self.progress_dialog.setMinimumDuration(0)
         self.progress_dialog.setValue(int(self.current_progress))
-        self.progress_dialog.show()
-        self.progress_dialog.canceled.connect(self.on_canceled)
+        self.progress_dialog.forceShow()
+        self.processEvents()
 
         self.csv_elements = []
 
-        self.pool = Pool(processes=100)
+        self.pool = Pool(processes=int(max_progress))
 
     def generate_csv(self):
         # dates
@@ -113,12 +152,12 @@ class CSVGenerator(QObject):
         for next_x in drange(self.left + INCREMENTAL_INTERVAL, self.right, INCREMENTAL_INTERVAL):
             for next_y in drange(self.bottom + INCREMENTAL_INTERVAL, self.top, INCREMENTAL_INTERVAL):
 
-                gbd_api_key = self.ui.gbd_api_key.text()
-                gbd_username = self.ui.gbd_username.text()
-                gbd_password = self.ui.gbd_password.text()
+                gbd_api_key = self.gbd_api_key
+                gbd_username = self.gbd_username
+                gbd_password = self.gbd_password
 
-                insightcloud_username = self.ui.insightcloud_username.text()
-                insightcloud_password = self.ui.insightcloud_password.text()
+                insightcloud_username = self.insightcloud_username
+                insightcloud_password = self.insightcloud_password
 
                 result = self.pool.apply_async(run, (gbd_api_key, gbd_username, gbd_password, insightcloud_username,
                                                 insightcloud_password, serial_no, next_y, current_x, next_x,
@@ -136,6 +175,7 @@ class CSVGenerator(QObject):
 
         self.csv_elements.sort(key=lambda element: element.serial_no)
 
+        # write file
         csv_file = open(self.csv_filename, 'w')
         # write the header
         csv_file.write(CSVOutput.get_csv_header())
@@ -146,6 +186,10 @@ class CSVGenerator(QObject):
             csv_file.write("\n")
 
         csv_file.close()
+
+        # remove lock
+        os.remove(self.csv_lock_filename)
+
         self.progress_dialog.close()
         message = QMessageBox()
         message.information(None, "CSV Write Complete", "CSV output to " + self.csv_filename + " is complete")
@@ -183,3 +227,75 @@ def run(auth_token, gbd_username, gbd_password, insightcloud_username, insightcl
 
     return csv_element
 
+def main(argv):
+    '''
+    Debug settings
+
+    import sys
+    sys.path.insert(1, '/home/mtrotter/pycharm-debug.egg')
+    import pydevd
+    pydevd.settrace('localhost', port=53100, stdoutToServer=True, stderrToServer=True)
+    '''
+
+    left = None
+    right = None
+    top = None
+    bottom = None
+
+    csv_filename = None
+
+    gbd_api_key = None
+    gbd_username = None
+    gbd_password = None
+
+    insightcloud_username = None
+    insightcloud_password = None
+
+    days_to_query = None
+
+    try:
+        opts, args = getopt.getopt(argv, "h", [ARG_LEFT + "=", ARG_RIGHT + "=", ARG_TOP + "=",
+                                               ARG_BOTTOM + "=", ARG_CSV_FILENAME + "=", ARG_GBD_API_KEY + "=",
+                                               ARG_GBD_USERNAME + "=", ARG_GBD_PASSWORD + "=",
+                                               ARG_INSIGHTCLOUD_USERNAME + "=", ARG_INSIGHTCLOUD_PASSWORD + "=",
+                                               ARG_DAYS_TO_QUERY + "="])
+    except getopt.GetoptError, e:
+        print("Received error: " + str(e))
+        print(USAGE)
+        sys.exit(2)
+
+    for o, a in opts:
+        if o == '-h':
+            print(USAGE)
+            sys.exit(0)
+        elif o == "--" + ARG_LEFT:
+            left = float(a)
+        elif o == "--" + ARG_RIGHT:
+            right = float(a)
+        elif o == "--" + ARG_BOTTOM:
+            bottom = float(a)
+        elif o == "--" + ARG_TOP:
+            top = float(a)
+        elif o == "--" + ARG_CSV_FILENAME:
+            csv_filename = a
+        elif o == "--" + ARG_GBD_API_KEY:
+            gbd_api_key = a
+        elif o == "--" + ARG_GBD_USERNAME:
+            gbd_username = a
+        elif o == "--" + ARG_GBD_PASSWORD:
+            gbd_password = a
+        elif o == "--" + ARG_INSIGHTCLOUD_USERNAME:
+            insightcloud_username = a
+        elif o == "--" + ARG_INSIGHTCLOUD_PASSWORD:
+            insightcloud_password = a
+        elif o == "--" + ARG_DAYS_TO_QUERY:
+            days_to_query = int(a)
+
+    generator = CSVGenerator(left=left, top=top, right=right, bottom=bottom, csv_filename=csv_filename,
+                             gbd_api_key=gbd_api_key, gbd_username=gbd_username, gbd_password=gbd_password,
+                             insightcloud_username=insightcloud_username, insightcloud_password=insightcloud_password,
+                             days_to_query=days_to_query)
+    generator.generate_csv()
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

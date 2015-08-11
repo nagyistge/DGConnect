@@ -7,9 +7,10 @@ from os.path import expanduser
 from GBDQuery import GBDQuery
 from InsightCloudQuery import InsightCloudQuery
 
-import CSVOutput
-
 import re
+import CSVOutput
+import os
+import subprocess
 
 # constants for plugin settings
 PLUGIN_NAME = "DGConnect"
@@ -73,10 +74,18 @@ def ok_clicked(ui):
                                   password=ui.insightcloud_password.text())
         insightcloud_query.log_into_monocle_3()
         '''
-        out = CSVOutput.CSVGenerator(top=float(ui.top.text()), left=float(ui.left.text()),
-                                     bottom=float(ui.bottom.text()), right=float(ui.right.text()),
-                                     csv_filename=ui.select_file.text(), ui=ui)
-        out.generate_csv()
+        subprocess.Popen(["python", os.path.dirname(os.path.realpath(__file__)) + os.sep + "CSVOutput.py",
+                                          "--" + CSVOutput.ARG_LEFT, ui.left.text(),
+                                          "--" + CSVOutput.ARG_TOP, ui.top.text(),
+                                          "--" + CSVOutput.ARG_RIGHT, ui.right.text(),
+                                          "--" + CSVOutput.ARG_BOTTOM, ui.bottom.text(),
+                                          "--" + CSVOutput.ARG_CSV_FILENAME, ui.select_file.text(),
+                                          "--" + CSVOutput.ARG_GBD_API_KEY, ui.gbd_api_key.text(),
+                                          "--" + CSVOutput.ARG_GBD_USERNAME, ui.gbd_username.text(),
+                                          "--" + CSVOutput.ARG_GBD_PASSWORD, ui.gbd_password.text(),
+                                          "--" + CSVOutput.ARG_INSIGHTCLOUD_USERNAME, ui.insightcloud_username.text(),
+                                          "--" + CSVOutput.ARG_INSIGHTCLOUD_PASSWORD, ui.insightcloud_password.text(),
+                                          "--" + CSVOutput.ARG_DAYS_TO_QUERY, "60"])
     else:
         ui.dialog.show()
 
@@ -236,6 +245,9 @@ def validate_output_path(ui, errors):
     # check if regex matches
     elif re.match(ENDS_WITH_SUFFIX_REGEX, ui.select_file.text()) is None:
         errors.append("Output file must be a csv file.")
+    # check if lock file exists
+    elif os.path.exists(ui.select_file.text() + CSVOutput.LOCK_SUFFIX):
+        errors.append("Currently writing to csv file. Please wait until output is complete.")
 
 def validate_insightcloud_info(ui, errors):
     """
