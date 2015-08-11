@@ -136,7 +136,7 @@ class CSVGenerator(QApplication):
 
         self.csv_elements = []
 
-        self.pool = Pool(processes=int(max_progress))
+        self.pool = Pool()
 
     def generate_csv(self):
         # dates
