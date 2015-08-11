@@ -61,6 +61,7 @@ def ok_clicked(ui):
     :return: None
     """
     if validate_ok(ui):
+        '''
         # build gbd query
         gbd_query = GBDQuery(auth_token=ui.gbd_api_key.text(), username=ui.gbd_username.text(),
                          password=ui.gbd_password.text())
@@ -71,10 +72,11 @@ def ok_clicked(ui):
         insightcloud_query = InsightCloudQuery(username=ui.insightcloud_username.text(),
                                   password=ui.insightcloud_password.text())
         insightcloud_query.log_into_monocle_3()
-        CSVOutput.generate_csv(top=float(ui.top.text()), left=float(ui.left.text()),
-                               bottom=float(ui.bottom.text()), right=float(ui.right.text()),
-                               gbd_query=gbd_query, insightcloud_query=insightcloud_query,
-                               csv_filename=ui.select_file.text(), ui=ui)
+        '''
+        out = CSVOutput.CSVGenerator(top=float(ui.top.text()), left=float(ui.left.text()),
+                                     bottom=float(ui.bottom.text()), right=float(ui.right.text()),
+                                     csv_filename=ui.select_file.text(), ui=ui)
+        out.generate_csv()
     else:
         ui.dialog.show()
 
