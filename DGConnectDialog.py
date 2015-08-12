@@ -26,3 +26,4 @@ class DGConnectDialog(QtGui.QDialog):
         self.ui = Ui_DGConnect()
         self.ui.setupUi(self)
         self.bbox = None
+        self.message_bar = None

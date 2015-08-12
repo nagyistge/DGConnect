@@ -51,6 +51,7 @@ class DGConnect:
 
         # create and show the dialog
         self.dlg = DGConnectDialog()
+        self.dlg.message_bar = self.iface.messageBar()
 
         # create the bbox tool
         self.bbox = BBoxTool(self.iface.mapCanvas(), self.dlg)

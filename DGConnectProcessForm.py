@@ -1,3 +1,5 @@
+from qgis.gui import QgsMessageBar
+
 __author__ = 'Michael Trotter <michael.trotter@digitalglobe.com>'
 
 from PyQt4 import QtGui
@@ -62,18 +64,7 @@ def ok_clicked(ui):
     :return: None
     """
     if validate_ok(ui):
-        '''
-        # build gbd query
-        gbd_query = GBDQuery(auth_token=ui.gbd_api_key.text(), username=ui.gbd_username.text(),
-                         password=ui.gbd_password.text())
-        gbd_query.log_in()
-        gbd_query.hit_test_endpoint()
-
-        # build insightcloud query
-        insightcloud_query = InsightCloudQuery(username=ui.insightcloud_username.text(),
-                                  password=ui.insightcloud_password.text())
-        insightcloud_query.log_into_monocle_3()
-        '''
+        ui.dialog.message_bar.pushMessage("Info", "Starting query...", level=QgsMessageBar.INFO, duration=20)
         subprocess.Popen(["python", os.path.dirname(os.path.realpath(__file__)) + os.sep + "CSVOutput.py",
                                           "--" + CSVOutput.ARG_LEFT, ui.left.text(),
                                           "--" + CSVOutput.ARG_TOP, ui.top.text(),
@@ -184,7 +175,6 @@ def validate_save_settings(ui):
     validate_output_path(ui, errors)
     if len(errors) > 0:
         error_dialog = QtGui.QErrorMessage(ui.dialog)
-        error_dialog.set
         error_dialog.showMessage(show_errors(errors))
         return False
     return True

@@ -40,10 +40,10 @@ ARG_DAYS_TO_QUERY = "days_to_query"
 LOCK_SUFFIX = ".lock"
 
 USAGE = "CSVOutput.py --" + ARG_TOP + " <" + ARG_TOP + "> --" + ARG_RIGHT + " <" + ARG_RIGHT + "> --" + ARG_BOTTOM +\
-        " <" + ARG_BOTTOM + "> --" + ARG_LEFT + " <" + ARG_LEFT +"> --" + ARG_CSV_FILENAME + " <" + ARG_CSV_FILENAME +\
+        " <" + ARG_BOTTOM + "> --" + ARG_LEFT + " <" + ARG_LEFT + "> --" + ARG_CSV_FILENAME + " <" + ARG_CSV_FILENAME +\
         "> --" + ARG_GBD_API_KEY + " <" + ARG_GBD_API_KEY + "> --" + ARG_GBD_USERNAME + " <" + ARG_GBD_USERNAME + \
-        "> --" + ARG_GBD_PASSWORD + " <" + ARG_GBD_PASSWORD +"> --" + ARG_INSIGHTCLOUD_USERNAME + \
-        " <" + ARG_INSIGHTCLOUD_USERNAME +"> --" + ARG_INSIGHTCLOUD_PASSWORD + " <" + ARG_INSIGHTCLOUD_PASSWORD +"> " \
+        "> --" + ARG_GBD_PASSWORD + " <" + ARG_GBD_PASSWORD + "> --" + ARG_INSIGHTCLOUD_USERNAME + \
+        " <" + ARG_INSIGHTCLOUD_USERNAME +"> --" + ARG_INSIGHTCLOUD_PASSWORD + " <" + ARG_INSIGHTCLOUD_PASSWORD + "> " \
         "--" + ARG_DAYS_TO_QUERY + " <" + ARG_DAYS_TO_QUERY + ">"
 
 class CSVOutput:
@@ -130,9 +130,8 @@ class CSVGenerator(QApplication):
         self.progress_dialog.setMinimumDuration(0)
         self.progress_dialog.setModal(True)
         self.progress_dialog.setValue(int(self.current_progress))
+        self.processEvents()
         self.progress_dialog.forceShow()
-        # hack to force it to render
-        self.progress_dialog.setValue(int(self.current_progress))
 
         self.csv_elements = []
 
