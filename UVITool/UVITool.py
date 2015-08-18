@@ -26,6 +26,7 @@ from PyQt4.QtGui import QAction, QIcon
 import resources_rc
 # Import the code for the dialog
 from UVITool_dialog import UVIToolDialog, BBoxDialog
+from BBoxTool import BBoxTool
 from PyQt4.QtCore import Qt
 import os.path
 
@@ -67,6 +68,8 @@ class UVITool:
 
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.bbox_dlg)
         self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dlg)
+
+        self.bbox_tool = BBoxTool(self.iface, self.bbox_dlg.bbox)
 
         # Declare instance attributes
         self.actions = []
@@ -181,11 +184,14 @@ class UVITool:
                 self.tr(u'&UVITool'),
                 action)
             self.iface.removeToolBarIcon(action)
+        # remove the tool
+        self.iface.mapCanvas().unsetMapTool(self.bbox_tool)
         # remove the toolbar
         del self.toolbar
 
     def run(self):
         """Run method that performs all the real work"""
+        self.iface.mapCanvas().setMapTool(self.bbox_tool)
         # show the dialog
         self.dlg.show()
         self.bbox_dlg.show()

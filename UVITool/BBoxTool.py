@@ -4,7 +4,7 @@ from qgis.gui import *
 from qgis.core import *
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
-import DGConnectProcessForm
+import UVIToolProcessForm
 
 
 class BBoxTool(QgsMapToolEmitPoint):
@@ -16,9 +16,10 @@ class BBoxTool(QgsMapToolEmitPoint):
     """
     Tool to draw rectangles on a map and update the Ui_DGConnect GUI
     """
-    def __init__(self, canvas, dlg):
-        QgsMapToolEmitPoint.__init__(self, canvas)
-        self.canvas = canvas
+    def __init__(self, iface, bbox_ui):
+        QgsMapToolEmitPoint.__init__(self, iface.mapCanvas())
+        self.iface = iface
+        self.canvas = iface.mapCanvas()
         self.rubber_band = QgsRubberBand(self.canvas, QGis.Polygon)
         self.rubber_band.setColor(QColor(250, 0, 0, 100))
         self.rubber_band.setWidth(1)
@@ -27,23 +28,22 @@ class BBoxTool(QgsMapToolEmitPoint):
         self.end_point = None
         self.is_emitting = False
         self.wgs_84 = QgsCoordinateReferenceSystem(4326)
-        self.ui = dlg.ui
-        dlg.bbox = self
+        self.bbox_ui = bbox_ui
         # slots for the text fields
         self.top = None
         self.bottom = None
         self.left = None
         self.right = None
         # connect the signals and slot
-        self.new_top.connect(self.ui.on_new_top)
-        self.new_bottom.connect(self.ui.on_new_bottom)
-        self.new_left.connect(self.ui.on_new_left)
-        self.new_right.connect(self.ui.on_new_right)
+        self.new_top.connect(self.bbox_ui.on_new_top)
+        self.new_bottom.connect(self.bbox_ui.on_new_bottom)
+        self.new_left.connect(self.bbox_ui.on_new_left)
+        self.new_right.connect(self.bbox_ui.on_new_right)
         # and vice versa
-        self.ui.top.textChanged.connect(self.on_top)
-        self.ui.bottom.textChanged.connect(self.on_bottom)
-        self.ui.left.textChanged.connect(self.on_left)
-        self.ui.right.textChanged.connect(self.on_right)
+        self.bbox_ui.top.textChanged.connect(self.on_top)
+        self.bbox_ui.bottom.textChanged.connect(self.on_bottom)
+        self.bbox_ui.left.textChanged.connect(self.on_left)
+        self.bbox_ui.right.textChanged.connect(self.on_right)
 
     def reset(self):
         """
@@ -188,7 +188,7 @@ class BBoxTool(QgsMapToolEmitPoint):
         :return: None
         """
         # all points must be valid
-        if not DGConnectProcessForm.validate_bbox_fields(self.left, self.right, self.top, self.bottom, []):
+        if not UVIToolProcessForm.validate_bbox_fields(self.left, self.right, self.top, self.bottom, []):
             return
         # convert points from wgs84
         x_upper_left = self.transform_point_from_wgs_84(float(self.left), float(self.top))
@@ -202,7 +202,7 @@ class BBoxTool(QgsMapToolEmitPoint):
         :param new_top: The new top coordinate
         :return: None
         """
-        if DGConnectProcessForm.validate_is_float(new_top) and (self.top is None or float(self.top) != float(new_top)):
+        if UVIToolProcessForm.validate_is_float(new_top) and (self.top is None or float(self.top) != float(new_top)):
             self.top = new_top
             self.draw_new_rect()
 
@@ -213,7 +213,7 @@ class BBoxTool(QgsMapToolEmitPoint):
         :param new_bottom: The new bottom coordinate
         :return: None
         """
-        if DGConnectProcessForm.validate_is_float(new_bottom) and (self.bottom is None or float(self.bottom) != float(new_bottom)):
+        if UVIToolProcessForm.validate_is_float(new_bottom) and (self.bottom is None or float(self.bottom) != float(new_bottom)):
             self.bottom = new_bottom
             self.draw_new_rect()
 
@@ -224,7 +224,7 @@ class BBoxTool(QgsMapToolEmitPoint):
         :param new_left: The new left coordinate
         :return: None
         """
-        if DGConnectProcessForm.validate_is_float(new_left) and (self.left is None or float(self.left) != float(new_left)):
+        if UVIToolProcessForm.validate_is_float(new_left) and (self.left is None or float(self.left) != float(new_left)):
             self.left = new_left
             self.draw_new_rect()
 
@@ -235,6 +235,6 @@ class BBoxTool(QgsMapToolEmitPoint):
         :param new_right: The new right coordinate
         :return: None
         """
-        if DGConnectProcessForm.validate_is_float(new_right) and (self.right is None or float(self.right) != float(new_right)):
+        if UVIToolProcessForm.validate_is_float(new_right) and (self.right is None or float(self.right) != float(new_right)):
             self.right = new_right
             self.draw_new_rect()

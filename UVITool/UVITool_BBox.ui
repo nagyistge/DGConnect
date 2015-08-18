@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>708</width>
+    <width>776</width>
     <height>252</height>
    </rect>
   </property>
@@ -71,6 +71,12 @@
           </item>
           <item row="0" column="1">
            <widget class="QLineEdit" name="top">
+            <property name="minimumSize">
+             <size>
+              <width>125</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="readOnly">
              <bool>false</bool>
             </property>
@@ -95,6 +101,12 @@
           </item>
           <item>
            <widget class="QLineEdit" name="left">
+            <property name="minimumSize">
+             <size>
+              <width>125</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="readOnly">
              <bool>false</bool>
             </property>
@@ -116,6 +128,12 @@
           </item>
           <item>
            <widget class="QLineEdit" name="right">
+            <property name="minimumSize">
+             <size>
+              <width>125</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="readOnly">
              <bool>false</bool>
             </property>
@@ -166,6 +184,12 @@
           </item>
           <item>
            <widget class="QLineEdit" name="bottom">
+            <property name="minimumSize">
+             <size>
+              <width>125</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="readOnly">
              <bool>false</bool>
             </property>
@@ -239,7 +263,7 @@
         <property name="bottomMargin">
          <number>0</number>
         </property>
-        <item row="0" column="0">
+        <item row="0" column="1">
          <spacer name="horizontalSpacer_4">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -255,8 +279,14 @@
           </property>
          </spacer>
         </item>
-        <item row="0" column="1">
+        <item row="0" column="2">
          <widget class="QPushButton" name="search_button">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Search</string>
           </property>
@@ -265,10 +295,29 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="2">
+        <item row="0" column="3">
          <widget class="QPushButton" name="cancel_button">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>Cancel</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QPushButton" name="credentials_button">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Credentials</string>
           </property>
          </widget>
         </item>

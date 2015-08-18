@@ -2,12 +2,13 @@
 
 # Form implementation generated from reading ui file 'UVITool_BBox.ui'
 #
-# Created: Tue Aug 18 10:12:57 2015
+# Created: Tue Aug 18 11:05:25 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
 
 from PyQt4 import QtCore, QtGui
+from PyQt4.QtCore import pyqtSlot
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -26,7 +27,7 @@ except AttributeError:
 class Ui_DockWidget(object):
     def setupUi(self, DockWidget):
         DockWidget.setObjectName(_fromUtf8("DockWidget"))
-        DockWidget.resize(708, 252)
+        DockWidget.resize(776, 252)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -65,6 +66,7 @@ class Ui_DockWidget(object):
         self.top_label.setObjectName(_fromUtf8("top_label"))
         self.gridLayout_3.addWidget(self.top_label, 0, 0, 1, 1)
         self.top = QtGui.QLineEdit(self.dockWidgetContents)
+        self.top.setMinimumSize(QtCore.QSize(125, 0))
         self.top.setReadOnly(False)
         self.top.setObjectName(_fromUtf8("top"))
         self.gridLayout_3.addWidget(self.top, 0, 1, 1, 1)
@@ -76,6 +78,7 @@ class Ui_DockWidget(object):
         self.left_label.setObjectName(_fromUtf8("left_label"))
         self.left_layout.addWidget(self.left_label)
         self.left = QtGui.QLineEdit(self.dockWidgetContents)
+        self.left.setMinimumSize(QtCore.QSize(125, 0))
         self.left.setReadOnly(False)
         self.left.setObjectName(_fromUtf8("left"))
         self.left_layout.addWidget(self.left)
@@ -86,6 +89,7 @@ class Ui_DockWidget(object):
         self.right_label.setObjectName(_fromUtf8("right_label"))
         self.right_layout.addWidget(self.right_label)
         self.right = QtGui.QLineEdit(self.dockWidgetContents)
+        self.right.setMinimumSize(QtCore.QSize(125, 0))
         self.right.setReadOnly(False)
         self.right.setObjectName(_fromUtf8("right"))
         self.right_layout.addWidget(self.right)
@@ -101,6 +105,7 @@ class Ui_DockWidget(object):
         self.bottom_label.setObjectName(_fromUtf8("bottom_label"))
         self.bottom_layout.addWidget(self.bottom_label)
         self.bottom = QtGui.QLineEdit(self.dockWidgetContents)
+        self.bottom.setMinimumSize(QtCore.QSize(125, 0))
         self.bottom.setReadOnly(False)
         self.bottom.setObjectName(_fromUtf8("bottom"))
         self.bottom_layout.addWidget(self.bottom)
@@ -127,14 +132,32 @@ class Ui_DockWidget(object):
         self.gridLayout_2.setContentsMargins(-1, -1, -1, 0)
         self.gridLayout_2.setObjectName(_fromUtf8("gridLayout_2"))
         spacerItem5 = QtGui.QSpacerItem(300, 20, QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Minimum)
-        self.gridLayout_2.addItem(spacerItem5, 0, 0, 1, 1)
+        self.gridLayout_2.addItem(spacerItem5, 0, 1, 1, 1)
         self.search_button = QtGui.QPushButton(self.dockWidgetContents)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.search_button.sizePolicy().hasHeightForWidth())
+        self.search_button.setSizePolicy(sizePolicy)
         self.search_button.setDefault(True)
         self.search_button.setObjectName(_fromUtf8("search_button"))
-        self.gridLayout_2.addWidget(self.search_button, 0, 1, 1, 1)
+        self.gridLayout_2.addWidget(self.search_button, 0, 2, 1, 1)
         self.cancel_button = QtGui.QPushButton(self.dockWidgetContents)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.cancel_button.sizePolicy().hasHeightForWidth())
+        self.cancel_button.setSizePolicy(sizePolicy)
         self.cancel_button.setObjectName(_fromUtf8("cancel_button"))
-        self.gridLayout_2.addWidget(self.cancel_button, 0, 2, 1, 1)
+        self.gridLayout_2.addWidget(self.cancel_button, 0, 3, 1, 1)
+        self.credentials_button = QtGui.QPushButton(self.dockWidgetContents)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.credentials_button.sizePolicy().hasHeightForWidth())
+        self.credentials_button.setSizePolicy(sizePolicy)
+        self.credentials_button.setObjectName(_fromUtf8("credentials_button"))
+        self.gridLayout_2.addWidget(self.credentials_button, 0, 0, 1, 1)
         self.gridLayout.addLayout(self.gridLayout_2, 5, 0, 1, 1)
         self.gridLayout_4.addLayout(self.gridLayout, 0, 0, 1, 1)
         DockWidget.setWidget(self.dockWidgetContents)
@@ -155,4 +178,24 @@ class Ui_DockWidget(object):
         self.query_label.setText(_translate("DockWidget", "Query", None))
         self.search_button.setText(_translate("DockWidget", "Search", None))
         self.cancel_button.setText(_translate("DockWidget", "Cancel", None))
+        self.credentials_button.setText(_translate("DockWidget", "Credentials", None))
 
+    @pyqtSlot(str)
+    def on_new_top(self, new_top):
+        if self.top.text() != new_top:
+            self.top.setText(new_top)
+
+    @pyqtSlot(str)
+    def on_new_bottom(self, new_bottom):
+        if self.bottom.text() != new_bottom:
+            self.bottom.setText(new_bottom)
+
+    @pyqtSlot(str)
+    def on_new_left(self, new_left):
+        if self.left.text() != new_left:
+            self.left.setText(new_left)
+
+    @pyqtSlot(str)
+    def on_new_right(self, new_right):
+        if self.right.text() != new_right:
+            self.right.setText(new_right)
