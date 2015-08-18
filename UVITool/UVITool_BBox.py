@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'UVITool_BBox.ui'
 #
-# Created: Tue Aug 18 11:05:25 2015
+# Created: Tue Aug 18 11:44:28 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -142,14 +142,6 @@ class Ui_DockWidget(object):
         self.search_button.setDefault(True)
         self.search_button.setObjectName(_fromUtf8("search_button"))
         self.gridLayout_2.addWidget(self.search_button, 0, 2, 1, 1)
-        self.cancel_button = QtGui.QPushButton(self.dockWidgetContents)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.cancel_button.sizePolicy().hasHeightForWidth())
-        self.cancel_button.setSizePolicy(sizePolicy)
-        self.cancel_button.setObjectName(_fromUtf8("cancel_button"))
-        self.gridLayout_2.addWidget(self.cancel_button, 0, 3, 1, 1)
         self.credentials_button = QtGui.QPushButton(self.dockWidgetContents)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -177,7 +169,6 @@ class Ui_DockWidget(object):
         self.bottom_label.setText(_translate("DockWidget", "Bottom", None))
         self.query_label.setText(_translate("DockWidget", "Query", None))
         self.search_button.setText(_translate("DockWidget", "Search", None))
-        self.cancel_button.setText(_translate("DockWidget", "Cancel", None))
         self.credentials_button.setText(_translate("DockWidget", "Credentials", None))
 
     @pyqtSlot(str)

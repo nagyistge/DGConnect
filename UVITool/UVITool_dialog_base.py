@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'UVITool_dialog_base.ui'
 #
-# Created: Tue Aug 18 10:06:53 2015
+# Created: Tue Aug 18 11:44:38 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -132,9 +132,6 @@ class Ui_DockWidget(object):
         self.export_button.setDefault(True)
         self.export_button.setObjectName(_fromUtf8("export_button"))
         self.button_layout.addWidget(self.export_button)
-        self.cancel_button = QtGui.QPushButton(self.dockWidgetContents)
-        self.cancel_button.setObjectName(_fromUtf8("cancel_button"))
-        self.button_layout.addWidget(self.cancel_button)
         self.verticalLayout.addLayout(self.button_layout)
         self.gridLayout.addLayout(self.verticalLayout, 0, 0, 1, 1)
         DockWidget.setWidget(self.dockWidgetContents)
@@ -148,5 +145,4 @@ class Ui_DockWidget(object):
         self.types_group_box.setTitle(_translate("DockWidget", "Types", None))
         self.geometry_group_box.setTitle(_translate("DockWidget", "Geometry", None))
         self.export_button.setText(_translate("DockWidget", "Export", None))
-        self.cancel_button.setText(_translate("DockWidget", "Cancel", None))
 

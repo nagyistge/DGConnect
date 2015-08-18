@@ -5,6 +5,7 @@ from qgis.gui import QgsMessageBar
 from PyQt4 import QtGui
 from PyQt4.QtCore import QSettings
 from os.path import expanduser
+from InsightCloudQuery import InsightCloudQuery
 
 import re
 import os
@@ -69,18 +70,6 @@ def cancel_clicked(ui):
     """
     ui.dialog.reject()
 
-def load_settings_clicked(ui):
-    """
-    Action performed when the load settings button is performed
-    :param ui: The GUI object with the fields to update
-    :return: None
-    """
-    load_settings(ui)
-
-    # write sucess message
-    message = QtGui.QMessageBox
-    message.information(None, "Credentials Loaded!", "Credentials Loaded!")
-
 def load_settings(ui):
     """
     Reads the QSettings file and fills in the relevant fields with stored data if present
@@ -88,22 +77,25 @@ def load_settings(ui):
     :return: None
     """
 
-    ui.insightcloud_username.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME))
-    ui.insightcloud_password.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD))
+    ui.username.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME))
+    ui.password.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD))
 
-def save_settings_clicked(ui):
+def save_settings_clicked(ui, iface, dialog):
     """
     Action performed when the save button is clicked; updates the settings file with the new data
     :param ui: The GUI object holding the fields
     :return: None
     """
+    if validate_save_settings(ui, iface):
+        write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME, ui.username.text())
+        write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD, ui.password.text())
+        iface.messageBar().pushMessage("Info", "InsightCloud settings saved successfully!")
+        dialog.accept()
 
-    write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME, ui.insightcloud_username.text())
-    write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD, ui.insightcloud_password.text())
+def validate_settings_clicked(ui, iface):
+    if validate_save_settings(ui, iface):
+        iface.messageBar().pushMessage("Info", "Entered credentials have been validated successfully!")
 
-    # write success message
-    message = QtGui.QMessageBox()
-    message.information(None, "Credentials Saved!", "Credentials Saved!")
 
 def select_file_clicked(ui):
     """
@@ -140,7 +132,7 @@ def validate_save_settings(ui, iface):
     :return: True if there are no errors; False otherwise
     """
     errors = []
-    validate_insightcloud_info(ui, errors)
+    validate_info(ui, errors)
     if len(errors) > 0:
         iface.messageBar().pushMessage("Error", "The following error(s) occurred:\n" + "\n".join(errors),
                                        level=QgsMessageBar.CRITICAL)
@@ -148,7 +140,7 @@ def validate_save_settings(ui, iface):
     return True
 
 
-def validate_insightcloud_info(ui, errors):
+def validate_info(ui, errors):
     """
     Validates the InsightCloud fields for errors
     :param ui: The GUI containing the fields
@@ -156,17 +148,17 @@ def validate_insightcloud_info(ui, errors):
     :return: None
     """
     # check insightcloud credentials
-    is_insightcloud_info_good = True
-    if is_field_empty(ui.insightcloud_username):
-        is_insightcloud_info_good = False
+    is_info_good = True
+    if is_field_empty(ui.username):
+        is_info_good = False
         errors.append("No InsightCloud username provided.")
-    if is_field_empty(ui.insightcloud_password):
-        is_insightcloud_info_good = False
+    if is_field_empty(ui.password):
+        is_info_good = False
         errors.append("No InsightCloud password provided.")
     # validate credentials by hitting monocle-3
-    if is_insightcloud_info_good:
-        query = InsightCloudQuery(username=ui.insightcloud_username.text(),
-                                  password=ui.insightcloud_password.text())
+    if is_info_good:
+        query = InsightCloudQuery(username=ui.username.text(),
+                                  password=ui.password.text())
         query.log_into_monocle_3()
         if not query.is_login_successful:
             errors.append("Unable to verify InsightCloud credentials. See logs for more details.")

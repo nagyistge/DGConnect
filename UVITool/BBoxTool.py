@@ -1,9 +1,12 @@
+
+
 __author__ = 'Michael Trotter <michael.trotter@digitalglobe.com>'
 
 from qgis.gui import *
 from qgis.core import *
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
+from CredentialsTool import CredentialsTool
 import UVIToolProcessForm
 
 
@@ -44,6 +47,8 @@ class BBoxTool(QgsMapToolEmitPoint):
         self.bbox_ui.bottom.textChanged.connect(self.on_bottom)
         self.bbox_ui.left.textChanged.connect(self.on_left)
         self.bbox_ui.right.textChanged.connect(self.on_right)
+        # set up button
+        self.bbox_ui.credentials_button.clicked.connect(lambda: CredentialsTool(self.iface))
 
     def reset(self):
         """
