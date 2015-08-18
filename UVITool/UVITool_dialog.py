@@ -24,14 +24,14 @@
 import os
 
 from PyQt4 import QtGui, uic
-from UVITool_BBox import Ui_BBox
-from UVITool_dialog_base import Ui_UVIToolDialogBase
+import UVITool_BBox
+import UVITool_dialog_base
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'UVITool_dialog_base.ui'))
 
 
-class UVIToolDialog(QtGui.QDialog, FORM_CLASS):
+class UVIToolDialog(QtGui.QDockWidget, FORM_CLASS):
     def __init__(self, parent=None):
         """Constructor."""
         super(UVIToolDialog, self).__init__(parent)
@@ -40,31 +40,19 @@ class UVIToolDialog(QtGui.QDialog, FORM_CLASS):
         # self.<objectname>, and you can use autoconnect slots - see
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
-        self.dialog_base = Ui_UVIToolDialogBase()
+        self.dialog_base = UVITool_dialog_base.Ui_DockWidget()
         self.setupUi()
         self.bbox_dialog = None
-        current_pos = self.pos()
-        desktop = QtGui.QApplication.instance().desktop()
-        rect = desktop.screenGeometry(desktop.screenNumber(QtGui.QCursor.pos()))
-        dest_width = rect.width()
-        widget_width = self.width()
-        self.move(dest_width / desktop.numScreens() - 1.5 * widget_width + rect.left(), current_pos.y())
 
     def setupUi(self):
         self.dialog_base.setupUi(self)
 
-class BBoxDialog(QtGui.QDialog, FORM_CLASS):
+class BBoxDialog(QtGui.QDockWidget, FORM_CLASS):
     def __init__(self, parent=None):
         super(BBoxDialog, self).__init__(parent)
-        self.bbox = Ui_BBox()
+        self.bbox = UVITool_BBox.Ui_DockWidget()
         self.setupUi()
         self.uvi_tool_dialog = None
-        current_pos = self.pos()
-        desktop = QtGui.QApplication.instance().desktop()
-        rect = desktop.screenGeometry(desktop.screenNumber(QtGui.QCursor.pos()))
-        dest_width = rect.width()
-        widget_width = self.width()
-        self.move(dest_width / desktop.numScreens() - 1.5 * widget_width + rect.right(), current_pos.y())
 
     def setupUi(self):
         self.bbox.setupUi(self)
