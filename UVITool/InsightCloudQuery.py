@@ -17,7 +17,9 @@ from CASHTMLParser import CASFormHTMLParser
 
 MONOCLE_3_URL = "https://iipbeta.digitalglobe.com/monocle-3/"
 INSIGHT_VECTOR_URL = "https://iipbeta.digitalglobe.com/insight-vector/"
-SOURCES_QUERY = Template(INSIGHT_VECTOR_URL + "api/vectors/sources?left=$left&right=$right&upper=$upper&lower=$lower")
+SOURCES_QUERY = Template(INSIGHT_VECTOR_URL + "api/esri/sources?left=$left&right=$right&upper=$upper&lower=$lower")
+GEOMETRY_QUERY = Template(INSIGHT_VECTOR_URL +
+                          "api/esri/$source/geometries?left=$left&right=$right&upper=$upper&lower=$lower")
 
 URL_CAS_LOGIN_SEGMENT = "login"
 
@@ -41,16 +43,23 @@ NUM_TIMES_TO_TRY = 10
 
 
 
-class InsightCloudParams:
+class InsightCloudSourcesParams:
     """
     Class for holding query params for InsightCloud queries
     """
 
-    def __init__(self, top, right, bottom, left):
+    def __init__(self, top, right, bottom, left, params=None):
         self.top = top
         self.right = right
         self.bottom = bottom
         self.left = left
+
+class InsightCloudGeometriesParams(InsightCloudSourcesParams):
+    def __init__(self, sources_params, source):
+        InsightCloudSourcesParams.__init__(self, sources_params.top, sources_params.right, sources_params.bottom,
+                                           sources_params.left)
+        self.source = source
+
 
 class InsightCloudQuery:
     """
@@ -142,15 +151,14 @@ class InsightCloudQuery:
             return response.read()
         return None
 
-    def query_sources(self, order_params):
+    def query_sources(self, source_params):
         """
-        Queries OSM data for stats and updates the CSV element for output
-        :param order_params: InsightCloud params to query for
-        :param csv_element: The CSV row to update
-        :return: None
+        Queries sources and returns a dictionary of (source => count)
+        :param source_params: The params for the source query
+        :return: A dictionary of (source => count) if there are results
         """
-        sources_url = SOURCES_QUERY.substitute(upper=str(order_params.top), right=str(order_params.right),
-                                               lower=str(order_params.bottom), left=str(order_params.left))
+        sources_url = SOURCES_QUERY.substitute(upper=str(source_params.top), right=str(source_params.right),
+                                               lower=str(source_params.bottom), left=str(source_params.left))
         for i in range(1, NUM_TIMES_TO_TRY):
             response = None
             try:
@@ -160,18 +168,18 @@ class InsightCloudQuery:
                     response = self.login_to_app(response)
             except Exception, e:
                 self.is_login_successful = False
-                log.error("Unable to hit the osm end point due to: " + str(e) + "; trying " + str(NUM_TIMES_TO_TRY - i)
+                log.error("Unable to hit the sources end point due to: " + str(e) + "; trying " +
+                          str(NUM_TIMES_TO_TRY - i)
                           + " more times.")
             if response and self.is_login_successful:
-                return self.process_osm_data(response.read())
+                return self.process_json_data(response.read())
         return None
 
-    def process_osm_data(self, response):
+    def process_json_data(self, response):
         """
-        Updates the CSV row with the OSM stats
-        :param response: The string response from the server with data for the csv row
-        :param csv_element: The csv row to update
-        :return: None
+        Builds up a dictionary of sources from the response
+        :param response: The string response from the server with data for the dictionary
+        :return: The dictionary in the form (source => count)
         """
         sources = {}
         json_data = json.loads(response, strict=False)
@@ -185,3 +193,22 @@ class InsightCloudQuery:
             sources[name] = count
         return sources
 
+    def query_geometries(self, geometry_params):
+        types_url = GEOMETRY_QUERY.substitute(upper=str(geometry_params.top), lower=str(geometry_params.bottom),
+                                              left=str(geometry_params.left), right=str(geometry_params.right),
+                                              source=urllib.quote(str(geometry_params.source), safe=''))
+        for i in range(1, NUM_TIMES_TO_TRY):
+            response = None
+            try:
+                request = urllib2.Request(types_url)
+                response = self.opener.open(request, timeout=TIMEOUT_IN_SECONDS)
+                if self.is_on_login_page(response):
+                    response = self.login_to_app(response)
+            except Exception, e:
+                self.is_login_successful = False
+                log.error("Unable to hit the geometry end point due to: " + str(e) + "; trying " +
+                          str(NUM_TIMES_TO_TRY - i)
+                          + " more times.")
+            if response and self.is_login_successful:
+                return self.process_json_data(response.read())
+        return None

@@ -83,7 +83,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="types_group_box">
+       <widget class="QGroupBox" name="geometry_group_box">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
           <horstretch>0</horstretch>
@@ -97,11 +97,11 @@
          </size>
         </property>
         <property name="title">
-         <string>Types</string>
+         <string>Geometry</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_3">
          <item row="0" column="0">
-          <widget class="QListView" name="types_list_view">
+          <widget class="QListView" name="geometry_list_view">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
              <horstretch>0</horstretch>
@@ -127,7 +127,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="geometry_group_box">
+       <widget class="QGroupBox" name="types_group_box">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
           <horstretch>0</horstretch>
@@ -135,11 +135,11 @@
          </sizepolicy>
         </property>
         <property name="title">
-         <string>Geometry</string>
+         <string>Types</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_4">
          <item row="0" column="0">
-          <widget class="QListView" name="geometry_list_view">
+          <widget class="QListView" name="types_list_view">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
