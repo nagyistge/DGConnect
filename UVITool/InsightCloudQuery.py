@@ -20,6 +20,10 @@ INSIGHT_VECTOR_URL = "https://iipbeta.digitalglobe.com/insight-vector/"
 SOURCES_QUERY = Template(INSIGHT_VECTOR_URL + "api/esri/sources?left=$left&right=$right&upper=$upper&lower=$lower")
 GEOMETRY_QUERY = Template(INSIGHT_VECTOR_URL +
                           "api/esri/$source/geometries?left=$left&right=$right&upper=$upper&lower=$lower")
+TYPES_QUERY = Template(INSIGHT_VECTOR_URL +
+                       "api/esri/$source/$geometry/types?left=$left&right=$right&upper=$upper&lower=$lower")
+ITEMS_QUERY = Template(INSIGHT_VECTOR_URL +
+                       "api/vectors/$source/$geometry?left=$left&right=$right&upper=$upper&lower=$lower")
 
 URL_CAS_LOGIN_SEGMENT = "login"
 
@@ -48,7 +52,7 @@ class InsightCloudSourcesParams:
     Class for holding query params for InsightCloud queries
     """
 
-    def __init__(self, top, right, bottom, left, params=None):
+    def __init__(self, top, right, bottom, left):
         self.top = top
         self.right = right
         self.bottom = bottom
@@ -58,7 +62,15 @@ class InsightCloudGeometriesParams(InsightCloudSourcesParams):
     def __init__(self, sources_params, source):
         InsightCloudSourcesParams.__init__(self, sources_params.top, sources_params.right, sources_params.bottom,
                                            sources_params.left)
+        self.sources_params = sources_params
         self.source = source
+
+class InsightCloudTypesParams(InsightCloudGeometriesParams):
+    def __init__(self, geometries_params, geometry):
+        InsightCloudGeometriesParams.__init__(self, geometries_params.sources_params, geometries_params.source)
+        self.geometries_params = geometries_params
+        self.geometry = geometry
+
 
 
 class InsightCloudQuery:
@@ -159,21 +171,37 @@ class InsightCloudQuery:
         """
         sources_url = SOURCES_QUERY.substitute(upper=str(source_params.top), right=str(source_params.right),
                                                lower=str(source_params.bottom), left=str(source_params.left))
+        return self.make_query(sources_url)
+
+    def query_geometries(self, geometry_params):
+        geometries_url = GEOMETRY_QUERY.substitute(upper=str(geometry_params.top), lower=str(geometry_params.bottom),
+                                              left=str(geometry_params.left), right=str(geometry_params.right),
+                                              source=urllib.quote(str(geometry_params.source), safe=''))
+        return self.make_query(geometries_url)
+    
+    def query_types(self, types_params):
+        types_url = TYPES_QUERY.substitute(upper=str(types_params.top), lower=str(types_params.bottom),
+                                           left=str(types_params.left), right=str(types_params.right),
+                                           source=urllib.quote(str(types_params.source), safe=''),
+                                           geometry=urllib.quote(str(types_params.geometry), safe=''))
+        return self.make_query(types_url)
+
+    def make_query(self, url):
+        response = None
         for i in range(1, NUM_TIMES_TO_TRY):
-            response = None
             try:
-                request = urllib2.Request(sources_url)
+                request = urllib2.Request(url)
                 response = self.opener.open(request, timeout=TIMEOUT_IN_SECONDS)
                 if self.is_on_login_page(response):
                     response = self.login_to_app(response)
             except Exception, e:
                 self.is_login_successful = False
-                log.error("Unable to hit the sources end point due to: " + str(e) + "; trying " +
+                log.error("Unable to hit url: " + url + " due to: " + str(e) + "; trying " +
                           str(NUM_TIMES_TO_TRY - i)
                           + " more times.")
             if response and self.is_login_successful:
                 return self.process_json_data(response.read())
-        return None
+            return None
 
     def process_json_data(self, response):
         """
@@ -192,23 +220,3 @@ class InsightCloudQuery:
             count = data[KEY_JSON_COUNT]
             sources[name] = count
         return sources
-
-    def query_geometries(self, geometry_params):
-        types_url = GEOMETRY_QUERY.substitute(upper=str(geometry_params.top), lower=str(geometry_params.bottom),
-                                              left=str(geometry_params.left), right=str(geometry_params.right),
-                                              source=urllib.quote(str(geometry_params.source), safe=''))
-        for i in range(1, NUM_TIMES_TO_TRY):
-            response = None
-            try:
-                request = urllib2.Request(types_url)
-                response = self.opener.open(request, timeout=TIMEOUT_IN_SECONDS)
-                if self.is_on_login_page(response):
-                    response = self.login_to_app(response)
-            except Exception, e:
-                self.is_login_successful = False
-                log.error("Unable to hit the geometry end point due to: " + str(e) + "; trying " +
-                          str(NUM_TIMES_TO_TRY - i)
-                          + " more times.")
-            if response and self.is_login_successful:
-                return self.process_json_data(response.read())
-        return None

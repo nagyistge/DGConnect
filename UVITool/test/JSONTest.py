@@ -86,3 +86,19 @@ class ProcessJSONTest(unittest.TestCase):
 
         self.assertTrue("Point" in data)
         self.assertEquals(95391003, data["Point"])
+
+    def processGlobalGBDPolygonJson(self):
+        json = """\
+        {"data":[{"name":"LV3B","count":6016},{"name":"UNKNOWN","count":19}],"shards":1295}
+                """
+
+        query = InsightCloudQuery(None, None)
+        data = query.process_json_data(json)
+
+        self.assertTrue(len(data) == 2)
+
+        self.assertTrue("LV3B" in data)
+        self.assertEquals(6016, data["LV3B"])
+
+        self.assertTrue("UNKNOWN" in data)
+        self.assertEquals(19, data["UNKNOWN"])
