@@ -16,9 +16,8 @@ import logging as log
 from CASHTMLParser import CASFormHTMLParser
 
 MONOCLE_3_URL = "https://iipbeta.digitalglobe.com/monocle-3/"
-VECTOR_TYPE_QUERY = Template(MONOCLE_3_URL + "app/broker/vector/api/vectors/OSM/types?left=$left&right=$right&upper=$upper&lower=$lower")
-TWITTER_QUERY = Template(MONOCLE_3_URL + "app/broker/sma/sma/twitter/tweets?bbox=$left,$lower,$right,$upper")
-RSS_QUERY = Template(MONOCLE_3_URL + "app/broker/sma/sma/rss/sentences?bbox=$left,$lower,$right,$upper")
+INSIGHT_VECTOR_URL = "https://iipbeta.digitalglobe.com/insight-vector/"
+SOURCES_QUERY = Template(INSIGHT_VECTOR_URL + "api/vectors/sources?left=$left&right=$right&upper=$upper&lower=$lower")
 
 URL_CAS_LOGIN_SEGMENT = "login"
 
@@ -28,27 +27,30 @@ FIELD_USERNAME = "username"
 FIELD_PASSWORD = "password"
 URL_MATCH = re.compile('(.*://[^/]*)')
 
-JSON_OSM_DATA_KEY = u'data'
-JSON_OSM_COUNT_KEY = u'count'
-JSON_SMA_HITS_KEY = u'hits'
-JSON_SMA_TOTAL_KEY = u'total'
+KEY_JSON_DATA = u'data'
+KEY_JSON_NAME = u'name'
+KEY_JSON_COUNT = u'count'
+
+ENCODING_UTF8 = 'utf8'
+ENCODING_ASCII = 'ascii'
+ENCODING_IGNORE = 'ignore'
 
 TIMEOUT_IN_SECONDS = 30
 
 NUM_TIMES_TO_TRY = 10
+
+
 
 class InsightCloudParams:
     """
     Class for holding query params for InsightCloud queries
     """
 
-    def __init__(self, top, right, bottom, left, time_begin=None, time_end=None):
+    def __init__(self, top, right, bottom, left):
         self.top = top
         self.right = right
         self.bottom = bottom
         self.left = left
-        self.time_begin = time_begin
-        self.time_end = time_end
 
 class InsightCloudQuery:
     """
@@ -140,19 +142,19 @@ class InsightCloudQuery:
             return response.read()
         return None
 
-    def query_osm(self, order_params, csv_element):
+    def query_sources(self, order_params):
         """
         Queries OSM data for stats and updates the CSV element for output
         :param order_params: InsightCloud params to query for
         :param csv_element: The CSV row to update
         :return: None
         """
-        osm_url = VECTOR_TYPE_QUERY.substitute(upper=str(order_params.top), right=str(order_params.right),
+        sources_url = SOURCES_QUERY.substitute(upper=str(order_params.top), right=str(order_params.right),
                                                lower=str(order_params.bottom), left=str(order_params.left))
         for i in range(1, NUM_TIMES_TO_TRY):
             response = None
             try:
-                request = urllib2.Request(osm_url)
+                request = urllib2.Request(sources_url)
                 response = self.opener.open(request, timeout=TIMEOUT_IN_SECONDS)
                 if self.is_on_login_page(response):
                     response = self.login_to_app(response)
@@ -161,99 +163,25 @@ class InsightCloudQuery:
                 log.error("Unable to hit the osm end point due to: " + str(e) + "; trying " + str(NUM_TIMES_TO_TRY - i)
                           + " more times.")
             if response and self.is_login_successful:
-                self.process_osm_data(response.read(), csv_element)
-                break
+                return self.process_osm_data(response.read())
+        return None
 
-    def process_osm_data(self, response, csv_element):
+    def process_osm_data(self, response):
         """
         Updates the CSV row with the OSM stats
         :param response: The string response from the server with data for the csv row
         :param csv_element: The csv row to update
         :return: None
         """
+        sources = {}
         json_data = json.loads(response, strict=False)
-        # skip over empty fields
-        if not json_data or JSON_OSM_DATA_KEY not in json_data:
-            return
-        for entry in json_data[JSON_OSM_DATA_KEY]:
-            # check that count entry exists
-            if JSON_OSM_COUNT_KEY in entry:
-                csv_element.num_osm += entry[JSON_OSM_COUNT_KEY]
+        if not json_data or KEY_JSON_DATA not in json_data:
+            return sources
+        for data in json_data[KEY_JSON_DATA]:
+            if KEY_JSON_NAME not in data or KEY_JSON_COUNT not in data:
+                continue
+            name = data[KEY_JSON_NAME].encode(ENCODING_ASCII, ENCODING_IGNORE)
+            count = data[KEY_JSON_COUNT]
+            sources[name] = count
+        return sources
 
-    def query_twitter(self, order_params, csv_element):
-        """
-        Queries for Twitter data and updates the CSV row with the stats
-        :param order_params: The InsightCloud params for the query
-        :param csv_element: The CSV element to update
-        :return: None
-        """
-        twitter_url = TWITTER_QUERY.substitute(upper=str(order_params.top), lower=str(order_params.bottom),
-                                               left=str(order_params.left), right=str(order_params.right))
-        for i in range(1, NUM_TIMES_TO_TRY):
-            response = None
-            try:
-                request = urllib2.Request(twitter_url)
-                response = self.opener.open(request, timeout=TIMEOUT_IN_SECONDS)
-                if self.is_on_login_page(response):
-                    response = self.login_to_app(response)
-            except Exception, e:
-                self.is_login_successful = False
-                log.error("Unable to hit the twitter end point due to: " + str(e) + "; trying " +
-                          str(NUM_TIMES_TO_TRY - i) + " more times.")
-            if response and self.is_login_successful:
-                self.process_twitter_data(response.read(), csv_element)
-                break
-
-    def query_rss(self, order_params, csv_element):
-        """
-        Queries RSS for data and updates the CSV row with the stats
-        :param order_params: The InsightCloud params for the query
-        :param csv_element: The CSV element to update
-        :return: None
-        """
-        rss_url = RSS_QUERY.substitute(upper=str(order_params.top), lower=str(order_params.bottom),
-                                       left=str(order_params.left), right=str(order_params.right))
-        for i in range(1, NUM_TIMES_TO_TRY):
-            response = None
-            try:
-                request = urllib2.Request(rss_url)
-                response = self.opener.open(request, timeout=TIMEOUT_IN_SECONDS)
-                if self.is_on_login_page(response):
-                    response = self.login_to_app(response)
-            except Exception, e:
-                self.is_login_successful = False
-                log.error("Unable to hit the rss end point due to: " + str(e) + "; trying " + str(NUM_TIMES_TO_TRY - i)
-                          + " more times.")
-            if response and self.is_login_successful:
-                self.process_rss_data(response.read(), csv_element)
-                break
-
-    def process_sma_data(self, response):
-        """
-        Processes OSM data (including RSS and Twitter) and returns the stats field
-        :param response: The str response from the server
-        :return: 0 if there are no stats; else the stats
-        """
-        json_data = json.loads(response, strict=False)
-        # skip over empty fields
-        if not json_data or JSON_SMA_HITS_KEY not in json_data or JSON_SMA_TOTAL_KEY not in json_data[JSON_SMA_HITS_KEY]:
-            return 0
-        return json_data[JSON_SMA_HITS_KEY][JSON_SMA_TOTAL_KEY]
-
-    def process_twitter_data(self, response, csv_element):
-        """
-        Updates the CSV row with the stats from the Twitter query
-        :param response: The str response containing the JSON data from the query
-        :param csv_element: The CSV row to update
-        :return: None
-        """
-        csv_element.num_twitter = self.process_sma_data(response)
-
-    def process_rss_data(self, response, csv_element):
-        """
-        Updates the CSV row with the stats from the RSS query
-        :param response: The str response containing JSON data from the query
-        :param csv_element: The CSV row to update
-        :return: None
-        """
-        csv_element.num_rss = self.process_sma_data(response)

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 __author__ = 'mtrotter'
 
 
@@ -80,6 +81,10 @@ def load_settings(ui):
     ui.username.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME))
     ui.password.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD))
 
+def get_settings():
+    return read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME), \
+           read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD)
+
 def save_settings_clicked(ui, iface, dialog):
     """
     Action performed when the save button is clicked; updates the settings file with the new data
@@ -139,7 +144,6 @@ def validate_save_settings(ui, iface):
         return False
     return True
 
-
 def validate_info(ui, errors):
     """
     Validates the InsightCloud fields for errors
@@ -162,6 +166,30 @@ def validate_info(ui, errors):
         query.log_into_monocle_3()
         if not query.is_login_successful:
             errors.append("Unable to verify InsightCloud credentials. See logs for more details.")
+
+def validate_stored_settings(iface, username, password):
+    errors = []
+    if validate_stored_info(username, password, errors):
+        iface.messageBar().pushMessage("Info", "Successfully checked credentials. Launching queries...")
+        return True
+    else:
+        iface.messageBar().pushMessage("Error", "Unable to validate credentials due to:\n" + "\n".join(errors))
+        return False
+
+def validate_stored_info(username, password, errors):
+    # check insightcloud credentials
+    is_field_good = True
+    if not username or len(username) == 0:
+        is_field_good = False
+        errors.append("No InsightCloud username provided.")
+    if not password or len(password) == 0:
+        is_field_good = False
+        errors.append("No InsightCloud password provided.")
+    if is_field_good:
+        query = InsightCloudQuery(username=username, password=password)
+        query.log_into_monocle_3()
+        if not query.is_login_successful:
+            errors.append("Unable to verify InsightCloud credentials. See logs for details.")
 
 def validate_bbox(ui, errors):
     """

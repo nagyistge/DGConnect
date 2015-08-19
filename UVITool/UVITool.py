@@ -27,6 +27,7 @@ import resources_rc
 # Import the code for the dialog
 from UVITool_dialog import UVIToolDialog, BBoxDialog
 from BBoxTool import BBoxTool
+from DialogTool import DialogTool
 from PyQt4.QtCore import Qt
 import os.path
 
@@ -70,6 +71,7 @@ class UVITool:
         self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dlg)
 
         self.bbox_tool = BBoxTool(self.iface, self.bbox_dlg.bbox)
+        self.dialog_tool = DialogTool(self.iface, self.bbox_dlg.bbox, self.dlg.dialog_base)
 
         # Declare instance attributes
         self.actions = []
