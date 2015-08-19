@@ -34,9 +34,9 @@ def classFactory(iface):  # pylint: disable=invalid-name
     from .UVITool import UVITool
     '''
     Debug settings
-    '''
     import sys
     sys.path.insert(1, '/home/mtrotter/pycharm-debug.egg')
     import pydevd
     pydevd.settrace('localhost', port=53100, stdoutToServer=True, stderrToServer=True)
+    '''
     return UVITool(iface)
