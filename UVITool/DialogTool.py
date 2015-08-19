@@ -71,6 +71,8 @@ class DialogTool:
                 self.geometries[geometry].update_count(key, 0)
         if new_model:
             self.dialog_base.data_sources_list_view.setModel(model)
+        self.dialog_base.data_sources_list_view.model().sort(0)
+        self.dialog_base.geometry_list_view.model().sort(0)
 
     def query_geometries(self, geometry_params):
         username, password = UVIToolProcessForm.get_settings()
