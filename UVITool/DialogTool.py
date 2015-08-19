@@ -70,6 +70,7 @@ class DialogTool:
             for geometry in self.geometries.keys():
                 self.geometries[geometry].update_count(key, 0)
         if new_model:
+            model.itemChanged.connect(self.on_source_checked)
             self.dialog_base.data_sources_list_view.setModel(model)
         self.dialog_base.data_sources_list_view.model().sort(0)
         self.dialog_base.geometry_list_view.model().sort(0)
@@ -105,6 +106,14 @@ class DialogTool:
             self.geometries[geometry].update_count(geometry_params.source, 0)
         if new_model:
             self.dialog_base.geometry_list_view.setModel(model)
+
+    def on_source_checked(self, source_item):
+        is_checked = source_item.checkState() == Qt.Checked
+        for key in self.geometries.keys():
+            if is_checked:
+                self.geometries[key].enable_source(source_item.title)
+            else:
+                self.geometries[key].disable_source(source_item.title)
 
 
 class SourceItem(QStandardItem):
@@ -176,6 +185,16 @@ class GeometryItem(QStandardItem):
         self._counts[source] = count
         self._total_count += count
         self.change_text()
+
+    def enable_source(self, source):
+        if source in self._counts:
+            self._total_count += self._counts[source]
+            self.change_text()
+
+    def disable_source(self, source):
+        if source in self._counts:
+            self._total_count -= self._counts[source]
+            self.change_text()
 
     def change_text(self):
         self.setText(WIDGET_TEXT_FMT % (self._title, self._total_count))
