@@ -32,6 +32,8 @@ VALIDATION_LAT_UPPER = 90.0
 VALIDATION_LONG_LOWER = -180.0
 VALIDATION_LONG_UPPER = 180.0
 
+DURATION = 30
+
 # simple regex validator for data; make sure there's something there
 ENDS_WITH_SUFFIX_REGEX = re.compile(".+\." + DEFAULT_SUFFIX + "$")
 
@@ -64,7 +66,7 @@ def ok_clicked(ui):
     :return: None
     """
     if validate_ok(ui):
-        ui.dialog.message_bar.pushMessage("Info", "Starting query...", level=QgsMessageBar.INFO, duration=20)
+        ui.dialog.message_bar.pushMessage("Info", "Starting query...", level=QgsMessageBar.INFO, duration=DURATION)
         subprocess.Popen(["python", os.path.dirname(os.path.realpath(__file__)) + os.sep + "CSVOutput.py",
                                           "--" + CSVOutput.ARG_LEFT, ui.left.text(),
                                           "--" + CSVOutput.ARG_TOP, ui.top.text(),
