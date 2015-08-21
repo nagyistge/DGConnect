@@ -21,6 +21,7 @@ class BBoxTool(QgsMapToolEmitPoint):
     """
     def __init__(self, iface, bbox_ui):
         QgsMapToolEmitPoint.__init__(self, iface.mapCanvas())
+        self.dialog_tool = None
         self.iface = iface
         self.canvas = iface.mapCanvas()
         self.rubber_band = QgsRubberBand(self.canvas, QGis.Polygon)
@@ -49,6 +50,8 @@ class BBoxTool(QgsMapToolEmitPoint):
         self.bbox_ui.right.textChanged.connect(self.on_right)
         # set up button
         self.bbox_ui.credentials_button.clicked.connect(lambda: CredentialsTool(self.iface))
+        self.bbox_ui.search_button.clicked.connect(lambda: UVIToolProcessForm.search_clicked(self.bbox_ui,
+                                                                                             self.dialog_tool))
 
     def reset(self):
         """

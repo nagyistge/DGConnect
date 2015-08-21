@@ -72,6 +72,7 @@ class UVITool:
 
         self.bbox_tool = BBoxTool(self.iface, self.bbox_dlg.bbox)
         self.dialog_tool = DialogTool(self.iface, self.bbox_dlg.bbox, self.dlg.dialog_base)
+        self.bbox_tool.dialog_tool = self.dialog_tool
 
         # Declare instance attributes
         self.actions = []
@@ -180,6 +181,7 @@ class UVITool:
             parent=self.iface.mainWindow())
 
     def unload(self):
+        self.bbox_tool.reset()
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
             self.iface.removePluginMenu(

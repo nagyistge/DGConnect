@@ -52,11 +52,12 @@ class InsightCloudSourcesParams:
     Class for holding query params for InsightCloud queries
     """
 
-    def __init__(self, top, right, bottom, left):
+    def __init__(self, top, right, bottom, left, query=None):
         self.top = top
         self.right = right
         self.bottom = bottom
         self.left = left
+        self.query = query
 
 class InsightCloudGeometriesParams(InsightCloudSourcesParams):
     def __init__(self, sources_params, source):
@@ -216,7 +217,7 @@ class InsightCloudQuery:
         for data in json_data[KEY_JSON_DATA]:
             if KEY_JSON_NAME not in data or KEY_JSON_COUNT not in data:
                 continue
-            name = data[KEY_JSON_NAME].encode(ENCODING_ASCII, ENCODING_IGNORE)
+            name = data[KEY_JSON_NAME]  # .encode(ENCODING_ASCII, ENCODING_IGNORE)
             count = data[KEY_JSON_COUNT]
             sources[name] = count
         return sources

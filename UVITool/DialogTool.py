@@ -54,7 +54,6 @@ class DialogTool(QObject):
 
     @pyqtSlot(object, object)
     def on_new_source(self, source_params, new_sources):
-        self.on_task_complete()
         if not new_sources:
             return
         examined_sources = set()
@@ -84,11 +83,10 @@ class DialogTool(QObject):
         if new_model:
             model.itemChanged.connect(self.on_source_checked)
             self.dialog_base.data_sources_list_view.setModel(model)
-        # self.dialog_base.data_sources_list_view.model().sort(0)
+        self.on_task_complete()
 
     @pyqtSlot(object, object)
     def on_new_geometries(self, geometry_params, new_geometries):
-        self.on_task_complete()
         if not new_geometries:
             return
         examined_geometries = set()
@@ -116,11 +114,10 @@ class DialogTool(QObject):
         if new_model:
             # model.itemChanged.connect(self.on_geometry_check)
             self.dialog_base.geometry_list_view.setModel(model)
-        # self.dialog_base.geometry_list_view.model().sort(0)
+        self.on_task_complete()
 
     @pyqtSlot(object, object)
     def on_new_types(self, types_params, new_types):
-        self.on_task_complete()
         if not new_types:
             return
         examined_types = set()
@@ -145,7 +142,7 @@ class DialogTool(QObject):
             self.types[type_key].update_count(types_params.source, types_params.geometry, 0)
         if new_model:
             self.dialog_base.types_list_view.setModel(model)
-        # self.dialog_base.types_list_view.model().sort(0)
+        self.on_task_complete()
 
     def __init__(self, iface, bbox_gui, dialog_base):
         QObject.__init__(self, None)
@@ -170,6 +167,7 @@ class DialogTool(QObject):
             self.iface.messageBar().pushWidget(self.progress_message_bar, self.iface.messageBar().INFO)
 
     def query_initial_sources(self):
+        self.thread_pool.waitForDone(0)
         username, password = UVIToolProcessForm.get_settings()
         errors = []
         UVIToolProcessForm.validate_stored_info(username, password, errors)
@@ -180,6 +178,14 @@ class DialogTool(QObject):
             self.thread_pool.start(source_runnable)
 
     def query_sources(self, order_params):
+        self.thread_pool.waitForDone(0)
+        # clear out old models
+        self.dialog_base.data_sources_list_view.setModel(None)
+        self.dialog_base.geometry_list_view.setModel(None)
+        self.dialog_base.types_list_view.setModel(None)
+        self.sources.clear()
+        self.geometries.clear()
+        self.types.clear()
         username, password = UVIToolProcessForm.get_settings()
         if UVIToolProcessForm.validate_stored_settings(self.iface, username, password):
             source_runnable = SourceRunnable(username, password, order_params)

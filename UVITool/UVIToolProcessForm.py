@@ -6,7 +6,7 @@ from qgis.gui import QgsMessageBar
 from PyQt4 import QtGui
 from PyQt4.QtCore import QSettings
 from os.path import expanduser
-from InsightCloudQuery import InsightCloudQuery
+from InsightCloudQuery import InsightCloudQuery, InsightCloudSourcesParams
 
 import re
 import os
@@ -55,13 +55,22 @@ def write_setting(key, value):
     s = QSettings()
     s.setValue(key, value)
 
-def ok_clicked(ui):
+def search_clicked(ui, dialog_tool):
     """
     Action performed when the ok button is clicked
     :param ui: The UI ui where this occurs
     :return: None
     """
-    pass
+    top = ui.top.text()
+    bottom = ui.bottom.text()
+    left = ui.left.text()
+    right = ui.right.text()
+    query = ui.query.text()
+    if query and len(query) == 0:
+        query = None
+    params = InsightCloudSourcesParams(top=top, right=right, bottom=bottom, left=left, query=query)
+    dialog_tool.query_sources(params)
+
 
 def cancel_clicked(ui):
     """
@@ -190,6 +199,9 @@ def validate_stored_info(username, password, errors):
         query.log_into_monocle_3()
         if not query.is_login_successful:
             errors.append("Unable to verify InsightCloud credentials. See logs for details.")
+            is_field_good = False
+    return is_field_good
+
 
 def validate_bbox(ui, errors):
     """
