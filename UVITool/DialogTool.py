@@ -4,8 +4,8 @@ import UVIToolProcessForm
 from InsightCloudQuery import InsightCloudSourcesParams, InsightCloudGeometriesParams, InsightCloudTypesParams,\
     InsightCloudQuery
 
-from PyQt4.QtGui import QStandardItem, QStandardItemModel
-from PyQt4.QtCore import Qt
+from PyQt4.QtGui import QStandardItem, QStandardItemModel, QProgressBar
+from PyQt4.QtCore import Qt, QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal
 
 
 DEFAULT_LEFT = "-180.0"
@@ -27,33 +27,34 @@ KEY_COUNT = "count"
 KEY_GEOMETRY = "geometry"
 KEY_ENABLED = "enabled"
 
-class DialogTool:
-    def __init__(self, iface, bbox_gui, dialog_base):
-        self.iface = iface
-        self.bbox_gui = bbox_gui
-        self.dialog_base = dialog_base
-        self.sources = {}
-        self.geometries = {}
-        self.types = {}
-        self.query_initial_sources()
 
-    def query_initial_sources(self):
-        username, password = UVIToolProcessForm.get_settings()
-        errors = []
-        UVIToolProcessForm.validate_stored_info(username, password, errors)
-        if len(errors) == 0:
-            query = InsightCloudQuery(username, password)
-            new_sources = query.query_sources(source_params=DEFAULT_ORDER_PARAMS)
-            self.process_new_sources(DEFAULT_ORDER_PARAMS, new_sources)
+class DialogTool(QObject):
+    def on_sort_complete(self):
+        if self.thread_pool.activeThreadCount() == 0:
+            self.progress_message_bar = None
+            self.iface.messageBar().clearWidgets()
 
-    def query_sources(self, order_params):
-        username, password = UVIToolProcessForm.get_settings()
-        if UVIToolProcessForm.validate_stored_settings(self.iface, username, password):
-            query = InsightCloudQuery(username, password)
-            new_sources = query.query_sources(source_params=order_params)
-            self.process_new_sources(order_params, new_sources)
+    def on_task_complete(self):
+        if self.thread_pool.activeThreadCount() == 0:
+            source_model = self.dialog_base.data_sources_list_view.model()
+            if source_model:
+                source_thread = SortRunnable(source_model)
+                source_thread.sort_object.task_complete.connect(self.on_sort_complete)
+                self.thread_pool.start(source_thread)
+            geometry_model = self.dialog_base.geometry_list_view.model()
+            if geometry_model:
+                geometry_thread = SortRunnable(geometry_model)
+                geometry_thread.sort_object.task_complete.connect(self.on_sort_complete)
+                self.thread_pool.start(geometry_thread)
+            types_model = self.dialog_base.types_list_view.model()
+            if types_model:
+                type_thread = SortRunnable(types_model)
+                type_thread.sort_object.task_complete.connect(self.on_sort_complete)
+                self.thread_pool.start(type_thread)
 
-    def process_new_sources(self, source_params, new_sources):
+    @pyqtSlot(object, object)
+    def on_new_source(self, source_params, new_sources):
+        self.on_task_complete()
         if not new_sources:
             return
         examined_sources = set()
@@ -83,17 +84,11 @@ class DialogTool:
         if new_model:
             model.itemChanged.connect(self.on_source_checked)
             self.dialog_base.data_sources_list_view.setModel(model)
-        self.dialog_base.data_sources_list_view.model().sort(0)
-        self.dialog_base.geometry_list_view.model().sort(0)
-        self.dialog_base.types_list_view.model().sort(0)
+        # self.dialog_base.data_sources_list_view.model().sort(0)
 
-    def query_geometries(self, geometry_params):
-        username, password = UVIToolProcessForm.get_settings()
-        query = InsightCloudQuery(username, password)
-        new_geometries = query.query_geometries(geometry_params)
-        self.process_new_geometries(geometry_params, new_geometries)
-
-    def process_new_geometries(self, geometry_params, new_geometries):
+    @pyqtSlot(object, object)
+    def on_new_geometries(self, geometry_params, new_geometries):
+        self.on_task_complete()
         if not new_geometries:
             return
         examined_geometries = set()
@@ -119,16 +114,13 @@ class DialogTool:
         for geometry in unexamined_geometries:
             self.geometries[geometry].update_count(geometry_params.source, 0)
         if new_model:
-            model.itemChanged.connect(self.on_geometry_check)
+            # model.itemChanged.connect(self.on_geometry_check)
             self.dialog_base.geometry_list_view.setModel(model)
+        # self.dialog_base.geometry_list_view.model().sort(0)
 
-    def query_types(self, types_params):
-        username, password = UVIToolProcessForm.get_settings()
-        query = InsightCloudQuery(username, password)
-        new_types = query.query_types(types_params)
-        self.process_new_types(types_params, new_types)
-
-    def process_new_types(self, types_params, new_types):
+    @pyqtSlot(object, object)
+    def on_new_types(self, types_params, new_types):
+        self.on_task_complete()
         if not new_types:
             return
         examined_types = set()
@@ -153,6 +145,61 @@ class DialogTool:
             self.types[type_key].update_count(types_params.source, types_params.geometry, 0)
         if new_model:
             self.dialog_base.types_list_view.setModel(model)
+        # self.dialog_base.types_list_view.model().sort(0)
+
+    def __init__(self, iface, bbox_gui, dialog_base):
+        QObject.__init__(self, None)
+        self.iface = iface
+        self.bbox_gui = bbox_gui
+        self.dialog_base = dialog_base
+        self.sources = {}
+        self.geometries = {}
+        self.types = {}
+        self.thread_pool = QThreadPool()
+        self.progress_message_bar = None
+        self.query_initial_sources()
+
+    def init_progress_bar(self):
+        if not self.progress_message_bar:
+            self.progress_message_bar = self.iface.messageBar().createMessage("Querying for data")
+            progress = QProgressBar()
+            progress.setMinimum(0)
+            progress.setMaximum(0)
+            progress.setAlignment(Qt.AlignLeft | Qt.AlignCenter)
+            self.progress_message_bar.layout().addWidget(progress)
+            self.iface.messageBar().pushWidget(self.progress_message_bar, self.iface.messageBar().INFO)
+
+    def query_initial_sources(self):
+        username, password = UVIToolProcessForm.get_settings()
+        errors = []
+        UVIToolProcessForm.validate_stored_info(username, password, errors)
+        if len(errors) == 0:
+            source_runnable = SourceRunnable(username, password, DEFAULT_ORDER_PARAMS)
+            source_runnable.source_object.task_complete.connect(self.on_new_source)
+            self.init_progress_bar()
+            self.thread_pool.start(source_runnable)
+
+    def query_sources(self, order_params):
+        username, password = UVIToolProcessForm.get_settings()
+        if UVIToolProcessForm.validate_stored_settings(self.iface, username, password):
+            source_runnable = SourceRunnable(username, password, order_params)
+            source_runnable.source_object.task_complete.connect(self.on_new_source)
+            self.init_progress_bar()
+            self.thread_pool.start(source_runnable)
+
+    def query_geometries(self, geometry_params):
+        username, password = UVIToolProcessForm.get_settings()
+        geometry_runnable = GeometryRunnable(username, password, geometry_params)
+        geometry_runnable.geometry_object.task_complete.connect(self.on_new_geometries)
+        self.init_progress_bar()
+        self.thread_pool.start(geometry_runnable)
+
+    def query_types(self, types_params):
+        username, password = UVIToolProcessForm.get_settings()
+        types_runnable = TypeRunnable(username, password, types_params)
+        types_runnable.type_object.task_complete.connect(self.on_new_types)
+        self.init_progress_bar()
+        self.thread_pool.start(types_runnable)
 
     def on_source_checked(self, source_item):
         if not source_item.has_checked_changed():
@@ -180,6 +227,81 @@ class DialogTool:
             else:
                 self.types[type_key].disable_geometry(geometry_item.title, self.sources)
         geometry_item.update_checked()
+
+class SourceObject(QObject):
+    task_complete = pyqtSignal(object, object)
+
+    def __init__(self, QObject_parent=None):
+        QObject.__init__(self, QObject_parent)
+
+class SourceRunnable(QRunnable):
+
+    def __init__(self, username, password, source_params):
+        QRunnable.__init__(self)
+        self.username = username
+        self.password = password
+        self.source_params = source_params
+        self.source_object = SourceObject()
+
+    def run(self):
+        query = InsightCloudQuery(self.username, self.password)
+        new_sources = query.query_sources(source_params=self.source_params)
+        self.source_object.task_complete.emit(self.source_params, new_sources)
+
+class GeometryObject(QObject):
+    task_complete = pyqtSignal(object, object)
+
+    def __init__(self, QObject_parent=None):
+        QObject.__init__(self, QObject_parent)
+
+class GeometryRunnable(QRunnable):
+    def __init__(self, username, password, geometry_params):
+        QRunnable.__init__(self)
+        self.username = username
+        self.password = password
+        self.geometry_params = geometry_params
+        self.geometry_object = GeometryObject()
+
+    def run(self):
+        query = InsightCloudQuery(self.username, self.password)
+        new_geometries = query.query_geometries(geometry_params=self.geometry_params)
+        self.geometry_object.task_complete.emit(self.geometry_params, new_geometries)
+
+class TypeObject(QObject):
+    task_complete = pyqtSignal(object, object)
+
+    def __init__(self, QObject_parent=None):
+        QObject.__init__(self, QObject_parent)
+
+class TypeRunnable(QRunnable):
+    def __init__(self, username, password, type_params):
+        QRunnable.__init__(self)
+        self.username = username
+        self.password = password
+        self.type_params = type_params
+        self.type_object = TypeObject()
+
+    def run(self):
+        query = InsightCloudQuery(self.username, self.password)
+        new_types = query.query_types(self.type_params)
+        self.type_object.task_complete.emit(self.type_params, new_types)
+
+class SortObject(QObject):
+    task_complete = pyqtSignal()
+
+    def __init__(self, QObject_parent=None):
+        QObject.__init__(self, QObject_parent)
+
+
+class SortRunnable(QRunnable):
+    def __init__(self, model, ):
+        QRunnable.__init__(self)
+        self.model = model
+        self.sort_object = SortObject()
+
+    def run(self):
+        self.model.sort(0)
+        self.sort_object.task_complete.emit()
 
 class SourceItem(QStandardItem):
     def __init__(self, title, count, *__args):
@@ -350,14 +472,14 @@ class TypesItem(QStandardItem):
     def enable_source(self, source, geometries):
         if source in self._counts.keys():
             for geometry_key in self._counts[source].keys():
-                if geometries[source][geometry_key].is_checked:
+                if geometries[geometry_key].is_checked:
                     self._total_count += self._counts[source][geometry_key]
             self.change_text()
 
     def disable_source(self, source, geometries):
         if source in self._counts:
             for geometry_key in self._counts[source].keys():
-                if geometries[source][geometry_key].is_checked:
+                if geometries[geometry_key].is_checked:
                     self._total_count += self._counts[source][geometry_key]
             self.change_text()
 
