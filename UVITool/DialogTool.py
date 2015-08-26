@@ -201,19 +201,22 @@ class DialogTool(QObject):
             self.json_progress.setValue(self.json_progress.value() + 1)
         if new_items:
             for polygon in new_items[KEY_POLYGON]:
-                if not self.written_first_polygon:
+                if self.written_first_polygon:
                     self.polygon_file.write(u",")
+                else:
                     self.written_first_polygon = True
                 self.polygon_file.write(polygon)
             for line in new_items[KEY_LINE]:
-                if not self.written_first_line:
+                if self.written_first_line:
                     self.line_file.write(u",")
+                else:
                     self.written_first_line = True
                 self.line_file.write(line)
 
             for point in new_items[KEY_POINT]:
-                if not self.written_first_point:
+                if self.written_first_point:
                     self.point_file.write(u",")
+                else:
                     self.written_first_point = True
                 self.point_file.write(point)
 
