@@ -41,7 +41,7 @@ FILE_POINTS = u'points.json'
 FILE_POLYGON = u'polygon.json'
 FILE_LINE = u'line.json'
 
-MAX_EXPORT = 5000
+MAX_EXPORT = 50000000000
 
 GEOJSON_BEGINNING = '{"type": "FeatureCollection", "features": ['
 GEOJSON_ENDING = ']}'
@@ -197,29 +197,26 @@ class DialogTool(QObject):
 
     @pyqtSlot(object, object)
     def on_new_json_items(self, items_params, new_items):
-        self.json_progress.setValue(self.json_progress.value() + 1)
+        if self.json_progress_message_bar:
+            self.json_progress.setValue(self.json_progress.value() + 1)
         if new_items:
             for polygon in new_items[KEY_POLYGON]:
-                polygon_string = json.dumps(polygon.__dict__)
-                if self.written_first_polygon:
-                    self.polygon_file.write(u"," + polygon_string)
-                else:
-                    self.polygon_file.write(polygon_string)
+                if not self.written_first_polygon:
+                    self.polygon_file.write(u",")
                     self.written_first_polygon = True
+                self.polygon_file.write(polygon)
             for line in new_items[KEY_LINE]:
-                line_string = json.dumps(line.__dict__)
-                if self.written_first_line:
-                    self.line_file.write(u"," + line_string)
-                else:
-                    self.line_file.write(line_string)
+                if not self.written_first_line:
+                    self.line_file.write(u",")
                     self.written_first_line = True
+                self.line_file.write(line)
+
             for point in new_items[KEY_POINT]:
-                point_string = json.dumps(point.__dict__)
-                if self.written_first_point:
-                    self.point_file.write(u"," + point_string)
-                else:
-                    self.point_file.write(point_string)
+                if not self.written_first_point:
+                    self.point_file.write(u",")
                     self.written_first_point = True
+                self.point_file.write(point)
+
         self.on_new_json_task_complete()
 
     def on_new_json_task_complete(self):
@@ -455,9 +452,17 @@ class DialogTool(QObject):
                         task.json_item_object.task_complete.connect(self.on_new_json_items)
                         self.json_thread_pool.start(task)
                     else:
-                        self.json_progress.setValue(self.json_progress.value() + 1)
+                        if self.json_progress:
+                            self.json_progress.setValue(self.json_progress.value() + 1)
             else:
-                self.json_progress.setValue(self.json_progress.value() + len(self.types_dict.keys()))
+                if self.json_progress:
+                    self.json_progress.setValue(self.json_progress.value() + len(self.types_dict.keys()))
+
+    def is_exporting(self):
+        return self.json_thread_pool.activeThreadCount() > 0
+
+    def is_searching(self):
+        return self.thread_pool.activeThreadCount() > 0
 
     def validate_export(self):
         errors = []
@@ -468,10 +473,10 @@ class DialogTool(QObject):
         if not self.dialog_base.types_list_view.model() or not self.dialog_base.data_sources_list_view.model():
             errors.append("Please search for data before attempting to export.")
         # ensure that the current search is complete
-        if self.progress_message_bar:
+        if self.progress_message_bar or self.is_searching():
             errors.append("Please wait until the current search is complete.")
         # ensure there's not a current export
-        if self.polygon_file or self.line_file or self.point_file:
+        if self.is_exporting():
             errors.append("Please wait until the current export is complete.")
         # ensure there's less than the max to export
         total_to_export = 0

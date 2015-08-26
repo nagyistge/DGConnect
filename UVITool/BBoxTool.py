@@ -49,9 +49,28 @@ class BBoxTool(QgsMapToolEmitPoint):
         self.bbox_ui.left.textChanged.connect(self.on_left)
         self.bbox_ui.right.textChanged.connect(self.on_right)
         # set up button
-        self.bbox_ui.credentials_button.clicked.connect(lambda: CredentialsTool(self.iface))
-        self.bbox_ui.search_button.clicked.connect(lambda: UVIToolProcessForm.search_clicked(self.bbox_ui,
-                                                                                             self.dialog_tool))
+        self.bbox_ui.credentials_button.clicked.connect(lambda: self.credentials_button_clicked())
+        self.bbox_ui.search_button.clicked.connect(lambda: self.search_button_clicked())
+
+    def credentials_button_clicked(self):
+        # can't change credentials during export
+        if self.dialog_tool.is_exporting():
+            self.iface.messageBar().pushMessage("Error", "Cannot alter credentials while export is running.",
+                                                level=QgsMessageBar.CRITICAL)
+        else:
+            CredentialsTool(self.iface)
+
+    def search_button_clicked(self):
+        # can't run search during export
+        if self.dialog_tool.is_exporting():
+            self.iface.messageBar().pushMessage("Error", "Cannot run search while export is running.",
+                                                level=QgsMessageBar.CRITICAL)
+        # can't run multiple search
+        elif self.dialog_tool.is_searching():
+            self.iface.messageBar().pushMessage("Error", "Cannot run a new search while a search is running.",
+                                                level=QgsMessageBar.CRITICAL)
+        else:
+            UVIToolProcessForm.search_clicked(self.bbox_ui, self.dialog_tool)
 
     def reset(self):
         """

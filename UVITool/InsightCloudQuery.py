@@ -342,11 +342,20 @@ class InsightCloudQuery:
             else:
                 new_item = self.build_qgis_feature(vector_item)
             if new_item.geometry_type == u'Point' or new_item.geometry_type == u'MultiPoint':
-                new_data[KEY_POINT].append(new_item)
+                if json_export:
+                    new_data[KEY_POINT].append(json.dumps(new_item.__dict__))
+                else:
+                    new_data[KEY_POINT].append(new_item)
             elif new_item.geometry_type == u'LineString' or new_item.geometry_type == u'MultiLineString':
-                new_data[KEY_LINE].append(new_item)
+                if json_export:
+                    new_data[KEY_LINE].append(json.dumps(new_item.__dict__))
+                else:
+                    new_data[KEY_LINE].append(new_item)
             else:
-                new_data[KEY_POLYGON].append(new_item)
+                if json_export:
+                    new_data[KEY_POLYGON].append(json.dumps(new_item.__dict__))
+                else:
+                    new_data[KEY_POLYGON].append(new_item)
         return new_data
 
     def build_qgis_feature(self, vector_item):
