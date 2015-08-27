@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'UVITool_BBox.ui'
 #
-# Created: Tue Aug 18 11:44:28 2015
+# Created: Thu Aug 27 13:50:16 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -142,14 +142,14 @@ class Ui_DockWidget(object):
         self.search_button.setDefault(True)
         self.search_button.setObjectName(_fromUtf8("search_button"))
         self.gridLayout_2.addWidget(self.search_button, 0, 2, 1, 1)
-        self.credentials_button = QtGui.QPushButton(self.dockWidgetContents)
+        self.settings_button = QtGui.QPushButton(self.dockWidgetContents)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.credentials_button.sizePolicy().hasHeightForWidth())
-        self.credentials_button.setSizePolicy(sizePolicy)
-        self.credentials_button.setObjectName(_fromUtf8("credentials_button"))
-        self.gridLayout_2.addWidget(self.credentials_button, 0, 0, 1, 1)
+        sizePolicy.setHeightForWidth(self.settings_button.sizePolicy().hasHeightForWidth())
+        self.settings_button.setSizePolicy(sizePolicy)
+        self.settings_button.setObjectName(_fromUtf8("settings_button"))
+        self.gridLayout_2.addWidget(self.settings_button, 0, 0, 1, 1)
         self.gridLayout.addLayout(self.gridLayout_2, 5, 0, 1, 1)
         self.gridLayout_4.addLayout(self.gridLayout, 0, 0, 1, 1)
         DockWidget.setWidget(self.dockWidgetContents)
@@ -169,7 +169,7 @@ class Ui_DockWidget(object):
         self.bottom_label.setText(_translate("DockWidget", "Bottom", None))
         self.query_label.setText(_translate("DockWidget", "Query", None))
         self.search_button.setText(_translate("DockWidget", "Search", None))
-        self.credentials_button.setText(_translate("DockWidget", "Credentials", None))
+        self.settings_button.setText(_translate("DockWidget", "Settings", None))
 
     @pyqtSlot(str)
     def on_new_top(self, new_top):

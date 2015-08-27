@@ -6,7 +6,7 @@ from qgis.gui import *
 from qgis.core import *
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
-from CredentialsTool import CredentialsTool
+from SettingsTool import SettingsTool
 import UVIToolProcessForm
 
 
@@ -56,20 +56,20 @@ class BBoxTool(QgsMapToolEmitPoint):
         self.bbox_ui.left.textChanged.connect(self.on_left)
         self.bbox_ui.right.textChanged.connect(self.on_right)
         # set up button
-        self.bbox_ui.credentials_button.clicked.connect(lambda: self.credentials_button_clicked())
+        self.bbox_ui.settings_button.clicked.connect(lambda: self.settings_button_clicked())
         self.bbox_ui.search_button.clicked.connect(lambda: self.search_button_clicked())
 
-    def credentials_button_clicked(self):
+    def settings_button_clicked(self):
         """
-        Validates and runs the credentials UI if validation successful
+        Validates and runs the settings UI if validation successful
         :return: None
         """
-        # can't change credentials during export
+        # can't change settings during export
         if self.dialog_tool.is_exporting():
-            self.iface.messageBar().pushMessage("Error", "Cannot alter credentials while export is running.",
+            self.iface.messageBar().pushMessage("Error", "Cannot alter settings while export is running.",
                                                 level=QgsMessageBar.CRITICAL)
         else:
-            CredentialsTool(self.iface)
+            SettingsTool(self.iface)
 
     def search_button_clicked(self):
         """

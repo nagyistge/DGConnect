@@ -19,6 +19,7 @@ GBD_PASSWORD = "gbd.password"
 GBD_API_KEY = "gbd.api.key"
 INSIGHTCLOUD_USERNAME = "insightcloud.username"
 INSIGHTCLOUD_PASSWORD = "insightcloud.password"
+MAX_ITEMS_TO_RETURN = "max.items.to.return"
 SELECT_FILE = "select.file"
 
 # file filter
@@ -29,6 +30,9 @@ VALIDATION_LAT_LOWER = -90.0
 VALIDATION_LAT_UPPER = 90.0
 VALIDATION_LONG_LOWER = -180.0
 VALIDATION_LONG_UPPER = 180.0
+
+VALIDATION_MIN_EXPORT = 1
+VALIDATION_MAX_EXPORT = 150000
 
 # simple regex validator for data; make sure there's something there
 ENDS_WITH_SUFFIX_REGEX = re.compile(".+\." + DEFAULT_SUFFIX + "$")
@@ -89,10 +93,16 @@ def load_settings(ui):
 
     ui.username.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME))
     ui.password.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD))
+    ui.max_items_to_return.setText(read_setting(PLUGIN_NAME + "/" + MAX_ITEMS_TO_RETURN))
 
 def get_settings():
+    max_settings_to_return_str = read_setting(PLUGIN_NAME + "/" + MAX_ITEMS_TO_RETURN)
+    max_settings_to_return = None
+    if validate_is_int(max_settings_to_return_str):
+        max_settings_to_return = int(max_settings_to_return_str)
     return read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME), \
-           read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD)
+           read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD), \
+           max_settings_to_return
 
 def save_settings_clicked(ui, iface, dialog):
     """
@@ -103,12 +113,13 @@ def save_settings_clicked(ui, iface, dialog):
     if validate_save_settings(ui, iface):
         write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME, ui.username.text())
         write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD, ui.password.text())
+        write_setting(PLUGIN_NAME + "/" + MAX_ITEMS_TO_RETURN, ui.max_items_to_return.text())
         iface.messageBar().pushMessage("Info", "InsightCloud settings saved successfully!")
         dialog.accept()
 
 def validate_settings_clicked(ui, iface):
     if validate_save_settings(ui, iface):
-        iface.messageBar().pushMessage("Info", "Entered credentials have been validated successfully!")
+        iface.messageBar().pushMessage("Info", "Entered settings have been validated successfully!")
 
 
 def select_file_clicked(ui):
@@ -175,24 +186,39 @@ def validate_info(ui, errors):
         query.log_into_monocle_3()
         if not query.is_login_successful:
             errors.append("Unable to verify InsightCloud credentials. See logs for more details.")
+    # validate max items to return
+    max_items_to_return = ui.max_items_to_return
+    if is_field_empty(max_items_to_return):
+        errors.append("No Max Items to Return provided.")
+    elif validate_is_int(max_items_to_return.text()):
+        max_items_to_return_int = int(max_items_to_return.text())
+        if max_items_to_return_int < VALIDATION_MIN_EXPORT:
+            errors.append("Supplied Max Items to Return (" + max_items_to_return.text() + ") is below threshold of "
+                          + str(VALIDATION_MIN_EXPORT))
+        elif max_items_to_return_int > VALIDATION_MAX_EXPORT:
+            errors.append("Supplied Max Items to Return (" + max_items_to_return.text() + ") is above threshold of "
+                          + str(VALIDATION_MAX_EXPORT))
+    else:
+        errors.append("Supplied Max Items to Return (" + max_items_to_return.text() + ") is not an integer.")
 
-def validate_stored_settings(iface, username, password):
+def validate_stored_settings(iface, username, password, max_items_to_return):
     """
-    Validates the username and password in the stored settings
+    Validates the settings in the stored settings
     :param iface: QGIS interface to push messages to
     :param username: Username for CAS Authentication
     :param password: Password for CAS Authentication
+    :param max_items_to_return: Max items to return for export
     :return: True if no problems; False otherwise
     """
     errors = []
-    if validate_stored_info(username, password, errors):
-        iface.messageBar().pushMessage("Info", "Successfully checked credentials. Launching queries...")
+    if validate_stored_info(username, password, max_items_to_return, errors):
+        iface.messageBar().pushMessage("Info", "Successfully checked settings. Launching queries...")
         return True
     else:
-        iface.messageBar().pushMessage("Error", "Unable to validate credentials due to:\n" + "\n".join(errors))
+        iface.messageBar().pushMessage("Error", "Unable to validate settings due to:\n" + "\n".join(errors))
         return False
 
-def validate_stored_info(username, password, errors):
+def validate_stored_info(username, password, max_items_to_return, errors):
     """
     Validates the username and password in the stored setting, writing any errors to the provided list
     :param username: Username for CAS Authentication
@@ -214,6 +240,9 @@ def validate_stored_info(username, password, errors):
         if not query.is_login_successful:
             errors.append("Unable to verify InsightCloud credentials. See logs for details.")
             is_field_good = False
+    if not max_items_to_return or max_items_to_return < VALIDATION_MIN_EXPORT or max_items_to_return \
+            > VALIDATION_MAX_EXPORT:
+        is_field_good = False
     return is_field_good
 
 
@@ -289,8 +318,24 @@ def validate_is_float(str_value):
     :param str_value: The string value
     :return: True if yes; False if no
     """
+    if not str_value or len(str_value) == 0:
+        return False
     try:
         float_value = float(str_value)
+        return True
+    except ValueError, e:
+        return False
+
+def validate_is_int(str_value):
+    """
+    Checks if a string can be converted to an int
+    :param str_value: The string value
+    :return: True if yes; False if no
+    """
+    if not str_value or len(str_value) == 0:
+        return False
+    try:
+        int_value = int(str_value)
         return True
     except ValueError, e:
         return False

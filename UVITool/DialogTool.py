@@ -41,10 +41,8 @@ FILE_POINTS = u'points.json'
 FILE_POLYGON = u'polygon.json'
 FILE_LINE = u'line.json'
 
-MAX_EXPORT = 50000000000
-
 GEOJSON_BEGINNING = '{"type": "FeatureCollection", "features": ['
-GEOJSON_ENDING = ']}'
+GEOJSON_ENDING = '\n]}'
 
 class DialogTool(QObject):
     """
@@ -203,7 +201,7 @@ class DialogTool(QObject):
             should_add = True
             self.items[source][type_key] = []
         if should_add:
-            username, password = UVIToolProcessForm.get_settings()
+            username, password, max_items_to_return = UVIToolProcessForm.get_settings()
             item_params = InsightCloudItemsParams(type_params.sources_params,
                                                   source, type_key)
             item_runnable = ItemRunnable(username, password, item_params)
@@ -255,12 +253,14 @@ class DialogTool(QObject):
             self.json_progress.setValue(self.json_progress.value() + 1)
         if new_items:
             for polygon in new_items[KEY_POLYGON]:
+                self.polygon_file.write(u"\n")
                 if self.written_first_polygon:
                     self.polygon_file.write(u",")
                 else:
                     self.written_first_polygon = True
                 self.polygon_file.write(polygon)
             for line in new_items[KEY_LINE]:
+                self.line_file.write(u"\n")
                 if self.written_first_line:
                     self.line_file.write(u",")
                 else:
@@ -268,6 +268,7 @@ class DialogTool(QObject):
                 self.line_file.write(line)
 
             for point in new_items[KEY_POINT]:
+                self.point_file.write(u"\n")
                 if self.written_first_point:
                     self.point_file.write(u",")
                 else:
@@ -419,9 +420,9 @@ class DialogTool(QObject):
         """
         self.search_thread_pool.waitForDone(0)
         # self.init_vector_layers()
-        username, password = UVIToolProcessForm.get_settings()
+        username, password, max_items_to_return = UVIToolProcessForm.get_settings()
         errors = []
-        UVIToolProcessForm.validate_stored_info(username, password, errors)
+        UVIToolProcessForm.validate_stored_info(username, password, max_items_to_return, errors)
         if len(errors) == 0:
             source_runnable = SourceRunnable(username, password, DEFAULT_ORDER_PARAMS)
             source_runnable.source_object.task_complete.connect(self.on_new_source)
@@ -448,8 +449,8 @@ class DialogTool(QObject):
         self.written_first_point = False
         self.written_first_polygon = False
 
-        username, password = UVIToolProcessForm.get_settings()
-        if UVIToolProcessForm.validate_stored_settings(self.iface, username, password):
+        username, password, max_items_to_return = UVIToolProcessForm.get_settings()
+        if UVIToolProcessForm.validate_stored_settings(self.iface, username, password, max_items_to_return):
             source_runnable = SourceRunnable(username, password, search_params)
             source_runnable.source_object.task_complete.connect(self.on_new_source)
             self.init_progress_bar()
@@ -461,7 +462,7 @@ class DialogTool(QObject):
         :param geometry_params: The InsightCloudGeometryParams for the search
         :return: None
         """
-        username, password = UVIToolProcessForm.get_settings()
+        username, password, max_items_to_return = UVIToolProcessForm.get_settings()
         geometry_runnable = GeometryRunnable(username, password, geometry_params)
         geometry_runnable.geometry_object.task_complete.connect(self.on_new_geometries)
         self.init_progress_bar()
@@ -473,7 +474,7 @@ class DialogTool(QObject):
         :param types_params: The InsightCloudTypesParams for the search
         :return: None
         """
-        username, password = UVIToolProcessForm.get_settings()
+        username, password, max_items_to_return = UVIToolProcessForm.get_settings()
         types_runnable = TypeRunnable(username, password, types_params)
         types_runnable.type_object.task_complete.connect(self.on_new_types)
         self.init_progress_bar()
@@ -485,7 +486,7 @@ class DialogTool(QObject):
         :param items_params: The InsightCloudItemsParams for the search
         :return: None
         """
-        username, password = UVIToolProcessForm.get_settings()
+        username, password, max_items_to_return = UVIToolProcessForm.get_settings()
         items_runnable = ItemRunnable(username, password, items_params)
         items_runnable.item_object.task_complete.connect(self.on_new_items)
         self.init_progress_bar()
@@ -563,7 +564,7 @@ class DialogTool(QObject):
 
         self.init_json_progress_bar(bar_max)
 
-        username, password = UVIToolProcessForm.get_settings()
+        username, password, max_items_to_return = UVIToolProcessForm.get_settings()
 
         # create file handlers
         self.polygon_file = open(polygon_file, 'w')
@@ -613,8 +614,8 @@ class DialogTool(QObject):
         """
         errors = []
         # validate settings
-        username, password = UVIToolProcessForm.get_settings()
-        UVIToolProcessForm.validate_stored_info(username, password, errors)
+        username, password, max_items_to_return = UVIToolProcessForm.get_settings()
+        UVIToolProcessForm.validate_stored_info(username, password, max_items_to_return, errors)
         # must ensure there's something to export
         if not self.dialog_base.types_list_view.model() or not self.dialog_base.data_sources_list_view.model():
             errors.append("Please search for data before attempting to export.")
@@ -629,8 +630,9 @@ class DialogTool(QObject):
         for type_entry, type_item in self.types_dict.iteritems():
             if type_item.is_checked():
                 total_to_export += type_item.total_count
-            if total_to_export > MAX_EXPORT:
-                errors.append("Number to export exceeds max of " + str(MAX_EXPORT) + ". Please refine your search.")
+            if total_to_export > max_items_to_return:
+                errors.append("Number to export exceeds max of " + str(max_items_to_return)
+                              + ". Please refine your search.")
                 break
 
         if len(errors) > 0:

@@ -1,12 +1,12 @@
 __author__ = 'mtrotter'
 
-from UVITool_Credentials import Ui_Credentials
+from UVITool_Settings import Ui_Settings
 from PyQt4.QtGui import QDialog
 import UVIToolProcessForm
 
-class CredentialsTool:
+class SettingsTool:
     """
-    Tool for managing CAS credentials
+    Tool for managing settings like CAS credentials and max items to return
     """
 
     def __init__(self, iface):
@@ -16,7 +16,7 @@ class CredentialsTool:
         :return: CredentialsTool
         """
         self.iface = iface
-        self.dialog = CredientialsDialog()
+        self.dialog = SettingsDialog()
         UVIToolProcessForm.load_settings(self.dialog.ui)
         self.dialog.ui.validate_button.clicked.connect(lambda:
                                                        UVIToolProcessForm.validate_settings_clicked(self.dialog.ui,
@@ -28,16 +28,16 @@ class CredentialsTool:
         self.dialog.show()
 
 
-class CredientialsDialog(QDialog):
+class SettingsDialog(QDialog):
     """
-    Dialog for handling the CAS credentials
+    Dialog for handling the settings
     """
 
     def __init__(self):
         """
         Constructor
-        :return: CredentialsDialog
+        :return: SettingsDialog
         """
         QDialog.__init__(self)
-        self.ui = Ui_Credentials()
+        self.ui = Ui_Settings()
         self.ui.setupUi(self)
