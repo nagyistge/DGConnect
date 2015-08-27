@@ -188,6 +188,7 @@ class UVITool:
                 self.tr(u'&UVITool'),
                 action)
             self.iface.removeToolBarIcon(action)
+        self.bbox_tool.reset()
         # remove the tool
         self.iface.mapCanvas().unsetMapTool(self.bbox_tool)
         # remove the toolbar
