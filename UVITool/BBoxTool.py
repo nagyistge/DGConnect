@@ -11,15 +11,22 @@ import UVIToolProcessForm
 
 
 class BBoxTool(QgsMapToolEmitPoint):
+    """
+    Tool to draw rectangles on a map and update the Ui_DGConnect GUI
+    """
+
     new_top = pyqtSignal(str)
     new_bottom = pyqtSignal(str)
     new_left = pyqtSignal(str)
     new_right = pyqtSignal(str)
 
-    """
-    Tool to draw rectangles on a map and update the Ui_DGConnect GUI
-    """
     def __init__(self, iface, bbox_ui):
+        """
+        Constructor
+        :param iface: QGIS Interface
+        :param bbox_ui: The Boundary Box GUI
+        :return: BBoxTool
+        """
         QgsMapToolEmitPoint.__init__(self, iface.mapCanvas())
         self.dialog_tool = None
         self.iface = iface
@@ -53,6 +60,10 @@ class BBoxTool(QgsMapToolEmitPoint):
         self.bbox_ui.search_button.clicked.connect(lambda: self.search_button_clicked())
 
     def credentials_button_clicked(self):
+        """
+        Validates and runs the credentials UI if validation successful
+        :return: None
+        """
         # can't change credentials during export
         if self.dialog_tool.is_exporting():
             self.iface.messageBar().pushMessage("Error", "Cannot alter credentials while export is running.",
@@ -61,6 +72,10 @@ class BBoxTool(QgsMapToolEmitPoint):
             CredentialsTool(self.iface)
 
     def search_button_clicked(self):
+        """
+        Validates and runs the search if validation successful
+        :return: None
+        """
         # can't run search during export
         if self.dialog_tool.is_exporting():
             self.iface.messageBar().pushMessage("Error", "Cannot run search while export is running.",

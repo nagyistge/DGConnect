@@ -5,7 +5,16 @@ from PyQt4.QtGui import QDialog
 import UVIToolProcessForm
 
 class CredentialsTool:
+    """
+    Tool for managing CAS credentials
+    """
+
     def __init__(self, iface):
+        """
+        Constructor
+        :param iface: QGIS Interface
+        :return: CredentialsTool
+        """
         self.iface = iface
         self.dialog = CredientialsDialog()
         UVIToolProcessForm.load_settings(self.dialog.ui)
@@ -20,7 +29,15 @@ class CredentialsTool:
 
 
 class CredientialsDialog(QDialog):
+    """
+    Dialog for handling the CAS credentials
+    """
+
     def __init__(self):
+        """
+        Constructor
+        :return: CredentialsDialog
+        """
         QDialog.__init__(self)
         self.ui = Ui_Credentials()
         self.ui.setupUi(self)

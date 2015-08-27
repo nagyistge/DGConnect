@@ -177,6 +177,13 @@ def validate_info(ui, errors):
             errors.append("Unable to verify InsightCloud credentials. See logs for more details.")
 
 def validate_stored_settings(iface, username, password):
+    """
+    Validates the username and password in the stored settings
+    :param iface: QGIS interface to push messages to
+    :param username: Username for CAS Authentication
+    :param password: Password for CAS Authentication
+    :return: True if no problems; False otherwise
+    """
     errors = []
     if validate_stored_info(username, password, errors):
         iface.messageBar().pushMessage("Info", "Successfully checked credentials. Launching queries...")
@@ -186,6 +193,13 @@ def validate_stored_settings(iface, username, password):
         return False
 
 def validate_stored_info(username, password, errors):
+    """
+    Validates the username and password in the stored setting, writing any errors to the provided list
+    :param username: Username for CAS Authentication
+    :param password: Password for CAS Authentication
+    :param errors: List of errors
+    :return: True if all validation passes; False if there are errors
+    """
     # check insightcloud credentials
     is_field_good = True
     if not username or len(username) == 0:

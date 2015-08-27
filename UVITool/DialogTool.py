@@ -47,34 +47,57 @@ GEOJSON_BEGINNING = '{"type": "FeatureCollection", "features": ['
 GEOJSON_ENDING = ']}'
 
 class DialogTool(QObject):
+    """
+    Tool for managing the search and export functionality
+    """
+
     def clear_widgets(self):
+        """
+        Clears the progress bar for the UVI searches
+        :return: None
+        """
         self.progress_message_bar = None
         self.iface.messageBar().clearWidgets()
 
     def on_sort_complete(self):
-        if self.thread_pool.activeThreadCount() == 0:
+        """
+        Callback function for searches; will clear dialogs if the searches are done
+        :return: None
+        """
+        if self.search_thread_pool.activeThreadCount() == 0:
             self.clear_widgets()
 
     def on_task_complete(self):
-        if self.thread_pool.activeThreadCount() == 0:
+        """
+        Callback function for when a search item is done processing; checks to see if the searches are before
+        processing
+        :return: None
+        """
+        if self.search_thread_pool.activeThreadCount() == 0:
             source_model = self.dialog_base.data_sources_list_view.model()
             if source_model:
                 source_thread = SortRunnable(source_model)
                 source_thread.sort_object.task_complete.connect(self.on_sort_complete)
-                self.thread_pool.start(source_thread)
+                self.search_thread_pool.start(source_thread)
             geometry_model = self.dialog_base.geometry_list_view.model()
             if geometry_model:
                 geometry_thread = SortRunnable(geometry_model)
                 geometry_thread.sort_object.task_complete.connect(self.on_sort_complete)
-                self.thread_pool.start(geometry_thread)
+                self.search_thread_pool.start(geometry_thread)
             types_model = self.dialog_base.types_list_view.model()
             if types_model:
                 type_thread = SortRunnable(types_model)
                 type_thread.sort_object.task_complete.connect(self.on_sort_complete)
-                self.thread_pool.start(type_thread)
+                self.search_thread_pool.start(type_thread)
 
     @pyqtSlot(object, object)
     def on_new_source(self, source_params, new_sources):
+        """
+        Callback for a new source; inserts it to the sources list view
+        :param source_params: InsightCloudSourcesParams holding the search params for the sources
+        :param new_sources: The new source data in a dictionary
+        :return: None
+        """
         if new_sources:
             new_model = False
             model = self.dialog_base.data_sources_list_view.model()
@@ -99,6 +122,12 @@ class DialogTool(QObject):
 
     @pyqtSlot(object, object)
     def on_new_geometries(self, geometry_params, new_geometries):
+        """
+        Callback function for new geometries; adds it to the UI
+        :param geometry_params: InsightCloudGeometryParams holding the search params for the geometries
+        :param new_geometries: The new geometry data in a dictionary
+        :return: None
+        """
         if new_geometries:
             new_model = False
             model = self.dialog_base.geometry_list_view.model()
@@ -126,6 +155,12 @@ class DialogTool(QObject):
 
     @pyqtSlot(object, object)
     def on_new_types(self, types_params, new_types):
+        """
+        Callback function for adding new types to the UI
+        :param types_params: The InsightCloudTypesParams used for running the search
+        :param new_types: The new types data in a dictionary
+        :return: None
+        """
         if new_types:
             new_model = False
             model = self.dialog_base.types_list_view.model()
@@ -153,6 +188,13 @@ class DialogTool(QObject):
         self.on_task_complete()
 
     def start_new_item(self, source, type_key, type_params):
+        """
+        Function for testing if a new type query should be run; tests if the source and type have already been run
+        :param source: The source name to use for the query
+        :param type_key: The type name to use for the query
+        :param type_params: The parameters from the type search
+        :return: None
+        """
         should_add = False
         if source not in self.items.keys():
             should_add = True
@@ -166,10 +208,16 @@ class DialogTool(QObject):
                                                   source, type_key)
             item_runnable = ItemRunnable(username, password, item_params)
             item_runnable.item_object.task_complete.connect(self.on_new_items)
-            self.thread_pool.start(item_runnable)
+            self.search_thread_pool.start(item_runnable)
 
     @pyqtSlot(object, object)
     def on_new_items(self, items_params, new_items):
+        """
+        Callback function for adding new items to the UI (not scalable)
+        :param items_params: The InsightCloudItemParams used for the item query
+        :param new_items: The dictionary holding the list of ItemFeatures broken up by geometry
+        :return: None
+        """
         if new_items:
             self.point_vector_layer.startEditing()
             self.line_vector_layer.startEditing()
@@ -197,6 +245,12 @@ class DialogTool(QObject):
 
     @pyqtSlot(object, object)
     def on_new_json_items(self, items_params, new_items):
+        """
+        Callback function for adding new json items to the exported GeoJSON files
+        :param items_params: The parameters used for the query
+        :param new_items: The dictionary holding the lists of json strings to add; broken up by geometry type
+        :return: None
+        """
         if self.json_progress_message_bar:
             self.json_progress.setValue(self.json_progress.value() + 1)
         if new_items:
@@ -223,6 +277,12 @@ class DialogTool(QObject):
         self.on_new_json_task_complete()
 
     def on_new_json_task_complete(self):
+        """
+        Callback function for testing if we're done with the GeoJSON export
+        (probably not since the timeouts can take awhile)
+        Resets the UI when it is actually done
+        :return: None
+        """
         if self.json_thread_pool.activeThreadCount() > 0:
             self.json_progress.setValue(self.json_progress.value() + 1)
         else:
@@ -255,6 +315,13 @@ class DialogTool(QObject):
             self.directory = None
 
     def __init__(self, iface, bbox_gui, dialog_base):
+        """
+        Constructor for the DialogTool
+        :param iface: The QGIS Interface
+        :param bbox_gui: The Boundary Box GUI
+        :param dialog_base: The Dialog GUI
+        :return: DialogTool
+        """
         QObject.__init__(self, None)
         self.iface = iface
         self.bbox_gui = bbox_gui
@@ -263,7 +330,7 @@ class DialogTool(QObject):
         self.geometries = {}
         self.types_dict = {}
         self.items = {}
-        self.thread_pool = QThreadPool()
+        self.search_thread_pool = QThreadPool()
         self.json_thread_pool = QThreadPool()
         self.progress_message_bar = None
         self.json_progress_message_bar = None
@@ -282,6 +349,10 @@ class DialogTool(QObject):
         self.written_first_polygon = False
 
     def init_progress_bar(self):
+        """
+        Sets up the progress bar for search functionality
+        :return: None
+        """
         if not self.progress_message_bar:
             self.progress_message_bar = self.iface.messageBar().createMessage("Querying for data")
             progress = QProgressBar()
@@ -292,6 +363,11 @@ class DialogTool(QObject):
             self.iface.messageBar().pushWidget(self.progress_message_bar, self.iface.messageBar().INFO)
 
     def init_json_progress_bar(self, bar_max):
+        """
+        Sets up the progress bar for exporting
+        :param bar_max: The max value for the progress bar
+        :return: None
+        """
         self.json_progress_message_bar = self.iface.messageBar().createMessage("Exporting json to " + self.directory)
         self.json_progress = QProgressBar()
         self.json_progress.setMinimum(0)
@@ -301,6 +377,10 @@ class DialogTool(QObject):
         self.iface.messageBar().pushWidget(self.json_progress_message_bar, self.iface.messageBar().INFO)
 
     def init_vector_layers(self):
+        """
+        Sets up the vector layers for rendering the items
+        :return: None
+        """
         if self.point_vector_layer:
             QgsMapLayerRegistry.instance().removeMapLayer(self.point_vector_layer.id())
         if self.line_vector_layer:
@@ -333,7 +413,11 @@ class DialogTool(QObject):
         polygon_data_provider.addAttributes(attribute_fields)
 
     def query_initial_sources(self):
-        self.thread_pool.waitForDone(0)
+        """
+        Queries the sources on load (not used)
+        :return: None
+        """
+        self.search_thread_pool.waitForDone(0)
         # self.init_vector_layers()
         username, password = UVIToolProcessForm.get_settings()
         errors = []
@@ -342,10 +426,15 @@ class DialogTool(QObject):
             source_runnable = SourceRunnable(username, password, DEFAULT_ORDER_PARAMS)
             source_runnable.source_object.task_complete.connect(self.on_new_source)
             self.init_progress_bar()
-            self.thread_pool.start(source_runnable)
+            self.search_thread_pool.start(source_runnable)
 
-    def query_sources(self, order_params):
-        self.thread_pool.waitForDone(0)
+    def query_sources(self, search_params):
+        """
+        Queries the sources when the user clicks search; first search to run
+        :param search_params: The InsightCloudSourcesParams for the search (the AOI)
+        :return: None
+        """
+        self.search_thread_pool.waitForDone(0)
         # self.init_vector_layers()
         # clear out old models
         self.dialog_base.data_sources_list_view.setModel(None)
@@ -361,34 +450,60 @@ class DialogTool(QObject):
 
         username, password = UVIToolProcessForm.get_settings()
         if UVIToolProcessForm.validate_stored_settings(self.iface, username, password):
-            source_runnable = SourceRunnable(username, password, order_params)
+            source_runnable = SourceRunnable(username, password, search_params)
             source_runnable.source_object.task_complete.connect(self.on_new_source)
             self.init_progress_bar()
-            self.thread_pool.start(source_runnable)
+            self.search_thread_pool.start(source_runnable)
 
     def query_geometries(self, geometry_params):
+        """
+        Queries the geometries using the geometry_params
+        :param geometry_params: The InsightCloudGeometryParams for the search
+        :return: None
+        """
         username, password = UVIToolProcessForm.get_settings()
         geometry_runnable = GeometryRunnable(username, password, geometry_params)
         geometry_runnable.geometry_object.task_complete.connect(self.on_new_geometries)
         self.init_progress_bar()
-        self.thread_pool.start(geometry_runnable)
+        self.search_thread_pool.start(geometry_runnable)
 
     def query_types(self, types_params):
+        """
+        Queries the types using the types_params
+        :param types_params: The InsightCloudTypesParams for the search
+        :return: None
+        """
         username, password = UVIToolProcessForm.get_settings()
         types_runnable = TypeRunnable(username, password, types_params)
         types_runnable.type_object.task_complete.connect(self.on_new_types)
         self.init_progress_bar()
-        self.thread_pool.start(types_runnable)
+        self.search_thread_pool.start(types_runnable)
 
     def query_items(self, items_params):
+        """
+        Queries the items using the items_params
+        :param items_params: The InsightCloudItemsParams for the search
+        :return: None
+        """
         username, password = UVIToolProcessForm.get_settings()
         items_runnable = ItemRunnable(username, password, items_params)
         items_runnable.item_object.task_complete.connect(self.on_new_items)
         self.init_progress_bar()
-        self.thread_pool.start(items_runnable)
+        self.search_thread_pool.start(items_runnable)
 
     def on_source_checked(self, source_item):
+        """
+        Callback function for when the user checks/unchecks a source item in the UI
+        Updates the counts of its children based on the action
+        :param source_item: The individual SourceItem in the UI
+        :return: None
+        """
+        # don't bother for non-checked events
         if not source_item.has_checked_changed():
+            return
+        # leave checked for as long as search is running
+        if self.is_searching():
+            source_item.setCheckState(Qt.Checked)
             return
         is_checked = source_item.current_state()
         for key, geometry in source_item.geometries.iteritems():
@@ -404,7 +519,18 @@ class DialogTool(QObject):
         source_item.update_checked()
 
     def on_geometry_check(self, geometry_item):
+        """
+        Callback function for when the user checks/unchecks a geometry item in the UI
+        Updates the counts of its children based on the action
+        :param geometry_item: The individual GeometryItem in the UI
+        :return:
+        """
+        # don't bother for non-checked events
         if not geometry_item.has_checked_changed():
+            return
+        # leave checked while search is running
+        if self.is_searching():
+            geometry_item.setCheckState(Qt.Checked)
             return
         is_checked = geometry_item.current_state()
         for key, type_entry in geometry_item.type_entries.iteritems():
@@ -415,6 +541,11 @@ class DialogTool(QObject):
         geometry_item.update_checked()
 
     def export(self):
+        """
+        Runs the items queries based on the checked items and writes the output to geojson files in the
+        directory specified
+        :return: None
+        """
         self.clear_widgets()
         if not self.validate_export():
             return
@@ -462,12 +593,24 @@ class DialogTool(QObject):
                     self.json_progress.setValue(self.json_progress.value() + len(self.types_dict.keys()))
 
     def is_exporting(self):
+        """
+        Check to see if the system is still exporting (checks if there's work in the json thread pool)
+        :return: True if exporting; False otherwise
+        """
         return self.json_thread_pool.activeThreadCount() > 0
 
     def is_searching(self):
-        return self.thread_pool.activeThreadCount() > 0
+        """
+        Check to see if the system is still searching (checks if there's work in the search thread pool)
+        :return: True if searching; False otherwise
+        """
+        return self.search_thread_pool.activeThreadCount() > 0
 
     def validate_export(self):
+        """
+        Validates the export information before running the export
+        :return: True if there are no problems; False if there are
+        """
         errors = []
         # validate settings
         username, password = UVIToolProcessForm.get_settings()
@@ -497,12 +640,20 @@ class DialogTool(QObject):
         return True
 
     def validate_directory(self, directory):
+        """
+        Validate the directory
+        :param directory:
+        :return:
+        """
         errors = []
+        # ensure the directory was actually given
+        if not directory:
+            errors.append("No output directory given.")
         # ensure directory exists
-        if not os.path.exists(directory):
+        elif not os.path.exists(directory):
             errors.append("Path: " + directory + " does not exist.")
         # ensure path is directory
-        if not os.path.isdir(directory):
+        elif not os.path.isdir(directory):
             errors.append("Path: " + directory + " is not a directory.")
         if len(errors) > 0:
             self.iface.messageBar().pushMessage("Error", "The following error(s) occurred:\n" + "\n".join(errors),
@@ -511,14 +662,27 @@ class DialogTool(QObject):
         return True
 
 class SourceObject(QObject):
+    """
+    QObject for holding the signal to emit new sources
+    """
     task_complete = pyqtSignal(object, object)
 
     def __init__(self, QObject_parent=None):
         QObject.__init__(self, QObject_parent)
 
 class SourceRunnable(QRunnable):
+    """
+    Thread pool worker task for running sources queries
+    """
 
     def __init__(self, username, password, source_params):
+        """
+        Constructor
+        :param username: Username for CAS authentication
+        :param password: Password for CAS authentication
+        :param source_params: InsightCloudSourceParams for the search
+        :return: SourceRunnable
+        """
         QRunnable.__init__(self)
         self.username = username
         self.password = password
@@ -526,18 +690,36 @@ class SourceRunnable(QRunnable):
         self.source_object = SourceObject()
 
     def run(self):
+        """
+        Runs the sources query and emits the results
+        :return: None
+        """
         query = InsightCloudQuery(self.username, self.password)
         new_sources = query.query_sources(source_params=self.source_params)
         self.source_object.task_complete.emit(self.source_params, new_sources)
 
 class GeometryObject(QObject):
+    """
+    QObject for holding the signal to emit new geometries
+    """
     task_complete = pyqtSignal(object, object)
 
     def __init__(self, QObject_parent=None):
         QObject.__init__(self, QObject_parent)
 
 class GeometryRunnable(QRunnable):
+    """
+    Thread pool task for running geometry queries
+    """
+
     def __init__(self, username, password, geometry_params):
+        """
+        Constructor
+        :param username: Username for CAS Authentication
+        :param password: Password for CAS Authentication
+        :param geometry_params: InsightCloudGeometryParams for the geometry search
+        :return: GeometryRunnable
+        """
         QRunnable.__init__(self)
         self.username = username
         self.password = password
@@ -545,18 +727,36 @@ class GeometryRunnable(QRunnable):
         self.geometry_object = GeometryObject()
 
     def run(self):
+        """
+        Runs the geometry query and emits the results
+        :return: None
+        """
         query = InsightCloudQuery(self.username, self.password)
         new_geometries = query.query_geometries(geometry_params=self.geometry_params)
         self.geometry_object.task_complete.emit(self.geometry_params, new_geometries)
 
 class TypeObject(QObject):
+    """
+    QObject for holding the signal to emit new types
+    """
     task_complete = pyqtSignal(object, object)
 
     def __init__(self, QObject_parent=None):
         QObject.__init__(self, QObject_parent)
 
 class TypeRunnable(QRunnable):
+    """
+    Thread pool task for running types queries
+    """
+
     def __init__(self, username, password, type_params):
+        """
+        Constructor
+        :param username: Username for CAS authentication
+        :param password: Password for CAS authentication
+        :param type_params: InsightCloudTypesParams for the types query
+        :return: TypeRunnable
+        """
         QRunnable.__init__(self)
         self.username = username
         self.password = password
@@ -564,18 +764,36 @@ class TypeRunnable(QRunnable):
         self.type_object = TypeObject()
 
     def run(self):
+        """
+        Runs the types query and emits the results
+        :return: None
+        """
         query = InsightCloudQuery(self.username, self.password)
         new_types = query.query_types(self.type_params)
         self.type_object.task_complete.emit(self.type_params, new_types)
 
 class ItemObject(QObject):
+    """
+    QObject for holding the signal to emit new items for rendering
+    """
     task_complete = pyqtSignal(object, object)
 
     def __init__(self, QObject_parent=None):
         QObject.__init__(self, QObject_parent)
 
 class ItemRunnable(QRunnable):
+    """
+    Thread pool task for querying items
+    """
+
     def __init__(self, username, password, item_params):
+        """
+        Constructor
+        :param username: Username for CAS authentication
+        :param password: Password for CAS authentication
+        :param item_params: InsightCloudItemParams for querying items
+        :return: ItemRunnable
+        """
         QRunnable.__init__(self)
         self.username = username
         self.password = password
@@ -583,11 +801,18 @@ class ItemRunnable(QRunnable):
         self.item_object = ItemObject()
 
     def run(self):
+        """
+        Runs the items query and emits the results
+        :return: None
+        """
         query = InsightCloudQuery(self.username, self.password)
         new_items = query.query_items(self.item_params)
         self.item_object.task_complete.emit(self.item_params, new_items)
 
 class SortObject(QObject):
+    """
+    QObject for holding the sort signal
+    """
     task_complete = pyqtSignal()
 
     def __init__(self, QObject_parent=None):
@@ -595,17 +820,32 @@ class SortObject(QObject):
 
 
 class SortRunnable(QRunnable):
+    """
+    Thread pool task for running the sort
+    """
     def __init__(self, model, ):
+        """
+        Constructor
+        :param model: The GUI model holding the view standard items to sort
+        :return: SortRunnable
+        """
         QRunnable.__init__(self)
         self.model = model
         self.sort_object = SortObject()
 
     def run(self):
+        """
+        Runs the sort and emits the signal that the model is done being sorted
+        :return:
+        """
         self.model.sort(0)
         self.sort_object.task_complete.emit()
 
 
 class JSONItemObject(QObject):
+    """
+    QObject for holding the signal for emitting new items in json format
+    """
     task_complete = pyqtSignal(object, object)
 
     def __init__(self, QObject_parent=None):
@@ -613,7 +853,17 @@ class JSONItemObject(QObject):
 
 
 class JSONItemRunnable(QRunnable):
+    """
+    Thread pool task for querying for items
+    """
     def __init__(self, username, password, items_params):
+        """
+        Constructor
+        :param username: Username for CAS authentication
+        :param password: Password for CAS authentication
+        :param items_params: The InsightCloudItemParams for querying for items
+        :return: JSONItemRunnable
+        """
         QRunnable.__init__(self)
         self.username = username
         self.password = password
@@ -621,12 +871,27 @@ class JSONItemRunnable(QRunnable):
         self.json_item_object = JSONItemObject()
 
     def run(self):
+        """
+        Runs the items query and emit the results
+        :return: None
+        """
         query = InsightCloudQuery(self.username, self.password)
         new_items = query.query_items(self.items_params, True)
         self.json_item_object.task_complete.emit(self.items_params, new_items)
 
 class SourceItem(QStandardItem):
+    """
+    Entry in the GUI list of sources
+    """
     def __init__(self, title, source_params, count, *__args):
+        """
+        Constructor
+        :param title: Name of the source (OSM, etc.)
+        :param source_params: The parameters used for running the search
+        :param count: The count in the UVI for the given source
+        :param __args: Additional args
+        :return: SourceItem
+        """
         QStandardItem.__init__(self, *__args)
         self._title = title
         self._count = count
@@ -654,16 +919,30 @@ class SourceItem(QStandardItem):
         return self._is_checked
 
     def current_state(self):
+        """
+        Gets the current state of the checkbox
+        :return: True if checked; False otherwise
+        """
         return self.checkState() == Qt.Checked
 
     def update_checked(self):
+        """
+        Updates the checked internal property
+        """
         self._is_checked = self.checkState() == Qt.Checked
 
     def has_checked_changed(self):
+        """
+        Checks if the checkbox has changed state (e.g. checked -> unchecked)
+        :return: True if it has changed state; False otherwise
+        """
         current_state = self.checkState() == Qt.Checked
         return self._is_checked != current_state
 
     def change_text(self):
+        """
+        Updates the current text for the item
+        """
         self.setText(WIDGET_TEXT_FMT % (self._title, self._count))
 
     def __hash__(self):
@@ -691,7 +970,16 @@ class SourceItem(QStandardItem):
         return cmp(self._title, other.title)
 
 class GeometryItem(QStandardItem):
+    """
+    Entry in the GUI list of geometries
+    """
     def __init__(self, title, *__args):
+        """
+        Constructor
+        :param title: Name of the geometry (Polygon, Point, etc.)
+        :param __args: Additional args
+        :return: Geometry Item
+        """
         QStandardItem.__init__(self, *__args)
         self._title = title
         self._counts = {}
@@ -713,16 +1001,30 @@ class GeometryItem(QStandardItem):
         return self._is_checked
 
     def current_state(self):
+        """
+        Gets the current checkbox state
+        :return: True if checked; False otherwise
+        """
         return self.checkState() == Qt.Checked
 
     def update_checked(self):
+        """
+        Updates the is_checked property with the current state
+        """
         self._is_checked = self.checkState() == Qt.Checked
 
     def has_checked_changed(self):
+        """
+        Checks to see if the checkbox has changed from checked to unchecked or vice versa
+        :return: True if it has; False otherwise
+        """
         current_state = self.checkState() == Qt.Checked
         return self._is_checked != current_state
 
     def update_count(self, source, count):
+        """
+        Updates the displayed count based on if the parent source(s) have been checked/unchecked
+        """
         if source in self._counts:
             self._total_count -= self._counts[source]
         self._counts[source] = count
@@ -730,16 +1032,27 @@ class GeometryItem(QStandardItem):
         self.change_text()
 
     def enable_source(self, source):
+        """
+        Updates the count if the parent source has been checked
+        :param source: The parent source
+        """
         if source in self._counts:
             self._total_count += self._counts[source]
             self.change_text()
 
     def disable_source(self, source):
+        """
+        Updates the count if the parent source has been unchecked
+        :param source: The parent source
+        """
         if source in self._counts:
             self._total_count -= self._counts[source]
             self.change_text()
 
     def change_text(self):
+        """
+        Updates the rendered text for the item
+        """
         self.setText(WIDGET_TEXT_FMT % (self._title, self._total_count))
 
     def __hash__(self):
@@ -767,7 +1080,17 @@ class GeometryItem(QStandardItem):
         return cmp(self._title, other.title)
 
 class TypesItem(QStandardItem):
+    """
+    Types entry in the GUI list of types
+    """
+
     def __init__(self, title, *__args):
+        """
+        Constructor
+        :param title: Name of the type
+        :param __args: Additional args
+        :return: TypesItem
+        """
         QStandardItem.__init__(self, *__args)
         self._title = title
         self._counts = {}
@@ -786,6 +1109,13 @@ class TypesItem(QStandardItem):
         return self.checkState() == Qt.Checked
 
     def update_count(self, source, geometry, count):
+        """
+        Updates the count given the parent source and geometry
+        :param source: The parent source
+        :param geometry: The parent geometry
+        :param count: The count to add
+        :return:
+        """
         if source in self._counts:
             if geometry in self._counts[source]:
                 self._total_count -= self._counts[source][geometry]
@@ -796,6 +1126,12 @@ class TypesItem(QStandardItem):
         self.change_text()
 
     def enable_source(self, source, geometries):
+        """
+        Updates the rendered count for the type when the parent source is checked
+        :param source: The source key
+        :param geometries: The list of geometry items
+        :return: None
+        """
         if source in self._counts.keys():
             for geometry_key in self._counts[source].keys():
                 if geometries[geometry_key].is_checked:
@@ -803,6 +1139,12 @@ class TypesItem(QStandardItem):
             self.change_text()
 
     def disable_source(self, source, geometries):
+        """
+        Updates the rendered count for the type when the parent source is unchecked
+        :param source: The source key
+        :param geometries: The list of geometries
+        :return: None
+        """
         if source in self._counts:
             for geometry_key in self._counts[source].keys():
                 if geometries[geometry_key].is_checked:
@@ -810,22 +1152,42 @@ class TypesItem(QStandardItem):
             self.change_text()
 
     def enable_geometry(self, geometry, sources):
+        """
+        Updates the rendered count for the type when the parent geometry is checked
+        :param geometry: The geometry key
+        :param sources: The list of sources
+        :return: None
+        """
         for source_key in self._counts.keys():
             if geometry in self._counts[source_key] and sources[source_key].is_checked:
                 self._total_count += self._counts[source_key][geometry]
         self.change_text()
 
     def disable_geometry(self, geometry, sources):
+        """
+        Updates the rendered count for the type when the parent geometry is unchecked
+        :param geometry:
+        :param sources:
+        :return:
+        """
         for source_key in self._counts.keys():
             if geometry in self._counts[source_key] and sources[source_key].is_checked:
                 self._total_count -= self._counts[source_key][geometry]
         self.change_text()
 
     def source_keys(self):
+        """
+        Generator for the source keys
+        :return: Source key
+        """
         for source_key in self._counts.keys():
             yield source_key
 
     def change_text(self):
+        """
+        Updates the text with the new count
+        :return: None
+        """
         self.setText(WIDGET_TEXT_FMT % (self._title, self._total_count))
 
     def __hash__(self):

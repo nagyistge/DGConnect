@@ -76,7 +76,7 @@ ITEMS_TO_RETURN = 500
 
 class InsightCloudSourcesParams:
     """
-    Class for holding query params for InsightCloud queries
+    Class for holding query params for InsightCloud source queries
     """
 
     def __init__(self, top, right, bottom, left, query=None):
@@ -87,6 +87,10 @@ class InsightCloudSourcesParams:
         self.query = query
 
 class InsightCloudGeometriesParams(InsightCloudSourcesParams):
+    """
+    Class for holding query params for InsightCloud geometry queries
+    """
+
     def __init__(self, sources_params, source):
         InsightCloudSourcesParams.__init__(self, sources_params.top, sources_params.right, sources_params.bottom,
                                            sources_params.left, sources_params.query)
@@ -94,12 +98,20 @@ class InsightCloudGeometriesParams(InsightCloudSourcesParams):
         self.source = source
 
 class InsightCloudTypesParams(InsightCloudGeometriesParams):
+    """
+    Class for holding query params for InsightCloud types queries
+    """
+
     def __init__(self, geometries_params, geometry):
         InsightCloudGeometriesParams.__init__(self, geometries_params.sources_params, geometries_params.source)
         self.geometries_params = geometries_params
         self.geometry = geometry
 
 class InsightCloudItemsParams(InsightCloudSourcesParams):
+    """
+    Class for holding query params for InsightCloud items queries
+    """
+
     def __init__(self, sources_params, source, type_name):
         InsightCloudSourcesParams.__init__(self, sources_params.top, sources_params.right, sources_params.bottom,
                                            sources_params.left, sources_params.query)
@@ -197,6 +209,11 @@ class InsightCloudQuery:
         return None
 
     def prep_param(self, param):
+        """
+        Strips slashes from the params used for query
+        :param param: The parameter
+        :return: The stripped parameter
+        """
         new_param = param.replace(SLASH, '')
         return urllib.quote(new_param, safe='')
 
@@ -211,12 +228,22 @@ class InsightCloudQuery:
         return self.make_query(sources_url)
 
     def query_geometries(self, geometry_params):
+        """
+        Queries geometries and returns a dictionary of (geometry => count)
+        :param geometry_params: The params for the geometry query
+        :return: A dictionary of (geometry => count) if there are results
+        """
         geometries_url = GEOMETRY_QUERY.substitute(upper=str(geometry_params.top), lower=str(geometry_params.bottom),
                                               left=str(geometry_params.left), right=str(geometry_params.right),
                                               source=self.prep_param(str(geometry_params.source)))
         return self.make_query(geometries_url)
     
     def query_types(self, types_params):
+        """
+        Queries types and returns a dictionary of (types => count)
+        :param types_params: The params for the types query
+        :return: A dictionary of (type => count) if there are results
+        """
         types_url = TYPES_QUERY.substitute(upper=str(types_params.top), lower=str(types_params.bottom),
                                            left=str(types_params.left), right=str(types_params.right),
                                            source=self.prep_param(str(types_params.source)),
@@ -224,6 +251,12 @@ class InsightCloudQuery:
         return self.make_query(types_url)
 
     def query_items(self, items_params, json_export=False):
+        """
+        Queries items and returns a list of items
+        :param items_params: The params for the items query
+        :param json_export: Boolean if this is exporting to JSON or not
+        :return: A list of items or None if the search is unsuccessful
+        """
         paging_url = ITEMS_GET_PAGING_ID.substitute(upper=str(items_params.top), lower=str(items_params.bottom),
                                                     left=str(items_params.left), right=str(items_params.right),
                                                     source=urllib.quote(str(items_params.source), safe=''),
@@ -233,6 +266,11 @@ class InsightCloudQuery:
         return self.make_paging_query(paging_url, json_export)
 
     def make_query(self, url):
+        """
+        Runs a source/geometry/type query and returns the results
+        :param url: The url to query
+        :return: A dictionary of name => count if successful; None if not
+        """
         response = None
         for i in range(0, NUM_TIMES_TO_TRY):
             try:
@@ -250,6 +288,12 @@ class InsightCloudQuery:
         return None
 
     def make_paging_query(self, url, json_export):
+        """
+        Runs an item query and returns the results
+        :param url: The url to query
+        :param json_export: True if exporting; False if rendering
+        :return: A list of items if successful; None if not
+        """
         response = None
         for i in range(0, NUM_TIMES_TO_TRY):
             try:
@@ -270,6 +314,12 @@ class InsightCloudQuery:
         return None
 
     def query_for_pages(self, paging_id, json_export):
+        """
+        Runs paging queries until there is nothing left to find
+        :param paging_id: The pagingId for the intial page
+        :param json_export: True if exporting to JSON; False if rendering
+        :return: A list of returned items if successful; None if not
+        """
         response = None
         total_data = {
             KEY_POINT: [],
@@ -323,12 +373,22 @@ class InsightCloudQuery:
         return processed_data
 
     def process_paging_request(self, response):
+        """
+        Extracts the initial pagingId from the response
+        :param response: The response to extract
+        :return: The paging id
+        """
         json_data = json.loads(response, strict=False)
         if not json_data or KEY_JSON_PAGING_ID not in json_data:
             return None
         return json_data[KEY_JSON_PAGING_ID]
 
     def process_paging_json_data(self, response, json_export):
+        """
+        Extracts the json information from the response
+        :param response: The response from the server
+        :param json_export: True if exporting to JSON; False if rendering
+        """
         new_data = {
             KEY_POINT: [],
             KEY_LINE: [],
@@ -359,6 +419,12 @@ class InsightCloudQuery:
         return new_data
 
     def build_qgis_feature(self, vector_item):
+        """
+        Constructs a QGIS feature for rendering
+        :param vector_item: The item returned from the UVI
+        :return a UVIFeature that can be rendered by QGIS
+        """
+
         feature = UVIFeature()
         geometry = vector_item[KEY_JSON_GEOMETRY]
         coordinates = geometry[KEY_JSON_GEOMETRY_COORDINATES]
@@ -396,6 +462,11 @@ class InsightCloudQuery:
         return feature
 
     def build_geojson_entry(self, vector_item):
+        """
+        Constructs a GeoJSON object from the vector item
+        :param vector_item: The vector item returned by the REST call
+        :return: A GeoJSON holding the vector data
+        """
         entry = GeoJSONEntry()
         geometry = vector_item[KEY_JSON_GEOMETRY]
         geometry_type = geometry[KEY_JSON_GEOMETRY_TYPE]
@@ -405,27 +476,53 @@ class InsightCloudQuery:
         return entry
 
     def get_point_from_json(self, coordinates):
+        """
+        Converts a coordinates list to a QgsPoint
+        :param coordinates: The coordinates list
+        :return: QgsPoint for that pair of coordinates
+        """
         return QgsPoint(coordinates[1], coordinates[0])
 
     def get_linestring_from_json(self, coordinates):
+        """
+        Converts a line string list to a list of QgsPoints
+        :param coordinates: The coordinates from the GeoJSON
+        :return: List of QgsPoints
+        """
         points = []
         for coordinate in coordinates:
             points.append(self.get_point_from_json(coordinate))
         return points
 
     def get_polygon_from_json(self, coordinates):
+        """
+        Converts a polygon list of coordinates to a list of list of QgsPoints
+        :param coordinates: The coordinates from the GeoJSON
+        :return: List of List of QgsPoints
+        """
         points = []
         for coordinate in coordinates:
             points.append(self.get_linestring_from_json(coordinate))
         return points
 
     def get_multipolygon_from_json(self, coordinates):
+        """
+        Converts of a list of polygon coordinates to a list of list of list of QgsPoints
+        :param coordinates: The coordinates from the GeoJSON
+        :return: List of List of List of QgsPoints
+        """
         points = []
         for coordinate in coordinates:
             points.append(self.get_polygon_from_json(coordinate))
         return points
 
     def get_attributes_from_json(self, properties):
+        """
+        Converts to properties from the GeoJSON to match the esri format
+        Brings up attributes one level and prefixes the attributes and properties appropriately
+        :param properties: The properties map from the UVI
+        :return: A map containing the modified properties
+        """
         attributes = {}
         for main_attribute in KEY_JSON_PROPERTIES_LIST:
             if main_attribute in properties:
@@ -436,6 +533,11 @@ class InsightCloudQuery:
         return attributes
 
     def clean_properties_from_json(self, props):
+        """
+        Removes extra info from the GeoJSON for rendering
+        :param props: The properties map
+        :return: The cleaned up map
+        """
         new_properties = {}
         for prop in KEY_JSON_PROPERTIES_LIST:
             if prop in props:
@@ -445,11 +547,17 @@ class InsightCloudQuery:
         return new_properties
 
 class UVIFeature(QgsFeature):
+    """
+    QgsFeature with special geometry_type used for filtering
+    """
     def __init__(self, *__args):
         QgsFeature.__init__(self, *__args)
         self.geometry_type = None
 
 class GeoJSONEntry:
+    """
+    Object representation of the GeoJSON used for export
+    """
     def __init__(self):
         self.geometry_type = None
         self.geometry = None
