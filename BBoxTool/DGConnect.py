@@ -60,6 +60,7 @@ class DGConnect:
         # Remove the plugin menu item and icon
         self.iface.removePluginMenu("&DGConnect", self.action)
         self.iface.removeToolBarIcon(self.action)
+        self.bbox.reset()
 
         # remove the bbox
         self.iface.mapCanvas().unsetMapTool(self.bbox)
