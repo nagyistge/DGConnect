@@ -40,9 +40,10 @@ def classFactory(iface):
     from DGConnect import DGConnect
     '''
     Debug settings
-    import sys
-    sys.path.insert(1, '/home/mtrotter/pycharm-debug.egg')
+    '''
+    import sys, os
+    sys.path.insert(1, os.path.expanduser('~') + '/pycharm-debug.egg')
     import pydevd
     pydevd.settrace('localhost', port=53100, stdoutToServer=True, stderrToServer=True)
-    '''
+
     return DGConnect(iface)

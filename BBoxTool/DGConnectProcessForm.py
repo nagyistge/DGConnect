@@ -1,18 +1,18 @@
 from qgis.gui import QgsMessageBar
+from PyQt4.QtGui import QMessageBox
 
 __author__ = 'Michael Trotter <michael.trotter@digitalglobe.com>'
 
 from PyQt4 import QtGui
-from PyQt4.QtCore import QSettings
+from PyQt4.QtCore import QSettings, QThreadPool
 from os.path import expanduser
 
 from GBDQuery import GBDQuery
 from InsightCloudQuery import InsightCloudQuery
-
-import re
 import CSVOutput
+import re
+from CSVOutput import CSVGenerator
 import os
-import subprocess
 
 # constants for plugin settings
 PLUGIN_NAME = "DGConnect"
@@ -31,8 +31,6 @@ VALIDATION_LAT_LOWER = -90.0
 VALIDATION_LAT_UPPER = 90.0
 VALIDATION_LONG_LOWER = -180.0
 VALIDATION_LONG_UPPER = 180.0
-
-DURATION = 30
 
 # simple regex validator for data; make sure there's something there
 ENDS_WITH_SUFFIX_REGEX = re.compile(".+\." + DEFAULT_SUFFIX + "$")
@@ -59,6 +57,11 @@ def write_setting(key, value):
     s = QSettings()
     s.setValue(key, value)
 
+def show_complete_message(file_name):
+    message = QMessageBox()
+
+    message.information(None, "CSV Write Complete", "CSV output to " + file_name + " is complete")
+
 def ok_clicked(ui):
     """
     Action performed when the ok button is clicked
@@ -66,19 +69,14 @@ def ok_clicked(ui):
     :return: None
     """
     if validate_ok(ui):
-        ui.dialog.message_bar.pushMessage("Info", "Starting query...", level=QgsMessageBar.INFO, duration=DURATION)
-        subprocess.Popen(["python", os.path.dirname(os.path.realpath(__file__)) + os.sep + "CSVOutput.py",
-                                          "--" + CSVOutput.ARG_LEFT, ui.left.text(),
-                                          "--" + CSVOutput.ARG_TOP, ui.top.text(),
-                                          "--" + CSVOutput.ARG_RIGHT, ui.right.text(),
-                                          "--" + CSVOutput.ARG_BOTTOM, ui.bottom.text(),
-                                          "--" + CSVOutput.ARG_CSV_FILENAME, ui.select_file.text(),
-                                          "--" + CSVOutput.ARG_GBD_API_KEY, ui.gbd_api_key.text(),
-                                          "--" + CSVOutput.ARG_GBD_USERNAME, ui.gbd_username.text(),
-                                          "--" + CSVOutput.ARG_GBD_PASSWORD, ui.gbd_password.text(),
-                                          "--" + CSVOutput.ARG_INSIGHTCLOUD_USERNAME, ui.insightcloud_username.text(),
-                                          "--" + CSVOutput.ARG_INSIGHTCLOUD_PASSWORD, ui.insightcloud_password.text(),
-                                          "--" + CSVOutput.ARG_DAYS_TO_QUERY, "60"])
+        csv_output = CSVGenerator(left=float(ui.left.text()), top=float(ui.top.text()),
+                                  right=float(ui.right.text()), bottom=float(ui.bottom.text()),
+                                  csv_filename=ui.select_file.text(), gbd_api_key=ui.gbd_api_key.text(),
+                                  gbd_username=ui.gbd_username.text(), gbd_password=ui.gbd_password.text(),
+                                  insightcloud_username=ui.insightcloud_username.text(),
+                                  insightcloud_password=ui.insightcloud_password.text())
+        csv_output.csv_generator_object.message_complete.connect(lambda file_name: show_complete_message(file_name))
+        QThreadPool.globalInstance().start(csv_output)
     else:
         ui.dialog.show()
 
@@ -240,7 +238,7 @@ def validate_output_path(ui, errors):
         errors.append("Output file must be a csv file.")
     # check if lock file exists
     elif os.path.exists(ui.select_file.text() + CSVOutput.LOCK_SUFFIX):
-        errors.append("Currently writing to csv file. Please wait until output is complete.")
+        errors.append("Lock file still exists. Please wait until output is complete or delete if output failed.")
 
 def validate_insightcloud_info(ui, errors):
     """

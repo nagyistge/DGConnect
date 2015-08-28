@@ -79,6 +79,7 @@ class GBDOrderParams:
         return POLYGON_TEMPLATE.substitute(top=str(self.top), right=(str(self.right)), bottom=str(self.bottom),
                                            left=str(self.left))
 
+
 class GBDQuery:
     """
     Class for querying GBD raster data

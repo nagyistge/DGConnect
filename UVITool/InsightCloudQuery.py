@@ -136,7 +136,7 @@ class InsightCloudQuery:
         :param response: The HTTP response received
         :return: True if the responses' url points to the log in page; else False
         """
-        return response and URL_CAS_LOGIN_SEGMENT in response.geturl()
+        return response is not None and URL_CAS_LOGIN_SEGMENT in response.geturl()
 
     @classmethod
     def build_form_info(cls, response_url, form_data):
