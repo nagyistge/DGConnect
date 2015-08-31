@@ -1,3 +1,5 @@
+from multiprocessing import Lock
+
 __author__ = 'Michael Trotter <michael.trotter@digitalglobe.com>'
 
 from datetime import datetime, timedelta
@@ -5,8 +7,8 @@ from datetime import datetime, timedelta
 from GBDQuery import GBDOrderParams
 from InsightCloudQuery import InsightCloudParams
 
-from PyQt4.QtGui import QProgressDialog, QMessageBox, QProgressBar
-from PyQt4.QtCore import QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal, Qt
+from PyQt4.QtGui import QProgressDialog
+from PyQt4.QtCore import QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal
 
 from GBDQuery import GBDQuery
 from InsightCloudQuery import InsightCloudQuery
@@ -91,20 +93,24 @@ class CSVGeneratorObject(QObject):
 
     @pyqtSlot(object)
     def callback(self, csv_element):
-        log.warn("Received: " + str(csv_element))
+        log.info("Received: " + str(csv_element))
         if csv_element:
             self.generator.csv_elements.append(csv_element)
             self.generator.current_progress += INCREMENTAL_INTERVAL
             if self.generator.progress_dialog:
                 self.generator.progress_dialog.setValue((int(self.generator.current_progress)))
+        thread_count = 0
+        with self.generator.lock:
+            thread_count = self.generator.pool.activeThreadCount()
+        if self.generator.finished_submissions and thread_count == 0:
+            self.generator.on_completion()
 
 
 
-class CSVGenerator(QRunnable):
+class CSVGenerator:
 
     def __init__(self, left, top, right, bottom, csv_filename, gbd_api_key, gbd_username,
                  gbd_password, insightcloud_username, insightcloud_password, days_to_query=60):
-        QRunnable.__init__(self)
         self.left = left
         self.top = top
         self.right = right
@@ -144,8 +150,9 @@ class CSVGenerator(QRunnable):
 
         self.pool = QThreadPool()
 
-    def run(self):
-        self.generate_csv()
+        self.finished_submissions = False
+
+        self.lock = Lock()
 
     def generate_csv(self):
         # dates
@@ -180,10 +187,11 @@ class CSVGenerator(QRunnable):
             current_y = self.bottom
             current_x = next_x
 
-        self.pool.waitForDone(-1)
+        self.finished_submissions = True
 
+    def on_completion(self):
         self.csv_elements.sort(key=lambda element: element.serial_no)
-        log.warn("Sort complete")
+        log.info("Sort complete")
         # write file
         csv_file = open(self.csv_filename, 'w')
         # write the header
@@ -195,18 +203,17 @@ class CSVGenerator(QRunnable):
             csv_file.write("\n")
 
         csv_file.close()
-        log.warn("Write complete")
+        log.info("Write complete")
 
         # remove lock
         if os.path.exists(self.csv_lock_filename):
             os.remove(self.csv_lock_filename)
-        log.warn("Removal of lock file complete")
+        log.info("Removal of lock file complete")
 
         if self.progress_dialog:
             self.progress_dialog.close()
 
         self.csv_generator_object.message_complete.emit(self.csv_filename)
-
 
 
 class CSVObject(QObject):
@@ -245,24 +252,24 @@ class CSVRunnable(QRunnable):
 
         gbd_query = GBDQuery(auth_token=self.auth_token, username=self.gbd_username,
                              password=self.gbd_password)
-        log.warn("Starting GBD Query with params: " + str(gbd_params.__dict__))
+        log.info("Starting GBD Query with params: " + str(gbd_params.__dict__))
         gbd_query.log_in()
         gbd_query.hit_test_endpoint()
 
         # build insightcloud query
         insightcloud_query = InsightCloudQuery(username=self.insightcloud_username,
                                                password=self.insightcloud_password)
-        log.warn("Starting InsightCloud queries with params: " + str(insightcloud_params.__dict__))
+        log.info("Starting InsightCloud queries with params: " + str(insightcloud_params.__dict__))
         insightcloud_query.log_into_monocle_3()
     
         gbd_query.do_aoi_search(gbd_params, csv_element)
-        log.warn("GBD Query complete for args: " + str(gbd_params.__dict__))
+        log.info("GBD Query complete for args: " + str(gbd_params.__dict__))
         insightcloud_query.query_osm(insightcloud_params, csv_element)
-        log.warn("OSM Query complete for args: " + str(insightcloud_params.__dict__))
+        log.info("OSM Query complete for args: " + str(insightcloud_params.__dict__))
         insightcloud_query.query_twitter(insightcloud_params, csv_element)
-        log.warn("Twitter Query complete for args: " + str(insightcloud_params.__dict__))
+        log.info("Twitter Query complete for args: " + str(insightcloud_params.__dict__))
         insightcloud_query.query_rss(insightcloud_params, csv_element)
-        log.warn("RSS Query complete for args: " + str(insightcloud_params.__dict__))
+        log.info("RSS Query complete for args: " + str(insightcloud_params.__dict__))
 
         self.csv_object.new_csv_element.emit(csv_element)
 

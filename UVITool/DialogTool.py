@@ -1,4 +1,5 @@
 import json
+from multiprocessing import Lock
 from qgis._core import QgsCoordinateReferenceSystem, QgsField
 from qgis._gui import QgsMessageBar
 
@@ -62,7 +63,7 @@ class DialogTool(QObject):
         Callback function for searches; will clear dialogs if the searches are done
         :return: None
         """
-        if self.search_thread_pool.activeThreadCount() == 0:
+        if self.get_search_active_thread_count() == 0:
             self.clear_widgets()
 
     def on_task_complete(self):
@@ -71,7 +72,7 @@ class DialogTool(QObject):
         processing
         :return: None
         """
-        if self.search_thread_pool.activeThreadCount() == 0:
+        if self.get_search_active_thread_count() == 0:
             source_model = self.dialog_base.data_sources_list_view.model()
             if source_model:
                 source_thread = SortRunnable(source_model)
@@ -284,7 +285,7 @@ class DialogTool(QObject):
         Resets the UI when it is actually done
         :return: None
         """
-        if self.json_thread_pool.activeThreadCount() > 0:
+        if self.get_json_active_thread_count() > 0:
             self.json_progress.setValue(self.json_progress.value() + 1)
         else:
             # close files
@@ -348,6 +349,9 @@ class DialogTool(QObject):
         self.written_first_line = False
         self.written_first_point = False
         self.written_first_polygon = False
+        # locks
+        self.search_lock = Lock()
+        self.json_lock = Lock()
 
     def init_progress_bar(self):
         """
@@ -598,14 +602,26 @@ class DialogTool(QObject):
         Check to see if the system is still exporting (checks if there's work in the json thread pool)
         :return: True if exporting; False otherwise
         """
-        return self.json_thread_pool.activeThreadCount() > 0
+        return self.get_json_active_thread_count() > 0
 
     def is_searching(self):
         """
         Check to see if the system is still searching (checks if there's work in the search thread pool)
         :return: True if searching; False otherwise
         """
-        return self.search_thread_pool.activeThreadCount() > 0
+        return self.get_search_active_thread_count() > 0
+
+    def get_search_active_thread_count(self):
+        """
+        Gets the number of active threads in the search thread pool
+        :return:
+        """
+        with self.search_lock:
+            return self.search_thread_pool.activeThreadCount()
+
+    def get_json_active_thread_count(self):
+        with self.json_lock:
+            return self.json_thread_pool.activeThreadCount()
 
     def validate_export(self):
         """

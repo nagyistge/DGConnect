@@ -20,7 +20,7 @@ from CASHTMLParser import CASFormHTMLParser
 from qgis.core import QgsFeature, QgsGeometry, QgsPoint, QgsFields, QgsField
 
 MONOCLE_3_URL = "https://iipbeta.digitalglobe.com/monocle-3/"
-INSIGHT_VECTOR_URL = "https://iipbeta.digitalglobe.com/insight-vector/"
+INSIGHT_VECTOR_URL = "https://iipbeta.digitalglobe.com/monocle-3/app/broker/vector/"
 SOURCES_QUERY = Template(INSIGHT_VECTOR_URL + "api/esri/sources?left=$left&right=$right&upper=$upper&lower=$lower")
 GEOMETRY_QUERY = Template(INSIGHT_VECTOR_URL +
                           "api/esri/$source/geometries?left=$left&right=$right&upper=$upper&lower=$lower")
@@ -126,7 +126,13 @@ class InsightCloudQuery:
     def __init__(self, username, password):
         self.username = username
         self.password = password
-        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.CookieJar()))
+        handlers = [
+            urllib2.HTTPCookieProcessor(cookielib.CookieJar()),
+            urllib2.HTTPHandler(),
+            urllib2.HTTPSHandler(),
+            urllib2.HTTPRedirectHandler(),
+        ]
+        self.opener = urllib2.build_opener(*handlers)
         self.is_login_successful = True
 
     @classmethod
@@ -136,7 +142,9 @@ class InsightCloudQuery:
         :param response: The HTTP response received
         :return: True if the responses' url points to the log in page; else False
         """
-        return response is not None and URL_CAS_LOGIN_SEGMENT in response.geturl()
+        if not response:
+            return False
+        return URL_CAS_LOGIN_SEGMENT in response.geturl()
 
     @classmethod
     def build_form_info(cls, response_url, form_data):

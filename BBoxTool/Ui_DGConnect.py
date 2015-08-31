@@ -10,6 +10,7 @@
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import pyqtSlot
 from qgis.core import QgsRectangle
+from PyQt4.QtGui import QMessageBox
 import DGConnectProcessForm
 import logging as log
 
@@ -67,6 +68,7 @@ class Ui_DGConnect(object):
         self.line = None
         self.line_2 = None
         self.dialog = None
+        self.csv_generator = None
 
     def setupUi(self, dialog):
         dialog.setObjectName(_fromUtf8("DGConnect"))
@@ -265,4 +267,11 @@ class Ui_DGConnect(object):
     def on_new_right(self, new_right):
         if self.right.text() != new_right:
             self.right.setText(new_right)
+
+    @pyqtSlot(str)
+    def show_complete_message(self, file_name):
+        self.csv_generator = None
+        message = QMessageBox()
+        message.information(None, "CSV Write Complete", "CSV output to " + file_name + " is complete")
+
 

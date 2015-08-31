@@ -57,11 +57,6 @@ def write_setting(key, value):
     s = QSettings()
     s.setValue(key, value)
 
-def show_complete_message(file_name):
-    message = QMessageBox()
-
-    message.information(None, "CSV Write Complete", "CSV output to " + file_name + " is complete")
-
 def ok_clicked(ui):
     """
     Action performed when the ok button is clicked
@@ -69,14 +64,14 @@ def ok_clicked(ui):
     :return: None
     """
     if validate_ok(ui):
-        csv_output = CSVGenerator(left=float(ui.left.text()), top=float(ui.top.text()),
+        ui.csv_generator = CSVGenerator(left=float(ui.left.text()), top=float(ui.top.text()),
                                   right=float(ui.right.text()), bottom=float(ui.bottom.text()),
                                   csv_filename=ui.select_file.text(), gbd_api_key=ui.gbd_api_key.text(),
                                   gbd_username=ui.gbd_username.text(), gbd_password=ui.gbd_password.text(),
                                   insightcloud_username=ui.insightcloud_username.text(),
                                   insightcloud_password=ui.insightcloud_password.text())
-        csv_output.csv_generator_object.message_complete.connect(lambda file_name: show_complete_message(file_name))
-        QThreadPool.globalInstance().start(csv_output)
+        ui.csv_generator.csv_generator_object.message_complete.connect(lambda file_name: ui.show_complete_message(file_name))
+        ui.csv_generator.generate_csv()
     else:
         ui.dialog.show()
 
