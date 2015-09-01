@@ -20,7 +20,7 @@ from CASHTMLParser import CASFormHTMLParser
 from qgis.core import QgsFeature, QgsGeometry, QgsPoint, QgsFields, QgsField
 
 MONOCLE_3_URL = "https://iipbeta.digitalglobe.com/monocle-3/"
-INSIGHT_VECTOR_URL = "https://iipbeta.digitalglobe.com/monocle-3/app/broker/vector/"
+INSIGHT_VECTOR_URL = "https://iipbeta.digitalglobe.com/insight-vector/"
 SOURCES_QUERY = Template(INSIGHT_VECTOR_URL + "api/esri/sources?left=$left&right=$right&upper=$upper&lower=$lower")
 GEOMETRY_QUERY = Template(INSIGHT_VECTOR_URL +
                           "api/esri/$source/geometries?left=$left&right=$right&upper=$upper&lower=$lower")
@@ -188,14 +188,14 @@ class InsightCloudQuery:
         :return: An update HTTP response from the CAS log in
         """
         url_data = self.build_form_info(response.geturl(), response.read())
-        response = self.post_login_credentials_to_app(url_data, response.geturl())
-        if isinstance(response, basestring):
+        new_response = self.post_login_credentials_to_app(url_data, response.geturl())
+        if isinstance(new_response, basestring):
             self.is_login_successful = False
             log.error("Error response received: " + str(response))
-        elif URL_CAS_LOGIN_SEGMENT in response.geturl():
+        elif new_response and URL_CAS_LOGIN_SEGMENT in new_response.geturl():
             self.is_login_successful = False
-            log.error("Unable to login with credentials: (username: %s, password %s)" % self.username, self.password)
-        return response
+            log.error("Unable to login with credentials: (username: %s, password %s)" % (self.username, self.password))
+        return new_response
 
     def log_into_monocle_3(self):
         """
@@ -286,6 +286,8 @@ class InsightCloudQuery:
                 response = self.opener.open(request, timeout=TIMEOUT_IN_SECONDS)
                 if self.is_on_login_page(response):
                     response = self.login_to_app(response)
+                    if response and url in response.geturl():
+                        self.is_login_successful = True
             except Exception, e:
                 self.is_login_successful = False
                 log.error("Unable to hit url: " + url + " due to: " + str(e) + "; trying " +
@@ -309,6 +311,7 @@ class InsightCloudQuery:
                 response = self.opener.open(request, timeout=TIMEOUT_IN_SECONDS)
                 if self.is_on_login_page(response):
                     response = self.login_to_app(response)
+                    self.is_login_successful = True
             except Exception, e:
                 self.is_login_successful = False
                 log.error("Unable to run get on url: " + url + " due to: " + str(e) + "; trying "
@@ -344,6 +347,7 @@ class InsightCloudQuery:
                     response = self.opener.open(request)
                     if self.is_on_login_page(response):
                         response = self.login_to_app(response)
+                        self.is_login_successful = True
                 except Exception, e:
                     self.is_login_successful = False
                     log.error("Unable to post to url: " + ITEMS_POST_PAGING_ID + " due to: " + str(e) + "; trying " +
