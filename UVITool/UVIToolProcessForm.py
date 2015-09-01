@@ -34,6 +34,8 @@ VALIDATION_LONG_UPPER = 180.0
 VALIDATION_MIN_EXPORT = 1
 VALIDATION_MAX_EXPORT = 150000
 
+VALIDATION_AOI_DIFF = 10
+
 # simple regex validator for data; make sure there's something there
 ENDS_WITH_SUFFIX_REGEX = re.compile(".+\." + DEFAULT_SUFFIX + "$")
 
@@ -65,6 +67,11 @@ def search_clicked(ui, dialog_tool):
     :param ui: The UI ui where this occurs
     :return: None
     """
+    errors = []
+    if not validate_bbox(ui, errors):
+        dialog_tool.iface.messageBar().pushMessage("ERROR", "The following errors occurred:<br />" + "<br />".join(errors),
+                                                   level=QgsMessageBar.CRITICAL)
+        return
     top = ui.top.text()
     bottom = ui.bottom.text()
     left = ui.left.text()
@@ -159,7 +166,7 @@ def validate_save_settings(ui, iface):
     errors = []
     validate_info(ui, errors)
     if len(errors) > 0:
-        iface.messageBar().pushMessage("Error", "The following error(s) occurred:\n" + "\n".join(errors),
+        iface.messageBar().pushMessage("Error", "The following error(s) occurred:<br />" + "<br />".join(errors),
                                        level=QgsMessageBar.CRITICAL)
         return False
     return True
@@ -215,7 +222,7 @@ def validate_stored_settings(iface, username, password, max_items_to_return):
         iface.messageBar().pushMessage("Info", "Successfully checked settings. Launching queries...")
         return True
     else:
-        iface.messageBar().pushMessage("Error", "Unable to validate settings due to:\n" + "\n".join(errors))
+        iface.messageBar().pushMessage("Error", "Unable to validate settings due to:<br />" + "<br />".join(errors))
         return False
 
 def validate_stored_info(username, password, max_items_to_return, errors):
@@ -272,13 +279,23 @@ def validate_bbox_fields(left, right, top, bottom, errors):
 
     is_valid = is_left_valid and is_right_valid and is_top_valid and is_bottom_valid
 
+    left_float = float(left)
+    right_float = float(right)
+    bottom_float = float(bottom)
+    top_float = float(top)
     # check that right > left
-    if is_left_valid and is_right_valid and float(left) > float(right):
+    if is_left_valid and is_right_valid and left_float > right_float:
         errors.append("Provided left (%s) is greater than right (%s)" % (left, right))
         is_valid = False
+    elif abs(right_float - left_float) > VALIDATION_AOI_DIFF:
+        errors.append("Provided left (%s) is greater than 10 degrees away from right (%s)" % (left, right))
+        is_valid = False
 
-    if is_top_valid and is_bottom_valid and float(bottom) > float(top):
-        errors.append("Provided top (%s) is greater than bottom (%s)" % (top, bottom))
+    if is_top_valid and is_bottom_valid and bottom_float > top_float:
+        errors.append("Provided bottom (%s) is greater than top (%s)" % (bottom, top))
+        is_valid = False
+    elif abs(top_float - bottom_float) > VALIDATION_AOI_DIFF:
+        errors.append("Provided top (%s) is greater than 10 degrees away from bottom (%s)" % (top, bottom))
         is_valid = False
 
     return is_valid

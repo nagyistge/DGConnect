@@ -647,7 +647,7 @@ class DialogTool(QObject):
                 break
 
         if len(errors) > 0:
-            self.iface.messageBar().pushMessage("Error", "The following error(s) occurred:\n" + "\n".join(errors),
+            self.iface.messageBar().pushMessage("Error", "The following error(s) occurred:<br />" + "<br />".join(errors),
                                                 level=QgsMessageBar.CRITICAL)
             return False
         return True
@@ -669,7 +669,7 @@ class DialogTool(QObject):
         elif not os.path.isdir(directory):
             errors.append("Path: " + directory + " is not a directory.")
         if len(errors) > 0:
-            self.iface.messageBar().pushMessage("Error", "The following error(s) occurred:\n" + "\n".join(errors),
+            self.iface.messageBar().pushMessage("Error", "The following error(s) occurred:<br />" + "<br />".join(errors),
                                                 level=QgsMessageBar.CRITICAL)
             return False
         return True
