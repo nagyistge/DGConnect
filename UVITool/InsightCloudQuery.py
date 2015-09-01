@@ -286,8 +286,7 @@ class InsightCloudQuery:
                 response = self.opener.open(request, timeout=TIMEOUT_IN_SECONDS)
                 if self.is_on_login_page(response):
                     response = self.login_to_app(response)
-                    if response and url in response.geturl():
-                        self.is_login_successful = True
+                    self.is_login_successful = True
             except Exception, e:
                 self.is_login_successful = False
                 log.error("Unable to hit url: " + url + " due to: " + str(e) + "; trying " +
