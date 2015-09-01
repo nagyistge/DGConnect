@@ -69,7 +69,8 @@ def search_clicked(ui, dialog_tool):
     """
     errors = []
     if not validate_bbox(ui, errors):
-        dialog_tool.iface.messageBar().pushMessage("ERROR", "The following errors occurred:<br />" + "<br />".join(errors),
+        dialog_tool.iface.messageBar().pushMessage("ERROR", "The following errors occurred:<br />" +
+                                                   "<br />".join(errors),
                                                    level=QgsMessageBar.CRITICAL)
         return
     top = ui.top.text()
@@ -260,7 +261,7 @@ def validate_bbox(ui, errors):
     :param errors: The list of errors occurred thus far
     :return: None
     """
-    validate_bbox_fields(ui.left.text(), ui.right.text(), ui.top.text(), ui.bottom.text(), errors)
+    return validate_bbox_fields(ui.left.text(), ui.right.text(), ui.top.text(), ui.bottom.text(), errors)
 
 def validate_bbox_fields(left, right, top, bottom, errors):
     """
