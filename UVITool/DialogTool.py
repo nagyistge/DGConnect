@@ -190,6 +190,7 @@ class DialogTool(QObject):
                 # source = types_params.source
                 # self.start_new_item(source, key, types_params)
             if new_model:
+                source_model.itemChanged.connect(self.on_type_check)
                 self.dialog_base.types_list_view.setModel(model)
         self.on_task_complete()
 
@@ -533,6 +534,13 @@ class DialogTool(QObject):
         if self.is_searching():
             source_item.setCheckState(Qt.Checked)
             return
+        # keep to the same if exporting
+        if self.is_exporting():
+            if source_item.is_checked:
+                source_item.setCheckState(Qt.Checked)
+            else:
+                source_item.setCheckState(Qt.Unchecked)
+            return
         is_checked = source_item.current_state()
         for key, geometry in source_item.geometries.iteritems():
             if is_checked:
@@ -551,7 +559,7 @@ class DialogTool(QObject):
         Callback function for when the user checks/unchecks a geometry item in the UI
         Updates the counts of its children based on the action
         :param geometry_item: The individual GeometryItem in the UI
-        :return:
+        :return: None
         """
         # don't bother for non-checked events
         if not geometry_item.has_checked_changed():
@@ -560,6 +568,13 @@ class DialogTool(QObject):
         if self.is_searching():
             geometry_item.setCheckState(Qt.Checked)
             return
+        # keep to the same if exporting
+        if self.is_exporting():
+            if geometry_item.is_checked:
+                geometry_item.setCheckState(Qt.Checked)
+            else:
+                geometry_item.setCheckState(Qt.Unchecked)
+            return
         is_checked = geometry_item.current_state()
         for key, type_entry in geometry_item.type_entries.iteritems():
             if is_checked:
@@ -567,6 +582,29 @@ class DialogTool(QObject):
             else:
                 type_entry.disable_geometry(geometry_item.title, self.sources)
         geometry_item.update_checked()
+
+    def on_type_check(self, type_item):
+        """
+        Callaback function for when the user checks/unchecks a type item in the UI
+        Updates the checkbox if necessary
+        :param type_item: The individual TypeItem in the UI
+        :return: None
+        """
+        # don't bother for non-checked events
+        if not type_item.has_checked_changed():
+            return
+        # leave checked while search is running
+        if self.is_searching():
+            type_item.setCheckState(Qt.Checked)
+            return
+        # keep to same if exporting
+        if self.is_exporting():
+            if type_item.is_checked:
+                type_item.setCheckState(Qt.Checked)
+            else:
+                type_item.setCheckState(Qt.Unchecked)
+            return
+        type_item.update_checked()
 
     def export(self):
         """
@@ -608,7 +646,7 @@ class DialogTool(QObject):
             if source_item.is_checked:
                 for item_key in self.types_dict.keys():
                     type_item = self.types_dict[item_key]
-                    if type_item.is_checked() and type_item.total_count > 0:
+                    if type_item.is_checked and type_item.total_count > 0:
                         item_params = InsightCloudItemsParams(source_item.source_params, source_key, item_key)
                         task = JSONItemRunnable(username, password, item_params)
                         task.json_item_object.task_complete.connect(self.on_new_json_items)
@@ -667,7 +705,7 @@ class DialogTool(QObject):
         # ensure there's less than the max to export
         total_to_export = 0
         for type_entry, type_item in self.types_dict.iteritems():
-            if type_item.is_checked():
+            if type_item.is_checked:
                 total_to_export += type_item.total_count
             if total_to_export > max_items_to_return:
                 errors.append("Number to export exceeds max of " + str(max_items_to_return)
@@ -1137,6 +1175,7 @@ class TypesItem(QStandardItem):
         self._title = title
         self._counts = {}
         self._total_count = 0
+        self._is_checked = True
         self.change_text()
 
     @property
@@ -1147,8 +1186,30 @@ class TypesItem(QStandardItem):
     def total_count(self):
         return self._total_count
 
+    @property
     def is_checked(self):
+        return self._is_checked
+
+    def current_state(self):
+        """
+        Gets the current checkbox state
+        :return: True if checked; False otherwise
+        """
         return self.checkState() == Qt.Checked
+
+    def update_checked(self):
+        """
+        Updates the is_checked property with the current state
+        """
+        self._is_checked = self.checkState() == Qt.Checked
+
+    def has_checked_changed(self):
+        """
+        Checks to see if the checkbox has changed from checked to unchecked or vice versa
+        :return: True if it has; False otherwise
+        """
+        current_state = self.checkState() == Qt.Checked
+        return self._is_checked != current_state
 
     def update_count(self, source, geometry, count):
         """
