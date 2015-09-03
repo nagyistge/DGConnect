@@ -63,6 +63,7 @@ ENCODING_ASCII = 'ascii'
 ENCODING_IGNORE = 'ignore'
 
 KEY_POINT = "Point"
+KEY_MULTIPOINT = "MultiPoint"
 KEY_POLYGON = "Polygon"
 KEY_LINE = "Line"
 
@@ -402,6 +403,7 @@ class InsightCloudQuery:
         """
         new_data = {
             KEY_POINT: [],
+            KEY_MULTIPOINT: [],
             KEY_LINE: [],
             KEY_POLYGON: [],
         }
@@ -412,11 +414,16 @@ class InsightCloudQuery:
                 new_item = self.build_geojson_entry(vector_item)
             else:
                 new_item = self.build_qgis_feature(vector_item)
-            if new_item.geometry_type == u'Point' or new_item.geometry_type == u'MultiPoint':
+            if new_item.geometry_type == u'Point':
                 if json_export:
                     new_data[KEY_POINT].append(json.dumps(new_item.__dict__))
                 else:
                     new_data[KEY_POINT].append(new_item)
+            elif new_item.geometry_type == u'MultiPoint':
+                if json_export:
+                    new_data[KEY_MULTIPOINT].append(json.dumps(new_item.__dict__))
+                else:
+                    new_data[KEY_MULTIPOINT].append(new_item)
             elif new_item.geometry_type == u'LineString' or new_item.geometry_type == u'MultiLineString':
                 if json_export:
                     new_data[KEY_LINE].append(json.dumps(new_item.__dict__))

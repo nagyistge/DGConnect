@@ -9,11 +9,12 @@ import UVIToolProcessForm
 from InsightCloudQuery import InsightCloudSourcesParams, InsightCloudGeometriesParams, InsightCloudTypesParams,\
     InsightCloudQuery, InsightCloudItemsParams, KEY_JSON_PROPERTIES_LIST
 
-from PyQt4.QtGui import QStandardItem, QStandardItemModel, QProgressBar, QFileDialog
+from PyQt4.QtGui import QStandardItem, QStandardItemModel, QProgressBar, QFileDialog, QSortFilterProxyModel
 from PyQt4.QtCore import Qt, QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal, QVariant
 from qgis.core import QgsVectorLayer, QgsMapLayerRegistry
 
 import os
+import re
 
 DEFAULT_LEFT = "-180.0"
 DEFAULT_RIGHT = "180.0"
@@ -30,8 +31,14 @@ KEY_GEOMETRY = "geometry"
 KEY_ENABLED = "enabled"
 
 KEY_POINT = "Point"
+KEY_MULTI_POINT = "MultiPoint"
 KEY_POLYGON = "Polygon"
 KEY_LINE = "Line"
+
+KEY_ESRI_GEOMETRY_POINT = u'Point'
+KEY_ESRI_GEOMETRY_MULTI_POINT = u'MultiPoint'
+KEY_ESRI_GEOMETRY_POLYLINE = u'PolyLine'
+KEY_ESRI_GEOMETRY_POLYGON = u'Polygon'
 
 FILE_POINTS = u'points.json'
 FILE_POLYGON = u'polygon.json'
@@ -39,6 +46,8 @@ FILE_LINE = u'line.json'
 
 GEOJSON_BEGINNING = '{"type": "FeatureCollection", "features": ['
 GEOJSON_ENDING = '\n]}'
+
+REGEX_DIGITS = re.compile("\((\d+)\)$")
 
 class DialogTool(QObject):
     """
@@ -159,7 +168,10 @@ class DialogTool(QObject):
             new_model = False
             model = self.dialog_base.types_list_view.model()
             if not model:
-                model = QStandardItemModel(self.dialog_base.types_list_view)
+                source_model = QStandardItemModel(self.dialog_base.types_list_view)
+                model = TypesModel(self.dialog_base.types_list_view)
+                model.setSourceModel(source_model)
+                model.setDynamicSortFilter(True)
                 new_model = True
             for key, count in new_types.iteritems():
                 if key in self.types_dict:
@@ -169,7 +181,7 @@ class DialogTool(QObject):
                     type_item.update_count(types_params.source, types_params.geometry, count)
                     type_item.setCheckable(True)
                     type_item.setCheckState(Qt.Checked)
-                    model.appendRow(type_item)
+                    model.sourceModel().appendRow(type_item)
                     self.types_dict[key] = type_item
                 if key not in self.sources[types_params.source].type_entries:
                     self.sources[types_params.source].type_entries[key] = self.types_dict[key]
@@ -221,9 +233,14 @@ class DialogTool(QObject):
             line_data_provider = self.line_vector_layer.dataProvider()
             polygon_data_provider = self.polygon_vector_layer.dataProvider()
 
-            point_data_provider.addFeatures(new_items[KEY_POINT])
-            line_data_provider.addFeatures(new_items[KEY_LINE])
-            polygon_data_provider.addFeatures(new_items[KEY_POLYGON])
+            if KEY_ESRI_GEOMETRY_POINT in self.geometries and self.geometries[KEY_ESRI_GEOMETRY_POINT].is_checked:
+                point_data_provider.addFeatures(new_items[KEY_POINT])
+            if KEY_ESRI_GEOMETRY_MULTI_POINT in self.geometries and self.geometries[KEY_ESRI_GEOMETRY_MULTI_POINT].is_checked:
+                point_data_provider.addFeatures(new_items[KEY_MULTI_POINT])
+            if KEY_ESRI_GEOMETRY_POLYLINE in self.geometries and self.geometries[KEY_ESRI_GEOMETRY_POLYLINE].is_checked:
+                line_data_provider.addFeatures(new_items[KEY_LINE])
+            if KEY_ESRI_GEOMETRY_POLYGON in self.geometries and self.geometries[KEY_ESRI_GEOMETRY_POLYGON].is_checked:
+                polygon_data_provider.addFeatures(new_items[KEY_POLYGON])
 
             self.point_vector_layer.commitChanges()
             self.point_vector_layer.updateExtents()
@@ -248,28 +265,39 @@ class DialogTool(QObject):
         if self.json_progress_message_bar:
             self.json_progress.setValue(self.json_progress.value() + 1)
         if new_items:
-            for polygon in new_items[KEY_POLYGON]:
-                self.polygon_file.write(u"\n")
-                if self.written_first_polygon:
-                    self.polygon_file.write(u",")
-                else:
-                    self.written_first_polygon = True
-                self.polygon_file.write(polygon)
-            for line in new_items[KEY_LINE]:
-                self.line_file.write(u"\n")
-                if self.written_first_line:
-                    self.line_file.write(u",")
-                else:
-                    self.written_first_line = True
-                self.line_file.write(line)
-
-            for point in new_items[KEY_POINT]:
-                self.point_file.write(u"\n")
-                if self.written_first_point:
-                    self.point_file.write(u",")
-                else:
-                    self.written_first_point = True
-                self.point_file.write(point)
+            if KEY_ESRI_GEOMETRY_POLYGON in self.geometries and self.geometries[KEY_ESRI_GEOMETRY_POLYGON].is_checked:
+                for polygon in new_items[KEY_POLYGON]:
+                    self.polygon_file.write(u"\n")
+                    if self.written_first_polygon:
+                        self.polygon_file.write(u",")
+                    else:
+                        self.written_first_polygon = True
+                    self.polygon_file.write(polygon)
+            if KEY_ESRI_GEOMETRY_POLYLINE in self.geometries and self.geometries[KEY_ESRI_GEOMETRY_POLYLINE].is_checked:
+                for line in new_items[KEY_LINE]:
+                    self.line_file.write(u"\n")
+                    if self.written_first_line:
+                        self.line_file.write(u",")
+                    else:
+                        self.written_first_line = True
+                    self.line_file.write(line)
+            if KEY_ESRI_GEOMETRY_POINT in self.geometries and self.geometries[KEY_ESRI_GEOMETRY_POINT].is_checked:
+                for point in new_items[KEY_POINT]:
+                    self.point_file.write(u"\n")
+                    if self.written_first_point:
+                        self.point_file.write(u",")
+                    else:
+                        self.written_first_point = True
+                    self.point_file.write(point)
+            if KEY_ESRI_GEOMETRY_MULTI_POINT in self.geometries and\
+                    self.geometries[KEY_ESRI_GEOMETRY_MULTI_POINT].is_checked:
+                for point in new_items[KEY_MULTI_POINT]:
+                    self.point_file.write(u"\n")
+                    if self.written_first_point:
+                        self.point_file.write(u",")
+                    else:
+                        self.written_first_point = True
+                    self.point_file.write(point)
 
         self.on_new_json_task_complete()
 
@@ -1092,6 +1120,7 @@ class GeometryItem(QStandardItem):
     def __cmp__(self, other):
         return cmp(self._title, other.title)
 
+
 class TypesItem(QStandardItem):
     """
     Types entry in the GUI list of types
@@ -1201,7 +1230,9 @@ class TypesItem(QStandardItem):
         Updates the text with the new count
         :return: None
         """
-        self.setText(WIDGET_TEXT_FMT % (self._title, self._total_count))
+        new_text = WIDGET_TEXT_FMT % (self._title, self._total_count)
+        if new_text != self.text():
+            self.setText(new_text)
 
     def __hash__(self):
         return hash(self._title)
@@ -1227,3 +1258,24 @@ class TypesItem(QStandardItem):
     def __cmp__(self, other):
         return cmp(self._title, other.title)
 
+class TypesModel(QSortFilterProxyModel):
+    """
+    FilterProxyModel to filter out types with count of 0
+    """
+    def filterAcceptsRow(self, p_int, source_parent):
+        """
+        Filters out a given row if the count found is 0
+        :param p_int: The index
+        :param source_parent: The source parent (ignored; it's None)
+        :return: True if it should be shown; False if it shouldn't
+        """
+        index = self.sourceModel().index(p_int, 0)
+        types_entry_str = index.data()
+        if not types_entry_str:
+            return False
+        match = REGEX_DIGITS.search(types_entry_str)
+        if match:
+            digits_str = match.group(1)
+            digits = int(digits_str)
+            return digits > 0
+        return False
