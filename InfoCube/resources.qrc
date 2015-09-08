@@ -1,5 +1,0 @@
-<RCC> 
-  <qresource prefix="/plugins/DGConnect" > 
-    <file>icon.png</file> 
-  </qresource> 
-</RCC> 

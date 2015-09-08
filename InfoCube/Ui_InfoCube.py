@@ -273,5 +273,6 @@ class Ui_InfoCube(object):
         self.csv_generator = None
         message = QMessageBox()
         message.information(None, "CSV Write Complete", "CSV output to " + file_name + " is complete")
+        self.dialog.show()
 
 

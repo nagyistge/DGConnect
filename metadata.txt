@@ -7,13 +7,17 @@
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=UVITool
+name=DGX
 qgisMinimumVersion=2.0
-description=Tool for querying the UVI
+description=DGX is a DigitalGlobe product enabling data search, download and analytics capabilities for vector and raster commercial, open source and proprietary data sources.  
 version=0.1
 author=Michael Trotter/DigitalGlobe, Inc.
-email=Michael.Trotter@digitalglobe.com
+email=michael.trotter@digitalglobe.com
 
+about=DGX is a DigitalGlobe product enabling data search, download and analytics capabilities for vector and raster commercial, open source and proprietary data sources.
+
+tracker=https://github.com/DigitalGlobe/DGConnect
+repository=https://github.com/DigitalGlobe/DGConnect
 # End of mandatory metadata
 
 # Recommended items:
@@ -25,8 +29,6 @@ email=Michael.Trotter@digitalglobe.com
 tags=
 
 homepage=https://github.com/DigitalGlobe/DGConnect
-tracker=https://github.com/DigitalGlobe/DGConnect
-repository=https://github.com/DigitalGlobe/DGConnect
 category=Plugins
 icon=icon.png
 # experimental flag

@@ -30,7 +30,7 @@ class Ui_AboutDialog(object):
         self.textEdit = QtGui.QTextEdit(AboutDialog)
         self.textEdit.setGeometry(QtCore.QRect(10, 20, 371, 251))
         self.textEdit.setObjectName(_fromUtf8("textEdit"))
-        self.textEdit.setText("DGX is a DigitalGlobe produce enabling data search, download and analytics capabilities"
+        self.textEdit.setText("DGX is a DigitalGlobe product enabling data search, download and analytics capabilities"
                               " for vector and raster commercial, open source and proprietary data sources.")
 
         self.retranslateUi(AboutDialog)

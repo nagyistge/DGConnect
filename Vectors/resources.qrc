@@ -1,5 +1,0 @@
-<RCC>
-    <qresource prefix="/plugins/UVITool" >
-        <file>icon.png</file>
-    </qresource>
-</RCC>

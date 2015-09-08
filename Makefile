@@ -1,12 +1,12 @@
 #/***************************************************************************
-# UVITool
+# DGX
 #
-# Tool for querying the UVI
+# DGX is a DigitalGlobe product enabling data search, download and analytics capabilities for vector and raster commercial, open source and proprietary data sources.  
 #							 -------------------
-#		begin				: 2015-08-17
+#		begin				: 2015-09-08
 #		git sha				: $Format:%H$
 #		copyright			: (C) 2015 by Michael Trotter/DigitalGlobe, Inc.
-#		email				: Michael.Trotter@digitalglobe.com
+#		email				: michael.trotter@digitalglobe.com
 # ***************************************************************************/
 #
 #/***************************************************************************
@@ -38,23 +38,62 @@ LOCALES =
 # translation
 SOURCES = \
 	__init__.py \
-	UVITool.py \
-	UVITool_dialog.py
+	DGX.py \
+	About/About.py \
+	About/AboutDialog.py \
+	InfoCube/CSVOutput.py \
+	InfoCube/InfoCubeBBoxTool.py \
+	InfoCube/InfoCubeCASHTMLParser.py \
+	InfoCube/InfoCubeConnect.py \
+	InfoCube/InfoCubeGBDQuery.py \
+	InfoCube/InfoCubeProcessForm.py \
+	InfoCube/Ui_InfoCube.py \
+	Vectors/Vectors_BBox.py \
+	Vectors/Vectors_dialog.py \
+	Vectors/Vectors_dialog_base.py \
+	Vectors/Vectors_Settings.py \
+	Vectors/VectorsBBoxTool.py \
+	Vectors/VectorsCASHTMLParser.py \
+	Vectors/VectorsDialogTool.py \
+	VectorsInsightCloudQuery.py \
+	Vectors/VectorsProcessForm.py \
+	Vectors/VectorsSettingsTool.py \
+	Vectors/VectorsTool.py
 
-PLUGINNAME = UVITool
+PLUGINNAME = DGX
 
 PY_FILES = \
-	UVITool.py \
-	UVITool_dialog.py \
-	__init__.py
+	__init__.py \
+	DGX.py \
+	About/About.py \
+	About/AboutDialog.py \
+	InfoCube/CSVOutput.py \
+	InfoCube/InfoCubeBBoxTool.py \
+	InfoCube/InfoCubeCASHTMLParser.py \
+	InfoCube/InfoCubeConnect.py \
+	InfoCube/InfoCubeGBDQuery.py \
+	InfoCube/InfoCubeProcessForm.py \
+	InfoCube/Ui_InfoCube.py \
+	Vectors/Vectors_BBox.py \
+	Vectors/Vectors_dialog.py \
+	Vectors/Vectors_dialog_base.py \
+	Vectors/Vectors_Settings.py \
+	Vectors/VectorsBBoxTool.py \
+	Vectors/VectorsCASHTMLParser.py \
+	Vectors/VectorsDialogTool.py \
+	VectorsInsightCloudQuery.py \
+	Vectors/VectorsProcessForm.py \
+	Vectors/VectorsSettingsTool.py \
+	Vectors/VectorsTool.py
 
-UI_FILES = UVITool_dialog_base.ui
 
-EXTRAS = icon.png metadata.txt
+UI_FILES = About/About.ui InfoCube/Ui_InfoCube.ui Vectors/Vectors_BBox.ui Vectors/Vectors_dialog_base.ui Vectors/Vectors_Settings.ui
 
-COMPILED_RESOURCE_FILES = resources_rc.py
+EXTRAS = metadata.txt icon.png About.png InfoCube.png Vectors.png
 
-PEP8EXCLUDE=pydev,resources_rc.py,conf.py,third_party,ui
+COMPILED_RESOURCE_FILES = resources.py
+
+PEP8EXCLUDE=pydev,resources.py,conf.py,third_party,ui
 
 
 #################################################
@@ -73,8 +112,8 @@ default: compile
 
 compile: $(COMPILED_RESOURCE_FILES)
 
-%_rc.py : %.qrc $(RESOURCES_SRC)
-	pyrcc4 -o $*_rc.py  $<
+%.py : %.qrc $(RESOURCES_SRC)
+	pyrcc4 -o $*.py  $<
 
 %.qm : %.ts
 	$(LRELEASE) $<

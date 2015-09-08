@@ -20,8 +20,6 @@ email                : michael.trotter@digitalglobe.com
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
-# Initialize Qt resources from file resources.py
-import resources
 # Import the code for the dialog
 from InfoCubeDialog import InfoCubeDialog
 from InfoCubeBBoxTool import InfoCubeBBoxTool
@@ -36,19 +34,6 @@ class InfoCubeConnect:
         self.bbox = None
 
     def initGui(self):
-        # Create action that will start plugin configuration
-        self.action = QAction(QIcon(":/plugins/DGConnect/icon.png"),
-                              "DGConnect", self.iface.mainWindow())
-        self.action.setObjectName("DGConnect")
-        self.action.setWhatsThis("Query GBD and UVI for data")
-        self.action.setIconVisibleInMenu(True)
-        # connect the action to the run method
-        QObject.connect(self.action, SIGNAL("activated()"), self.run)
-
-        # Add toolbar button and menu item
-        self.iface.addToolBarIcon(self.action)
-        self.iface.addPluginToMenu("&DGConnect", self.action)
-
         # create and show the dialog
         self.dlg = InfoCubeDialog()
         self.dlg.message_bar = self.iface.messageBar()
@@ -57,9 +42,6 @@ class InfoCubeConnect:
         self.bbox = InfoCubeBBoxTool(self.iface.mapCanvas(), self.dlg)
 
     def unload(self):
-        # Remove the plugin menu item and icon
-        self.iface.removePluginMenu("&DGConnect", self.action)
-        self.iface.removeToolBarIcon(self.action)
         self.bbox.reset()
 
         # remove the bbox
