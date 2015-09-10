@@ -59,6 +59,8 @@ class VectorsTool:
 
     def unload(self):
         self.bbox_tool.reset()
+        self.dlg.close()
+        self.bbox_dlg.close()
         # remove the tool
         self.iface.mapCanvas().unsetMapTool(self.bbox_tool)
 

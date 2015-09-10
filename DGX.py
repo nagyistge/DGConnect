@@ -261,11 +261,9 @@ class DGX:
 
             if self.infocube is None:
                 self.infocube = InfoCubeConnect(self.iface)
+                self.infocube.initGui()
 
-            self.infocube.initGui()
-            self.infocube.run()
-        else:
-            self.infocube.dlg.show()
+        self.infocube.run()
 
     def run_vectors(self):
         # deactivate infocube
@@ -280,7 +278,4 @@ class DGX:
             if self.vectors is None:
                 self.vectors = VectorsTool(self.iface)
 
-            self.vectors.run()
-        else:
-            self.vectors.bbox_dlg.show()
-            self.vectors.dlg.show()
+        self.vectors.run()

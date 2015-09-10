@@ -43,6 +43,7 @@ class InfoCubeConnect:
 
     def unload(self):
         self.bbox.reset()
+        self.dlg.reject()
 
         # remove the bbox
         self.iface.mapCanvas().unsetMapTool(self.bbox)
