@@ -151,7 +151,7 @@ class GBDQuery:
             if len(response.read()) > 0:
                 self.is_login_successful = True
         except Exception, e:
-            QgsMessageLog.instance().logMessage("Exception detected during endpoint text: " + str(e),
+            QgsMessageLog.instance().logMessage("Exception detected during endpoint test: " + str(e),
                                                 TAG_NAME, level=QgsMessageLog.CRITICAL)
             self.is_login_successful = False
 
