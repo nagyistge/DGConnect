@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from qgis._core import QgsMessageLog
+
 __author__ = 'Michael Trotter <michael.trotter@digitalglobe.com>'
 
 from string import Template
@@ -10,8 +12,6 @@ import urllib2
 import cookielib
 
 import json
-
-import logging as log
 
 from InfoCubeCASHTMLParser import CASFormHTMLParser
 
@@ -36,6 +36,8 @@ JSON_SMA_TOTAL_KEY = u'total'
 TIMEOUT_IN_SECONDS = 30
 
 NUM_TIMES_TO_TRY = 10
+
+TAG_NAME = 'InfoCube (UVI)'
 
 class InsightCloudParams:
     """
@@ -102,7 +104,8 @@ class InsightCloudQuery:
             response = self.opener.open(request, data, timeout=TIMEOUT_IN_SECONDS)
         except Exception, e:
             self.is_login_successful = False
-            log.error("Unable to post login credentials due to: " + str(e))
+            QgsMessageLog.instance().logMessage("Unable to post login credentials due to: " + str(e), TAG_NAME,
+                                                level=QgsMessageLog.CRITICAL)
         return response
 
     def login_to_app(self, response):
@@ -115,10 +118,13 @@ class InsightCloudQuery:
         response = self.post_login_credentials_to_app(url_data, response.geturl())
         if isinstance(response, basestring):
             self.is_login_successful = False
-            log.error("Error response received: " + str(response))
+            QgsMessageLog.instance().logMessage("Error response received: " + str(response), TAG_NAME,
+                                                level=QgsMessageLog.CRITICAL)
         elif URL_CAS_LOGIN_SEGMENT in response.geturl():
             self.is_login_successful = False
-            log.error("Unable to login with credentials: (username: %s, password %s)" % self.username, self.password)
+            QgsMessageLog.instance().logMessage("Unable to login with credentials: (username: %s, password %s)"
+                                                % (self.username, self.password), TAG_NAME,
+                                                level=QgsMessageLog.CRITICAL)
         return response
 
     def log_into_monocle_3(self):
@@ -135,7 +141,8 @@ class InsightCloudQuery:
                 response = self.login_to_app(response)
         except Exception, e:
             self.is_login_successful = False
-            log.error("Unable to log into Monocle-3 due to: " + str(e))
+            QgsMessageLog.instance().logMessage("Unable to log into Monocle-3 due to: " + str(e), TAG_NAME,
+                                                level=QgsMessageLog.CRITICAL)
         if response and self.is_login_successful:
             return response.read()
         return None
@@ -158,9 +165,9 @@ class InsightCloudQuery:
                     response = self.login_to_app(response)
             except Exception, e:
                 self.is_login_successful = False
-                log.error("Unable to hit the osm end point due to: " + str(e) + "; trying "
+                QgsMessageLog.instance().logMessage("Unable to hit the osm end point due to: " + str(e) + "; trying "
                           + str(NUM_TIMES_TO_TRY - i - 1)
-                          + " more times.")
+                          + " more times.", TAG_NAME, level=QgsMessageLog.CRITICAL)
             if response and self.is_login_successful:
                 self.process_osm_data(response.read(), csv_element)
                 break
@@ -199,8 +206,8 @@ class InsightCloudQuery:
                     response = self.login_to_app(response)
             except Exception, e:
                 self.is_login_successful = False
-                log.error("Unable to hit the twitter end point due to: " + str(e) + "; trying " +
-                          str(NUM_TIMES_TO_TRY - i - 1) + " more times.")
+                QgsMessageLog.instance().logMessage("Unable to hit the twitter end point due to: " + str(e) + "; trying " +
+                          str(NUM_TIMES_TO_TRY - i - 1) + " more times.", TAG_NAME, level=QgsMessageLog.CRITICAL)
             if response and self.is_login_successful:
                 self.process_twitter_data(response.read(), csv_element)
                 break
@@ -223,9 +230,9 @@ class InsightCloudQuery:
                     response = self.login_to_app(response)
             except Exception, e:
                 self.is_login_successful = False
-                log.error("Unable to hit the rss end point due to: " + str(e) + "; trying "
+                QgsMessageLog.instance().logMessage("Unable to hit the rss end point due to: " + str(e) + "; trying "
                           + str(NUM_TIMES_TO_TRY - i - 1)
-                          + " more times.")
+                          + " more times.", TAG_NAME, level=QgsMessageLog.CRITICAL)
             if response and self.is_login_successful:
                 self.process_rss_data(response.read(), csv_element)
                 break

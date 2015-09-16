@@ -11,7 +11,7 @@ import urllib
 import urllib2
 import cookielib
 
-import logging as log
+from qgis.core import QgsMessageLog
 
 # User Agent String; let's pretend we're chromium on Ubuntu
 USER_AGENT_STRING = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) ' \
@@ -56,6 +56,9 @@ VALUE_DATA_TYPES = ['DigitalGlobeAcquisition']
 KEY_JSON_RESULTS = u'results'
 KEY_JSON_PROPERTIES = u'properties'
 KEY_JSON_TIMESTAMP = u'timestamp'
+
+# tag name
+TAG_NAME = 'InfoCube (GBD)'
 
 class GBDOrderParams:
     """
@@ -125,7 +128,8 @@ class GBDQuery:
             self.token_type = json_data[KEY_TOKEN_TYPE].encode(JSON_ENCODING)
             self.update_headers_with_access_info()
         except Exception, e:
-            log.error("Exception detected during log in: " + str(e))
+            QgsMessageLog.instance().logMessage("Exception detected during log in: " + str(e), TAG_NAME,
+                                                level=QgsMessageLog.CRITICAL)
             self.is_login_successful = False
 
     def update_headers_with_access_info(self):
@@ -147,7 +151,8 @@ class GBDQuery:
             if len(response.read()) > 0:
                 self.is_login_successful = True
         except Exception, e:
-            log.error("Exception detected during endpoint text: " + str(e))
+            QgsMessageLog.instance().logMessage("Exception detected during endpoint text: " + str(e),
+                                                TAG_NAME, level=QgsMessageLog.CRITICAL)
             self.is_login_successful = False
 
     def do_aoi_search(self, order_params, csv_element):
@@ -175,7 +180,8 @@ class GBDQuery:
             result_data = json.loads(response_data, strict=False)
             self.update_csv_data(order_params.time_end, result_data, csv_element)
         except Exception, e:
-            log.error("Exception detected during aoi search: " + str(e))
+            QgsMessageLog.instance().logMessage("Exception detected during aoi search: " + str(e), TAG_NAME,
+                                                level=QgsMessageLog.CRITICAL)
 
     @classmethod
     def update_csv_data(cls, end_date, json_data, csv_element):
