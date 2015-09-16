@@ -13,11 +13,9 @@ import cookielib
 
 import json
 
-import logging as log
-
 from VectorsCASHTMLParser import VectorsCASFormHTMLParser
 
-from qgis.core import QgsFeature, QgsGeometry, QgsPoint, QgsFields, QgsField
+from qgis.core import QgsFeature, QgsGeometry, QgsPoint, QgsFields, QgsField, QgsMessageLog
 
 MONOCLE_3_URL = "https://iipbeta.digitalglobe.com/monocle-3/"
 INSIGHT_VECTOR_URL = "https://iipbeta.digitalglobe.com/monocle-3/app/broker/vector/"
@@ -74,6 +72,8 @@ NUM_TIMES_TO_TRY = 3
 SLASH = '/'
 
 ITEMS_TO_RETURN = 500
+
+TAG_NAME = 'Vectors (UVI)'
 
 class InsightCloudSourcesParams:
     """
@@ -179,7 +179,8 @@ class InsightCloudQuery:
             response = self.opener.open(request, data, timeout=TIMEOUT_IN_SECONDS)
         except Exception, e:
             self.is_login_successful = False
-            log.error("Unable to post login credentials due to: " + str(e))
+            QgsMessageLog.instance().logMessage("Unable to post login credentials due to: " + str(e), TAG_NAME,
+                                                level=QgsMessageLog.CRITICAL)
         return response
 
     def login_to_app(self, response):
@@ -192,10 +193,13 @@ class InsightCloudQuery:
         new_response = self.post_login_credentials_to_app(url_data, response.geturl())
         if isinstance(new_response, basestring):
             self.is_login_successful = False
-            log.error("Error response received: " + str(response))
+            QgsMessageLog.instance().logMessage("Error response received: " + str(response), TAG_NAME,
+                                                level=QgsMessageLog.CRITICAL)
         elif new_response and URL_CAS_LOGIN_SEGMENT in new_response.geturl():
             self.is_login_successful = False
-            log.error("Unable to login with credentials: (username: %s, password %s)" % (self.username, self.password))
+            QgsMessageLog.instance().logMessage("Unable to login with credentials: (username: %s, password %s)"
+                                                % (self.username, self.password), TAG_NAME,
+                                                level=QgsMessageLog.CRITICAL)
         return new_response
 
     def log_into_monocle_3(self):
@@ -212,7 +216,8 @@ class InsightCloudQuery:
                 response = self.login_to_app(response)
         except Exception, e:
             self.is_login_successful = False
-            log.error("Unable to log into Monocle-3 due to: " + str(e))
+            QgsMessageLog.instance().logMessage("Unable to log into Monocle-3 due to: " + str(e), TAG_NAME,
+                                                level=QgsMessageLog.CRITICAL)
         if response and self.is_login_successful:
             return response.read()
         return None
@@ -290,9 +295,9 @@ class InsightCloudQuery:
                     self.is_login_successful = True
             except Exception, e:
                 self.is_login_successful = False
-                log.error("Unable to hit url: " + url + " due to: " + str(e) + "; trying " +
-                          str(NUM_TIMES_TO_TRY - i - 1)
-                          + " more times.")
+                QgsMessageLog.instance().logMessage("Unable to hit url: " + url + " due to: " + str(e) + "; trying " +
+                                                    str(NUM_TIMES_TO_TRY - i - 1) + " more times.", TAG_NAME,
+                                                    level=QgsMessageLog.CRITICAL)
             if response and self.is_login_successful:
                 return self.process_json_data(response.read())
         return None
@@ -314,9 +319,9 @@ class InsightCloudQuery:
                     self.is_login_successful = True
             except Exception, e:
                 self.is_login_successful = False
-                log.error("Unable to run get on url: " + url + " due to: " + str(e) + "; trying "
-                          + str(NUM_TIMES_TO_TRY - i - 1) +
-                          " times")
+                QgsMessageLog.instance().logMessage("Unable to run get on url: " + url + " due to: " + str(e)
+                                                    + "; trying " + str(NUM_TIMES_TO_TRY - i - 1) + " times",
+                                                    TAG_NAME, level=QgsMessageLog.CRITICAL)
             if response and self.is_login_successful:
                 paging_id = self.process_paging_request(response.read())
                 if paging_id:
@@ -341,7 +346,6 @@ class InsightCloudQuery:
         continue_querying = True
         while continue_querying:
             data = {'pagingId': paging_id}
-            log.info("Using paging id: " + str(paging_id))
             for i in range(0, NUM_TIMES_TO_TRY):
                 try:
                     request = urllib2.Request(ITEMS_POST_PAGING_ID, urllib.urlencode(data))
@@ -351,8 +355,10 @@ class InsightCloudQuery:
                         self.is_login_successful = True
                 except Exception, e:
                     self.is_login_successful = False
-                    log.error("Unable to post to url: " + ITEMS_POST_PAGING_ID + " due to: " + str(e) + "; trying " +
-                              str(NUM_TIMES_TO_TRY - i - 1) + " times")
+                    QgsMessageLog.instance().logMessage("Unable to post to url: " + ITEMS_POST_PAGING_ID +
+                                                        " due to: " + str(e) + "; trying "
+                                                        + str(NUM_TIMES_TO_TRY - i - 1) + " times", TAG_NAME,
+                                                        level=QgsMessageLog.CRITICAL)
                     if (NUM_TIMES_TO_TRY - i - 1) <= 0:
                         return None
                 if response and self.is_login_successful:
@@ -461,7 +467,8 @@ class InsightCloudQuery:
         elif geometry_type == u'MultiPolygon':
             feature.setGeometry(QgsGeometry.fromMultiPolygon(self.get_multipolygon_from_json(coordinates)))
         else:
-            log.error(u"Encountered odd geometry type: " + geometry_type)
+            QgsMessageLog.instance().logMessage(u"Encountered odd geometry type: " + geometry_type, TAG_NAME,
+                                                level=QgsMessageLog.CRITICAL)
         feature.geometry_type = geometry_type
         attributes = self.get_attributes_from_json(vector_item[KEY_JSON_PROPERTIES])
         fields = QgsFields()
