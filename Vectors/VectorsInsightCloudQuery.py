@@ -569,7 +569,8 @@ class InsightCloudQuery:
             if prop in props:
                 new_properties[prop] = props[prop]
         if KEY_JSON_ATTRIBUTES in props:
-            new_properties[KEY_JSON_ATTRIBUTES] = props[KEY_JSON_ATTRIBUTES]
+            for key, value in props[KEY_JSON_ATTRIBUTES].iteritems():
+                new_properties[key] = value
         return new_properties
 
 class UVIFeature(QgsFeature):
