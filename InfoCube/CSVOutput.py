@@ -26,12 +26,8 @@ ARG_LEFT = "left"
 
 ARG_CSV_FILENAME = "csv_filename"
 
-ARG_GBD_API_KEY = "gbd_api_key"
-ARG_GBD_USERNAME = "gbd_username"
-ARG_GBD_PASSWORD = "gbd_password"
-
-ARG_INSIGHTCLOUD_USERNAME = "insightcloud_username"
-ARG_INSIGHTCLOUD_PASSWORD = "insightcloud_password"
+ARG_USERNAME = "username"
+ARG_PASSWORD = "password"
 
 ARG_DAYS_TO_QUERY = "days_to_query"
 
@@ -109,8 +105,7 @@ class CSVGeneratorObject(QObject):
 
 class CSVGenerator:
 
-    def __init__(self, left, top, right, bottom, csv_filename, gbd_api_key, gbd_username,
-                 gbd_password, insightcloud_username, insightcloud_password, days_to_query=60):
+    def __init__(self, left, top, right, bottom, csv_filename, username, password, client_id, client_secret, days_to_query=60):
         self.left = left
         self.top = top
         self.right = right
@@ -119,12 +114,10 @@ class CSVGenerator:
         self.csv_lock_filename = csv_filename + LOCK_SUFFIX
         self.days_to_query = days_to_query
 
-        self.gbd_api_key = gbd_api_key
-        self.gbd_username = gbd_username
-        self.gbd_password = gbd_password
-
-        self.insightcloud_username = insightcloud_username
-        self.insightcloud_password = insightcloud_password
+        self.username = username
+        self.password = password
+        self.client_id = client_id
+        self.client_secret = client_secret
 
         # create lock file
         open(self.csv_lock_filename, 'a').close()
@@ -168,15 +161,13 @@ class CSVGenerator:
         for next_x in drange(self.left + INCREMENTAL_INTERVAL, self.right, INCREMENTAL_INTERVAL):
             for next_y in drange(self.bottom + INCREMENTAL_INTERVAL, self.top, INCREMENTAL_INTERVAL):
 
-                gbd_api_key = self.gbd_api_key
-                gbd_username = self.gbd_username
-                gbd_password = self.gbd_password
-
-                insightcloud_username = self.insightcloud_username
-                insightcloud_password = self.insightcloud_password
-
-                csv_runnable = CSVRunnable(gbd_api_key, gbd_username, gbd_password, insightcloud_username,
-                                           insightcloud_password, serial_no, next_y, current_x, next_x,
+                username = self.username
+                password = self.password
+                client_id = self.client_id
+                client_secret = self.client_secret
+                
+                csv_runnable = CSVRunnable(username, password, client_id, client_secret,
+                                           serial_no, next_y, current_x, next_x,
                                            current_y, begin_date, end_date)
                 csv_runnable.csv_object.new_csv_element.connect(self.csv_generator_object.callback)
                 self.pool.start(csv_runnable)
@@ -224,14 +215,13 @@ class CSVObject(QObject):
 
 
 class CSVRunnable(QRunnable):
-    def __init__(self, auth_token, gbd_username, gbd_password, insightcloud_username, insightcloud_password,
+    def __init__(self, client_id, client_secret, username, password,
                  serial_no, top, left, right, bottom, time_begin, time_end):
         QRunnable.__init__(self)
-        self.auth_token = auth_token
-        self.gbd_username = gbd_username
-        self.gbd_password = gbd_password
-        self.insightcloud_username = insightcloud_username
-        self.insightcloud_password = insightcloud_password
+        self.username = username
+        self.password = password
+        self.client_id = client_id
+        self.client_secret = client_secret
         self.serial_no = serial_no
         self.top = top
         self.left = left
@@ -250,15 +240,13 @@ class CSVRunnable(QRunnable):
                                 bottom=self.bottom,
                                 polygon=gbd_params.polygon)
 
-        gbd_query = GBDQuery(auth_token=self.auth_token, username=self.gbd_username,
-                             password=self.gbd_password)
+        gbd_query = GBDQuery(username=self.username, password=self.password, client_id=self.client_id, client_secret=self.client_secret)
         log.info("Starting GBD Query with params: " + str(gbd_params.__dict__))
         gbd_query.log_in()
         gbd_query.hit_test_endpoint()
 
         # build insightcloud query
-        insightcloud_query = InsightCloudQuery(username=self.insightcloud_username,
-                                               password=self.insightcloud_password)
+        insightcloud_query = InsightCloudQuery(username=self.username, password=self.password)
         log.info("Starting InsightCloud queries with params: " + str(insightcloud_params.__dict__))
         insightcloud_query.log_into_monocle_3()
     

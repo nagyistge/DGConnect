@@ -13,6 +13,8 @@ import cookielib
 
 from qgis.core import QgsMessageLog
 
+from base64 import b64encode
+
 # User Agent String; let's pretend we're chromium on Ubuntu
 USER_AGENT_STRING = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) ' \
                     'Ubuntu Chromium/41.0.2272.76 Chrome/41.0.2272.76 Safari/537.36'
@@ -21,10 +23,10 @@ USER_AGENT_STRING = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, 
 POLYGON_TEMPLATE = Template("POLYGON (($left $bottom, $left $top, $right $top, $right $bottom, $left $bottom))")
 
 # gbd urls
-GBD_TOP_LEVEL_URL = 'https://geobigdata.io/'
-GBD_LOGIN_URL = GBD_TOP_LEVEL_URL + "auth/v1/oauth/token/"
-GBD_TEST_LOGIN_URL = GBD_TOP_LEVEL_URL + "workflows/v1/authtest"
-GBD_SEARCH_AOI_AND_TIME_URL = GBD_TOP_LEVEL_URL + "catalog/v1/search"
+GBD_TOP_LEVEL_URL = 'https://iipbeta.digitalglobe.com/'
+GBD_LOGIN_URL = GBD_TOP_LEVEL_URL + "cas/oauth/token"
+GBD_TEST_LOGIN_URL = GBD_TOP_LEVEL_URL + "raster-catalog/api/version"
+GBD_SEARCH_AOI_AND_TIME_URL = GBD_TOP_LEVEL_URL + "raster-catalog/api/gbd/catalog/v1/search"
 
 # data format for parsing
 ISO_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
@@ -88,15 +90,16 @@ class GBDQuery:
     Class for querying GBD raster data
     """
 
-    def __init__(self, auth_token, username, password, grant_type='password'):
-        self.auth_token = auth_token
+    def __init__(self, username, password, client_id, client_secret, grant_type='password'):
         self.username = username
         self.password = password
+        self.client_id = client_id
+        self.client_secret = client_secret
         self.grant_type = grant_type
         self.access_token = None
         self.token_type = None
         self.headers = {
-            HEADER_AUTHORIZATION: 'Basic ' + self.auth_token,
+            HEADER_AUTHORIZATION: 'Basic ' + b64encode(client_id + ':' + client_secret),
             HEADER_USER_AGENT: USER_AGENT_STRING
         }
         self.opener = None

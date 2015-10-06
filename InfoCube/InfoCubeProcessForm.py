@@ -66,10 +66,9 @@ def ok_clicked(ui):
     if validate_ok(ui):
         ui.csv_generator = CSVGenerator(left=float(ui.left.text()), top=float(ui.top.text()),
                                   right=float(ui.right.text()), bottom=float(ui.bottom.text()),
-                                  csv_filename=ui.select_file.text(), gbd_api_key=ui.gbd_api_key.text(),
-                                  gbd_username=ui.gbd_username.text(), gbd_password=ui.gbd_password.text(),
-                                  insightcloud_username=ui.insightcloud_username.text(),
-                                  insightcloud_password=ui.insightcloud_password.text())
+                                  csv_filename=ui.select_file.text(),
+                                  username=ui.username.text(), password=ui.password.text(),
+                                  client_id=ui.client_id.text(), client_secret=ui.client_secret.text())
         ui.csv_generator.csv_generator_object.message_complete.connect(lambda file_name: ui.show_complete_message(file_name))
         ui.csv_generator.generate_csv()
     else:
@@ -102,12 +101,11 @@ def load_settings(ui):
     :return: None
     """
     # read values
-    ui.gbd_api_key.setText(read_setting(PLUGIN_NAME + "/" + GBD_API_KEY))
-    ui.gbd_username.setText(read_setting(PLUGIN_NAME + "/" + GBD_USERNAME))
-    ui.gbd_password.setText(read_setting(PLUGIN_NAME + "/" + GBD_PASSWORD))
+    ui.client_id.setText(read_setting(PLUGIN_NAME + "/" + GBD_USERNAME))
+    ui.client_secret.setText(read_setting(PLUGIN_NAME + "/" + GBD_PASSWORD))
 
-    ui.insightcloud_username.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME))
-    ui.insightcloud_password.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD))
+    ui.username.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME))
+    ui.password.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD))
 
     ui.select_file.setText(read_setting(PLUGIN_NAME + "/" + SELECT_FILE))
 
@@ -118,12 +116,11 @@ def save_settings_clicked(ui):
     :return: None
     """
     # store values
-    write_setting(PLUGIN_NAME + "/" + GBD_API_KEY, ui.gbd_api_key.text())
-    write_setting(PLUGIN_NAME + "/" + GBD_USERNAME, ui.gbd_username.text())
-    write_setting(PLUGIN_NAME + "/" + GBD_PASSWORD, ui.gbd_password.text())
+    write_setting(PLUGIN_NAME + "/" + GBD_USERNAME, ui.client_id.text())
+    write_setting(PLUGIN_NAME + "/" + GBD_PASSWORD, ui.client_secret.text())
 
-    write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME, ui.insightcloud_username.text())
-    write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD, ui.insightcloud_password.text())
+    write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME, ui.username.text())
+    write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD, ui.password.text())
 
     write_setting(PLUGIN_NAME + "/" + SELECT_FILE, ui.select_file.text())
 
@@ -181,9 +178,9 @@ def validate_ok(ui):
     :return: True if there are no errors, False otherwise
     """
     errors = []
-    validate_gbd_info(ui, errors)
     validate_output_path(ui, errors)
     validate_insightcloud_info(ui, errors)
+    validate_gbd_info(ui, errors)
     validate_bbox(ui, errors)
     if len(errors) > 0:
         error_dialog = QtGui.QErrorMessage(ui.dialog)
@@ -200,19 +197,16 @@ def validate_gbd_info(ui, errors):
     """
     # check gbd info
     is_gbd_info_good = True
-    if is_field_empty(ui.gbd_api_key):
+    if is_field_empty(ui.client_id):
         is_gbd_info_good = False
-        errors.append("No GBD Api Key provided.")
-    if is_field_empty(ui.gbd_username):
+        errors.append("No Client ID provided.")
+    if is_field_empty(ui.client_secret):
         is_gbd_info_good = False
-        errors.append("No GBD Username provided.")
-    if is_field_empty(ui.gbd_password):
-        is_gbd_info_good = False
-        errors.append("No GBD Password provided.")
+        errors.append("No Client Secret provided.")
     # validate credentials by hitting validate page
     if is_gbd_info_good:
-        query = GBDQuery(auth_token=ui.gbd_api_key.text(), username=ui.gbd_username.text(),
-                         password=ui.gbd_password.text())
+        query = GBDQuery(username=ui.username.text(), password=ui.password.text(), 
+                         client_id=ui.client_id.text(), client_secret=ui.client_secret.text())
         query.log_in()
         query.hit_test_endpoint()
         if not query.is_login_successful:
@@ -244,16 +238,15 @@ def validate_insightcloud_info(ui, errors):
     """
     # check insightcloud credentials
     is_insightcloud_info_good = True
-    if is_field_empty(ui.insightcloud_username):
+    if is_field_empty(ui.username):
         is_insightcloud_info_good = False
         errors.append("No InsightCloud username provided.")
-    if is_field_empty(ui.insightcloud_password):
+    if is_field_empty(ui.password):
         is_insightcloud_info_good = False
         errors.append("No InsightCloud password provided.")
     # validate credentials by hitting monocle-3
     if is_insightcloud_info_good:
-        query = InsightCloudQuery(username=ui.insightcloud_username.text(),
-                                  password=ui.insightcloud_password.text())
+        query = InsightCloudQuery(username=ui.username.text(), password=ui.password.text())
         query.log_into_monocle_3()
         if not query.is_login_successful:
             errors.append("Unable to verify InsightCloud credentials. See logs for more details.")
