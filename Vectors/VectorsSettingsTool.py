@@ -6,7 +6,7 @@ import VectorsProcessForm
 
 class VectorsSettingsTool:
     """
-    Tool for managing settings like CAS credentials and max items to return
+    Tool for managing settings like OAuth2 credentials and max items to return
     """
 
     def __init__(self, iface):

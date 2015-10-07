@@ -14,11 +14,11 @@ import cookielib
 import json
 
 from VectorsCASHTMLParser import VectorsCASFormHTMLParser
+from VectorsOAuth2Query import OAuth2Query
 
 from qgis.core import QgsFeature, QgsGeometry, QgsPoint, QgsFields, QgsField, QgsMessageLog
 
-MONOCLE_3_URL = "https://iipbeta.digitalglobe.com/monocle-3/"
-INSIGHT_VECTOR_URL = "https://iipbeta.digitalglobe.com/monocle-3/app/broker/vector/"
+INSIGHT_VECTOR_URL = "https://iipbeta.digitalglobe.com/insight-vector/"
 SOURCES_QUERY = Template(INSIGHT_VECTOR_URL + "api/esri/sources?left=$left&right=$right&upper=$upper&lower=$lower")
 GEOMETRY_QUERY = Template(INSIGHT_VECTOR_URL +
                           "api/esri/$source/geometries?left=$left&right=$right&upper=$upper&lower=$lower")
@@ -34,8 +34,9 @@ URL_CAS_LOGIN_SEGMENT = "login"
 KEY_HEADER_REFERRER = 'Referer'
 KEY_HEADER_PAGING_ID = 'Vector-Paging-Id'
 
-FIELD_USERNAME = "username"
-FIELD_PASSWORD = "password"
+HEADER_CONTENT_TYPE = 'Content-Type'
+CONTENT_TYPE_JSON = 'application/json'
+
 URL_MATCH = re.compile('(.*://[^/]*)')
 
 KEY_JSON_DATA = u'data'
@@ -119,108 +120,13 @@ class InsightCloudItemsParams(InsightCloudSourcesParams):
         self.source = source
         self.type_name = type_name
 
-class InsightCloudQuery:
+class InsightCloudQuery(OAuth2Query):
     """
     Class for handling queries to InsightCloud vector data
     """
 
-    def __init__(self, username, password):
-        self.username = username
-        self.password = password
-        handlers = [
-            urllib2.HTTPCookieProcessor(cookielib.CookieJar()),
-            urllib2.HTTPHandler(),
-            urllib2.HTTPSHandler(),
-            urllib2.HTTPRedirectHandler(),
-        ]
-        self.opener = urllib2.build_opener(*handlers)
-        self.is_login_successful = True
-
-    @classmethod
-    def is_on_login_page(cls, response):
-        """
-        Check to see if the current response is for the CAS log in page
-        :param response: The HTTP response received
-        :return: True if the responses' url points to the log in page; else False
-        """
-        if not response:
-            return False
-        return URL_CAS_LOGIN_SEGMENT in response.geturl()
-
-    @classmethod
-    def build_form_info(cls, response_url, form_data):
-        """
-        Parses the CAS page and pulls out the relevant information
-        :param response_url: The url of the current page
-        :param form_data: The HTML code of the page as a str
-        :return: A tuple containing ( the url to post the CAS info to , a map of data to post to CAS )
-        """
-        parser = VectorsCASFormHTMLParser()
-        parser.feed(form_data)
-        action = parser.action
-        match = re.match(URL_MATCH, response_url)
-        if match:
-            return match.group(0) + action, parser.hidden_data
-        return None
-
-    def post_login_credentials_to_app(self, url_data, redirect_header):
-        """
-        Posts the data to CAS as part of the log in sequence
-        :param url_data: Additional CAS form data to post
-        :param redirect_header: url to redirect from CAS
-        :return: A new HTTP response as a result of the POST
-        """
-        # post the credentials
-        response = None
-        try:
-            unencoded_data = dict({FIELD_USERNAME : self.username, FIELD_PASSWORD : self.password}.items() + url_data[1].items())
-            data = urllib.urlencode(unencoded_data)
-            request = urllib2.Request(url=url_data[0], data=data, headers={KEY_HEADER_REFERRER: redirect_header})
-            response = self.opener.open(request, data, timeout=TIMEOUT_IN_SECONDS)
-        except Exception, e:
-            self.is_login_successful = False
-            QgsMessageLog.instance().logMessage("Unable to post login credentials due to: " + str(e), TAG_NAME,
-                                                level=QgsMessageLog.CRITICAL)
-        return response
-
-    def login_to_app(self, response):
-        """
-        Attempts to log into the InsightCloud platform based on the current HTTP response
-        :param response: The current HTTP response
-        :return: An update HTTP response from the CAS log in
-        """
-        url_data = self.build_form_info(response.geturl(), response.read())
-        new_response = self.post_login_credentials_to_app(url_data, response.geturl())
-        if isinstance(new_response, basestring):
-            self.is_login_successful = False
-            QgsMessageLog.instance().logMessage("Error response received: " + str(response), TAG_NAME,
-                                                level=QgsMessageLog.CRITICAL)
-        elif new_response and URL_CAS_LOGIN_SEGMENT in new_response.geturl():
-            self.is_login_successful = False
-            QgsMessageLog.instance().logMessage("Unable to login with credentials: (username: %s, password %s)"
-                                                % (self.username, self.password), TAG_NAME,
-                                                level=QgsMessageLog.CRITICAL)
-        return new_response
-
-    def log_into_monocle_3(self):
-        """
-        Attempts to log into Monocle-3; used to validate credentials and intialize the log-in so that future
-        communication doesn't need to log on
-        :return: The HTML page as a str if successful; None otherwise
-        """
-        response = None
-        try:
-            request = urllib2.Request(MONOCLE_3_URL)
-            response = self.opener.open(request, timeout=TIMEOUT_IN_SECONDS)
-            if self.is_on_login_page(response):
-                response = self.login_to_app(response)
-        except Exception, e:
-            self.is_login_successful = False
-            QgsMessageLog.instance().logMessage("Unable to log into Monocle-3 due to: " + str(e), TAG_NAME,
-                                                level=QgsMessageLog.CRITICAL)
-        if response and self.is_login_successful:
-            return response.read()
-        return None
+    def __init__(self, username, password, client_id, client_secret, grant_type='password'):
+        super(self.__class__, self).__init__(username, password, client_id, client_secret, grant_type)
 
     def prep_param(self, param):
         """
@@ -286,18 +192,20 @@ class InsightCloudQuery:
         :return: A dictionary of name => count if successful; None if not
         """
         response = None
+        headers = self.get_headers().copy()
+        headers[HEADER_CONTENT_TYPE] = CONTENT_TYPE_JSON
+                
         for i in range(0, NUM_TIMES_TO_TRY):
             try:
-                request = urllib2.Request(url)
-                response = self.opener.open(request, timeout=TIMEOUT_IN_SECONDS)
-                if self.is_on_login_page(response):
-                    response = self.login_to_app(response)
-                    self.is_login_successful = True
+                request = urllib2.Request(url=url, headers=headers)
+                response = self.get_opener().open(request, timeout=TIMEOUT_IN_SECONDS)
+                self.is_login_successful = True
             except Exception, e:
                 self.is_login_successful = False
                 QgsMessageLog.instance().logMessage("Unable to hit url: " + url + " due to: " + str(e) + "; trying " +
                                                     str(NUM_TIMES_TO_TRY - i - 1) + " more times.", TAG_NAME,
                                                     level=QgsMessageLog.CRITICAL)
+            
             if response and self.is_login_successful:
                 return self.process_json_data(response.read())
         return None
@@ -310,13 +218,13 @@ class InsightCloudQuery:
         :return: A list of items if successful; None if not
         """
         response = None
+        headers = self.get_headers().copy()
+        headers[HEADER_CONTENT_TYPE] = CONTENT_TYPE_JSON
         for i in range(0, NUM_TIMES_TO_TRY):
             try:
-                request = urllib2.Request(url)
-                response = self.opener.open(request, timeout=TIMEOUT_IN_SECONDS)
-                if self.is_on_login_page(response):
-                    response = self.login_to_app(response)
-                    self.is_login_successful = True
+                request = urllib2.Request(url=url, headers=headers)
+                response = self.get_opener().open(request, timeout=TIMEOUT_IN_SECONDS)
+                self.is_login_successful = True
             except Exception, e:
                 self.is_login_successful = False
                 QgsMessageLog.instance().logMessage("Unable to run get on url: " + url + " due to: " + str(e)
@@ -349,7 +257,7 @@ class InsightCloudQuery:
             for i in range(0, NUM_TIMES_TO_TRY):
                 try:
                     request = urllib2.Request(ITEMS_POST_PAGING_ID, urllib.urlencode(data))
-                    response = self.opener.open(request)
+                    response = self.get_opener().open(request)
                     if self.is_on_login_page(response):
                         response = self.login_to_app(response)
                         self.is_login_successful = True
@@ -379,7 +287,7 @@ class InsightCloudQuery:
         :param response: The string response from the server with data for the dictionary
         :return: The dictionary in the form (source => count)
         """
-        processed_data = {}
+        processed_data = {}        
         json_data = json.loads(response, strict=False)
         if not json_data or KEY_JSON_DATA not in json_data:
             return processed_data

@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'UVITool_Settings.ui'
+# Form implementation generated from reading ui file 'Vectors_Settings.ui'
 #
-# Created: Thu Aug 27 13:31:03 2015
-#      by: PyQt4 UI code generator 4.10.4
+# Created by: PyQt4 UI code generator 4.11.4
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -26,7 +25,7 @@ except AttributeError:
 class Vectors_Settings(object):
     def setupUi(self, Settings):
         Settings.setObjectName(_fromUtf8("Settings"))
-        Settings.resize(689, 149)
+        Settings.resize(689, 187)
         Settings.setModal(False)
         self.gridLayout = QtGui.QGridLayout(Settings)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
@@ -60,12 +59,25 @@ class Vectors_Settings(object):
         self.password.setEchoMode(QtGui.QLineEdit.Password)
         self.password.setObjectName(_fromUtf8("password"))
         self.formLayout.setWidget(1, QtGui.QFormLayout.FieldRole, self.password)
+        self.client_id_label = QtGui.QLabel(Settings)
+        self.client_id_label.setObjectName(_fromUtf8("client_id_label"))
+        self.formLayout.setWidget(2, QtGui.QFormLayout.LabelRole, self.client_id_label)
+        self.client_id = QtGui.QLineEdit(Settings)
+        self.client_id.setObjectName(_fromUtf8("client_id"))
+        self.formLayout.setWidget(2, QtGui.QFormLayout.FieldRole, self.client_id)
+        self.client_secret_label = QtGui.QLabel(Settings)
+        self.client_secret_label.setObjectName(_fromUtf8("client_secret_label"))
+        self.formLayout.setWidget(3, QtGui.QFormLayout.LabelRole, self.client_secret_label)
+        self.client_secret = QtGui.QLineEdit(Settings)
+        self.client_secret.setEchoMode(QtGui.QLineEdit.Password)
+        self.client_secret.setObjectName(_fromUtf8("client_secret"))
+        self.formLayout.setWidget(3, QtGui.QFormLayout.FieldRole, self.client_secret)
         self.max_items_to_return_label = QtGui.QLabel(Settings)
         self.max_items_to_return_label.setObjectName(_fromUtf8("max_items_to_return_label"))
-        self.formLayout.setWidget(2, QtGui.QFormLayout.LabelRole, self.max_items_to_return_label)
+        self.formLayout.setWidget(4, QtGui.QFormLayout.LabelRole, self.max_items_to_return_label)
         self.max_items_to_return = QtGui.QLineEdit(Settings)
         self.max_items_to_return.setObjectName(_fromUtf8("max_items_to_return"))
-        self.formLayout.setWidget(2, QtGui.QFormLayout.FieldRole, self.max_items_to_return)
+        self.formLayout.setWidget(4, QtGui.QFormLayout.FieldRole, self.max_items_to_return)
         self.gridLayout.addLayout(self.formLayout, 0, 0, 1, 2)
         self.max_items_to_return_label.setBuddy(self.max_items_to_return)
 
@@ -73,6 +85,12 @@ class Vectors_Settings(object):
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), Settings.accept)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("rejected()")), Settings.reject)
         QtCore.QMetaObject.connectSlotsByName(Settings)
+        Settings.setTabOrder(self.validate_button, self.save_button)
+        Settings.setTabOrder(self.save_button, self.username)
+        Settings.setTabOrder(self.username, self.password)
+        Settings.setTabOrder(self.password, self.client_id)
+        Settings.setTabOrder(self.client_id, self.client_secret)
+        Settings.setTabOrder(self.client_secret, self.max_items_to_return)
 
     def retranslateUi(self, Settings):
         Settings.setWindowTitle(_translate("Settings", "Settings", None))
@@ -80,5 +98,7 @@ class Vectors_Settings(object):
         self.save_button.setText(_translate("Settings", "Save", None))
         self.username_label.setText(_translate("Settings", "Username", None))
         self.password_label.setText(_translate("Settings", "Password", None))
+        self.client_id_label.setText(_translate("Settings", "Client ID", None))
+        self.client_secret_label.setText(_translate("Settings", "Client Secret", None))
         self.max_items_to_return_label.setText(_translate("Settings", "Max Items to Return", None))
 
