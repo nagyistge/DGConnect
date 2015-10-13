@@ -269,37 +269,37 @@ class VectorsDialogTool(QObject):
         if new_items:
             if KEY_ESRI_GEOMETRY_POLYGON in self.geometries and self.geometries[KEY_ESRI_GEOMETRY_POLYGON].is_checked:
                 for polygon in new_items[KEY_POLYGON]:
-                    self.polygon_file.write(u"\n")
+                    self.write_to_file(FILE_POLYGON, u"\n")
                     if self.written_first_polygon:
-                        self.polygon_file.write(u",")
+                        self.write_to_file(FILE_POLYGON, u",")
                     else:
                         self.written_first_polygon = True
-                    self.polygon_file.write(polygon)
+                    self.write_to_file(FILE_POLYGON, polygon)
             if KEY_ESRI_GEOMETRY_POLYLINE in self.geometries and self.geometries[KEY_ESRI_GEOMETRY_POLYLINE].is_checked:
                 for line in new_items[KEY_LINE]:
-                    self.line_file.write(u"\n")
+                    self.write_to_file(FILE_LINE, u"\n")
                     if self.written_first_line:
-                        self.line_file.write(u",")
+                        self.write_to_file(FILE_LINE, u",")
                     else:
                         self.written_first_line = True
-                    self.line_file.write(line)
+                    self.write_to_file(FILE_LINE, line)
             if KEY_ESRI_GEOMETRY_POINT in self.geometries and self.geometries[KEY_ESRI_GEOMETRY_POINT].is_checked:
                 for point in new_items[KEY_POINT]:
-                    self.point_file.write(u"\n")
+                    self.write_to_file(FILE_POINTS, u"\n")
                     if self.written_first_point:
-                        self.point_file.write(u",")
+                        self.write_to_file(FILE_POINTS, u",")
                     else:
                         self.written_first_point = True
-                    self.point_file.write(point)
+                    self.write_to_file(FILE_POINTS, point)
             if KEY_ESRI_GEOMETRY_MULTI_POINT in self.geometries and\
                     self.geometries[KEY_ESRI_GEOMETRY_MULTI_POINT].is_checked:
                 for point in new_items[KEY_MULTI_POINT]:
-                    self.point_file.write(u"\n")
+                    self.write_to_file(FILE_POINTS, u"\n")
                     if self.written_first_point:
-                        self.point_file.write(u",")
+                        self.write_to_file(FILE_POINTS, u",")
                     else:
                         self.written_first_point = True
-                    self.point_file.write(point)
+                    self.write_to_file(FILE_POINTS, point)
 
         self.on_new_json_task_complete()
 
@@ -314,19 +314,12 @@ class VectorsDialogTool(QObject):
             self.json_progress.setValue(self.json_progress.value() + 1)
         else:
             # close files
-            self.polygon_file.write(GEOJSON_ENDING)
-            self.polygon_file.close()
-
-            self.line_file.write(GEOJSON_ENDING)
-            self.line_file.close()
-
-            self.point_file.write(GEOJSON_ENDING)
-            self.point_file.close()
+            self.close_file(FILE_POLYGON)
+            self.close_file(FILE_LINE)
+            self.close_file(FILE_POINTS)
 
             # update tool
-            self.line_file = None
-            self.point_file = None
-            self.polygon_file = None
+            self.file_dict = {}
             self.written_first_line = False
             self.written_first_point = False
             self.written_first_polygon = False
@@ -367,9 +360,7 @@ class VectorsDialogTool(QObject):
         self.polygon_vector_layer = None
         self.dialog_base.export_button.clicked.connect(self.export)
         # self.query_initial_sources()
-        self.point_file = None
-        self.line_file = None
-        self.polygon_file = None
+        self.file_dict = {}
         self.directory = None
         self.written_first_line = False
         self.written_first_point = False
@@ -621,26 +612,12 @@ class VectorsDialogTool(QObject):
         if not self.validate_directory(directory):
             return
         self.directory = directory
-        # set up file names
-        point_file = os.path.join(self.directory, FILE_POINTS)
-        polygon_file = os.path.join(self.directory, FILE_POLYGON)
-        line_file = os.path.join(self.directory, FILE_LINE)
 
         bar_max = len(self.sources.keys()) * len(self.types_dict.keys())
 
         self.init_json_progress_bar(bar_max)
 
         username, password, client_id, client_secret, max_items_to_return = VectorsProcessForm.get_settings()
-
-        # create file handlers
-        self.polygon_file = open(polygon_file, 'w')
-        self.polygon_file.write(GEOJSON_BEGINNING)
-
-        self.line_file = open(line_file, 'w')
-        self.line_file.write(GEOJSON_BEGINNING)
-
-        self.point_file = open(point_file, 'w')
-        self.point_file.write(GEOJSON_BEGINNING)
 
         for source_key in self.sources.keys():
             source_item = self.sources[source_key]
@@ -740,6 +717,21 @@ class VectorsDialogTool(QObject):
                                                 level=QgsMessageBar.CRITICAL)
             return False
         return True
+
+    def write_to_file(self, filename, text):
+        file_obj = self.file_dict.get(str(filename), None)
+        if not file_obj:
+            file_path = os.path.join(self.directory, filename)
+            file_obj = open(file_path, 'w')
+            self.file_dict[str(filename)] = file_obj
+            file_obj.write(GEOJSON_BEGINNING)
+        file_obj.write(text)
+
+    def close_file(self, filename):
+        file_obj = self.file_dict.get(str(filename), None)
+        if file_obj:
+            file_obj.write(GEOJSON_ENDING)
+            file_obj.close()
 
 class SourceObject(QObject):
     """
