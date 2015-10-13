@@ -245,6 +245,7 @@ class InsightCloudQuery(OAuth2Query):
         :return: A list of returned items if successful; None if not
         """
         response = None
+        headers = self.get_headers().copy()
         total_data = {
             KEY_POINT: [],
             KEY_POLYGON: [],
@@ -256,11 +257,9 @@ class InsightCloudQuery(OAuth2Query):
             data = {'pagingId': paging_id}
             for i in range(0, NUM_TIMES_TO_TRY):
                 try:
-                    request = urllib2.Request(ITEMS_POST_PAGING_ID, urllib.urlencode(data))
+                    request = urllib2.Request(ITEMS_POST_PAGING_ID, urllib.urlencode(data), headers)
                     response = self.get_opener().open(request)
-                    if self.is_on_login_page(response):
-                        response = self.login_to_app(response)
-                        self.is_login_successful = True
+                    self.is_login_successful = True
                 except Exception, e:
                     self.is_login_successful = False
                     QgsMessageLog.instance().logMessage("Unable to post to url: " + ITEMS_POST_PAGING_ID +
