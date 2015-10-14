@@ -332,8 +332,6 @@ class VectorsDialogTool(QObject):
             # update info
             self.iface.messageBar().pushMessage("INFO", "File export has completed to directory %s." % self.directory)
 
-            self.directory = None
-
     def __init__(self, iface, bbox_gui, dialog_base):
         """
         Constructor for the DialogTool
@@ -607,8 +605,8 @@ class VectorsDialogTool(QObject):
         self.clear_widgets()
         if not self.validate_export():
             return
-        file_dialog = QFileDialog(None)
-        directory = file_dialog.getExistingDirectory(None, "Export to directory", os.path.expanduser("~"))
+        starting_directory = self.directory or os.path.expanduser("~")
+        directory = QFileDialog.getExistingDirectory(None, "Export to directory", starting_directory)
         if not self.validate_directory(directory):
             return
         self.directory = directory
