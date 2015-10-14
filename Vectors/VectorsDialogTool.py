@@ -719,19 +719,21 @@ class VectorsDialogTool(QObject):
         return True
 
     def write_to_file(self, filename, text):
-        file_obj = self.file_dict.get(str(filename), None)
-        if not file_obj:
-            file_path = os.path.join(self.directory, filename)
-            file_obj = open(file_path, 'w')
-            self.file_dict[str(filename)] = file_obj
-            file_obj.write(GEOJSON_BEGINNING)
+        with self.json_lock:
+            file_obj = self.file_dict.get(str(filename), None)
+            if not file_obj:
+                file_path = os.path.join(self.directory, filename)
+                file_obj = open(file_path, 'w')
+                self.file_dict[str(filename)] = file_obj
+                file_obj.write(GEOJSON_BEGINNING)
         file_obj.write(text)
 
     def close_file(self, filename):
-        file_obj = self.file_dict.get(str(filename), None)
-        if file_obj:
-            file_obj.write(GEOJSON_ENDING)
-            file_obj.close()
+        with self.json_lock:
+            file_obj = self.file_dict.get(str(filename), None)
+            if file_obj:
+                file_obj.write(GEOJSON_ENDING)
+                file_obj.close()
 
 class SourceObject(QObject):
     """
