@@ -22,7 +22,7 @@ USER_AGENT_STRING = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, 
 # oauth2 urls
 TOP_LEVEL_URL = 'https://iipbeta.digitalglobe.com/'
 LOGIN_URL = TOP_LEVEL_URL + "cas/oauth/token"
-TEST_LOGIN_URL = TOP_LEVEL_URL + "raster-catalog/api/version"
+TEST_LOGIN_URL = TOP_LEVEL_URL + "insight-vector/api/vectors/connection/test?source=foo&type=foo&left=0&right=0&upper=0&lower=0&count=0"
 
 # json keys
 JSON_ENCODING = 'utf8'
@@ -53,7 +53,7 @@ class OAuth2Query(object):
         self.access_token = None
         self.token_type = None
         self.headers = {
-            HEADER_AUTHORIZATION: 'Basic ' + b64encode(client_id + ':' + client_secret),
+            HEADER_AUTHORIZATION: 'Basic ' + b64encode(self.client_id + ':' + self.client_secret),
             HEADER_USER_AGENT: USER_AGENT_STRING
         }
         self.opener = None
@@ -61,7 +61,7 @@ class OAuth2Query(object):
 
     def log_in(self):
         """
-        Log in to GBD using the credentials provided to the constructor
+        Log in to OAuth2 using the credentials provided to the constructor
         :return: None
         """
         # prep data
@@ -75,9 +75,12 @@ class OAuth2Query(object):
         # build up request with cookie jar and basic auth handler
         cookie_jar = cookielib.LWPCookieJar()
         self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar))
+        
+        headers = self.headers
+        headers[HEADER_AUTHORIZATION] = 'Basic ' + b64encode(self.client_id + ':' + self.client_secret)
 
         try:
-            request = urllib2.Request(LOGIN_URL, encoded_data, headers=self.headers)
+            request = urllib2.Request(url=LOGIN_URL, data=encoded_data, headers=headers)
             response = self.opener.open(request)
             response_data = response.read()
             json_data = json.loads(response_data, strict=False)
@@ -111,3 +114,9 @@ class OAuth2Query(object):
             QgsMessageLog.instance().logMessage("Exception detected during endpoint test: " + str(e),
                                                 TAG_NAME, level=QgsMessageLog.CRITICAL)
             self.is_login_successful = False
+    
+    def get_opener(self):
+        return self.opener
+    
+    def get_headers(self):
+        return self.headers

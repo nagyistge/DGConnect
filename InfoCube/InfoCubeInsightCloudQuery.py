@@ -61,7 +61,7 @@ class InsightCloudQuery:
         self.username = username
         self.password = password
         self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.CookieJar()))
-        self.is_login_successful = True
+        self.is_login_successful = False
 
     @classmethod
     def is_on_login_page(cls, response):
@@ -102,6 +102,7 @@ class InsightCloudQuery:
             data = urllib.urlencode(unencoded_data)
             request = urllib2.Request(url=url_data[0], data=data, headers={KEY_HEADER_REFERRER: redirect_header})
             response = self.opener.open(request, data, timeout=TIMEOUT_IN_SECONDS)
+            self.is_login_successful = True
         except Exception, e:
             self.is_login_successful = False
             QgsMessageLog.instance().logMessage("Unable to post login credentials due to: " + str(e), TAG_NAME,

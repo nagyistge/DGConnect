@@ -115,18 +115,19 @@ def save_settings_clicked(ui):
     :param ui: The GUI object holding the fields
     :return: None
     """
-    # store values
-    write_setting(PLUGIN_NAME + "/" + GBD_USERNAME, ui.client_id.text())
-    write_setting(PLUGIN_NAME + "/" + GBD_PASSWORD, ui.client_secret.text())
+    if validate_save_settings(ui):
+        # store values
+        write_setting(PLUGIN_NAME + "/" + GBD_USERNAME, ui.client_id.text())
+        write_setting(PLUGIN_NAME + "/" + GBD_PASSWORD, ui.client_secret.text())
 
-    write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME, ui.username.text())
-    write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD, ui.password.text())
+        write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME, ui.username.text())
+        write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD, ui.password.text())
 
-    write_setting(PLUGIN_NAME + "/" + SELECT_FILE, ui.select_file.text())
+        write_setting(PLUGIN_NAME + "/" + SELECT_FILE, ui.select_file.text())
 
-    # write success message
-    message = QtGui.QMessageBox()
-    message.information(None, "Credentials Saved!", "Credentials Saved!")
+        # write success message
+        message = QtGui.QMessageBox()
+        message.information(None, "Credentials Saved!", "Credentials Saved!")
 
 def select_file_clicked(ui):
     """
