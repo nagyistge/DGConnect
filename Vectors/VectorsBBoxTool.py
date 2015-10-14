@@ -32,8 +32,9 @@ class VectorsBBoxTool(QgsMapToolEmitPoint):
         self.iface = iface
         self.canvas = iface.mapCanvas()
         self.rubber_band = QgsRubberBand(self.canvas, QGis.Polygon)
-        self.rubber_band.setColor(QColor(250, 0, 0, 100))
-        self.rubber_band.setWidth(1)
+        self.rubber_band.setColor(QColor(250, 0, 0, 8))
+        self.rubber_band.setBorderColor(QColor(250, 0, 0, 128))
+        self.rubber_band.setWidth(3)
         self.reset()
         self.start_point = None
         self.end_point = None
