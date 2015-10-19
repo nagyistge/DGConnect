@@ -12,6 +12,7 @@ import urllib2
 import cookielib
 
 import json
+import time
 
 from VectorsCASHTMLParser import VectorsCASFormHTMLParser
 from VectorsOAuth2Query import OAuth2Query
@@ -205,6 +206,7 @@ class InsightCloudQuery(OAuth2Query):
                 QgsMessageLog.instance().logMessage("Unable to hit url: " + url + " due to: " + str(e) + "; trying " +
                                                     str(NUM_TIMES_TO_TRY - i - 1) + " more times.", TAG_NAME,
                                                     level=QgsMessageLog.CRITICAL)
+                time.sleep(1)
             
             if response and self.is_login_successful:
                 return self.process_json_data(response.read())
@@ -230,12 +232,13 @@ class InsightCloudQuery(OAuth2Query):
                 QgsMessageLog.instance().logMessage("Unable to run get on url: " + url + " due to: " + str(e)
                                                     + "; trying " + str(NUM_TIMES_TO_TRY - i - 1) + " times",
                                                     TAG_NAME, level=QgsMessageLog.CRITICAL)
+                time.sleep(1)
             if response and self.is_login_successful:
                 paging_id = self.process_paging_request(response.read())
                 if paging_id:
                     return self.query_for_pages(paging_id, json_export)
                 return None
-        return None
+        raise Exception("unable to make paging query on url:" + url)
 
     def query_for_pages(self, paging_id, json_export):
         """
@@ -266,6 +269,7 @@ class InsightCloudQuery(OAuth2Query):
                                                         " due to: " + str(e) + "; trying "
                                                         + str(NUM_TIMES_TO_TRY - i - 1) + " times", TAG_NAME,
                                                         level=QgsMessageLog.CRITICAL)
+                    time.sleep(1)
                     if (NUM_TIMES_TO_TRY - i - 1) <= 0:
                         return None
                 if response and self.is_login_successful:

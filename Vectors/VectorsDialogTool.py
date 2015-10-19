@@ -257,7 +257,7 @@ class VectorsDialogTool(QObject):
         self.on_task_complete()
 
     @pyqtSlot(object, object)
-    def on_new_json_items(self, items_params, new_items):
+    def on_new_json_items(self, items_params, new_items=None):
         """
         Callback function for adding new json items to the exported GeoJSON files
         :param items_params: The parameters used for the query
@@ -310,27 +310,40 @@ class VectorsDialogTool(QObject):
         Resets the UI when it is actually done
         :return: None
         """
-        if self.get_json_active_thread_count() > 0:
-            self.json_progress.setValue(self.json_progress.value() + 1)
-        else:
-            # close files
-            self.close_file(FILE_POLYGON)
-            self.close_file(FILE_LINE)
-            self.close_file(FILE_POINTS)
+        if not self.json_failed:
+            if self.get_json_active_thread_count() > 0:
+                self.json_progress.setValue(self.json_progress.value() + 1)
+            else:
+                # close files
+                self.close_file(FILE_POLYGON)
+                self.close_file(FILE_LINE)
+                self.close_file(FILE_POINTS)
+    
+                # update tool
+                self.file_dict = {}
+                self.written_first_line = False
+                self.written_first_point = False
+                self.written_first_polygon = False
+    
+                # remove progress bar
+                self.json_progress_message_bar = None
+                self.json_progress = None
+                self.iface.messageBar().clearWidgets()
+    
+                # update info
+                self.iface.messageBar().pushMessage("Info", "File export has completed to directory %s." % self.directory)
 
-            # update tool
-            self.file_dict = {}
-            self.written_first_line = False
-            self.written_first_point = False
-            self.written_first_polygon = False
-
-            # remove progress bar
-            self.json_progress_message_bar = None
-            self.json_progress = None
-            self.iface.messageBar().clearWidgets()
-
-            # update info
-            self.iface.messageBar().pushMessage("INFO", "File export has completed to directory %s." % self.directory)
+    @pyqtSlot(object)
+    def cancel_json_threads(self, exception):
+        self.json_failed = True
+        
+        # remove progress bar
+        self.json_progress_message_bar = None
+        self.json_progress = None
+        self.iface.messageBar().clearWidgets()
+        
+        # update info
+        self.iface.messageBar().pushMessage("Error", "Error encountered during export.", level=QgsMessageBar.CRITICAL)
 
     def __init__(self, iface, bbox_gui, dialog_base):
         """
@@ -353,6 +366,7 @@ class VectorsDialogTool(QObject):
         self.progress_message_bar = None
         self.json_progress_message_bar = None
         self.json_progress = None
+        self.json_failed = False
         self.point_vector_layer = None
         self.line_vector_layer = None
         self.polygon_vector_layer = None
@@ -626,6 +640,7 @@ class VectorsDialogTool(QObject):
                         item_params = InsightCloudItemsParams(source_item.source_params, source_key, item_key)
                         task = JSONItemRunnable(username, password, client_id, client_secret, item_params)
                         task.json_item_object.task_complete.connect(self.on_new_json_items)
+                        task.json_item_object.task_cancel.connect(self.cancel_json_threads)
                         self.json_thread_pool.start(task)
                     else:
                         if self.json_progress:
@@ -939,6 +954,7 @@ class JSONItemObject(QObject):
     QObject for holding the signal for emitting new items in json format
     """
     task_complete = pyqtSignal(object, object)
+    task_cancel = pyqtSignal(object)
 
     def __init__(self, QObject_parent=None):
         QObject.__init__(self, QObject_parent)
@@ -971,10 +987,13 @@ class JSONItemRunnable(QRunnable):
         Runs the items query and emit the results
         :return: None
         """
-        query = InsightCloudQuery(self.username, self.password, self.client_id, self.client_secret)
-        query.log_in()
-        new_items = query.query_items(self.items_params, True)
-        self.json_item_object.task_complete.emit(self.items_params, new_items)
+        try:
+            query = InsightCloudQuery(self.username, self.password, self.client_id, self.client_secret)
+            query.log_in()
+            new_items = query.query_items(self.items_params, True)
+            self.json_item_object.task_complete.emit(self.items_params, new_items)
+        except Exception, e:
+            self.json_item_object.task_cancel.emit(e)
 
 class SourceItem(QStandardItem):
     """
