@@ -247,8 +247,10 @@ def validate_insightcloud_info(ui, errors):
         errors.append("No InsightCloud password provided.")
     # validate credentials by hitting monocle-3
     if is_insightcloud_info_good:
-        query = InsightCloudQuery(username=ui.username.text(), password=ui.password.text())
-        query.log_into_monocle_3()
+        query = InsightCloudQuery(username=ui.username.text(), password=ui.password.text(),
+                                  client_id=ui.client_id.text(), client_secret=ui.client_secret.text())
+        query.log_in()
+        query.hit_test_endpoint()
         if not query.is_login_successful:
             errors.append("Unable to verify InsightCloud credentials. See logs for more details.")
 

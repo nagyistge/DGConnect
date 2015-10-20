@@ -36,7 +36,7 @@ LOCK_SUFFIX = ".lock"
 class CSVOutput:
     serial_no_counter = 1
 
-    def __init__(self, top, right, bottom, left, polygon, serial_no=None):
+    def __init__(self, top, right, bottom, left, polygon, vector_header_dict, serial_no=None):
 
         self.top = top
         self.right = right
@@ -50,9 +50,8 @@ class CSVOutput:
         self.num_gbd_30_day = 0
         self.num_gbd_60_day = 0
         # uvi stats
-        self.num_osm = 0
-        self.num_twitter = 0
-        self.num_rss = 0
+        self.vector_dict = {}
+        self.vector_header_dict = vector_header_dict
         # increment counter
         if serial_no:
             self.serial_no = serial_no
@@ -61,17 +60,20 @@ class CSVOutput:
             CSVOutput.serial_no_counter += 1
 
     def __str__(self):
-        return "%s, %s, %s, %s, %s, \"%s\", %s, %s, %s, %s, %s, %s, %s, %s" % (self.serial_no, self.top, self.right,
+        text = "%s, %s, %s, %s, %s, \"%s\", %s, %s, %s, %s, %s," % (self.serial_no, self.top, self.right,
                                                                                self.bottom, self.left, self.polygon,
                                                                                self.num_gbd_1_day, self.num_gbd_3_day,
                                                                                self.num_gbd_7_day, self.num_gbd_30_day,
-                                                                               self.num_gbd_60_day,self.num_osm,
-                                                                               self.num_twitter, self.num_rss)
+                                                                               self.num_gbd_60_day)
+        for term in self.vector_header_dict:
+            text = text + str(self.vector_dict.get(term) or "0") + ","
+        text = text[:-1]
+        return text
 
     @classmethod
     def get_csv_header(cls):
         return "S No,Top,Right,Bottom,Left,Polygon,GBD 1 Day,GBD 3 Days,GBD 7 Days," \
-               "GBD 30 Days,GBD 60 Days,OSM,Twitter,RSS"
+               "GBD 30 Days,GBD 60 Days,"
 
 
 def drange(start, stop, step):
@@ -113,6 +115,8 @@ class CSVGenerator:
         self.csv_filename = csv_filename
         self.csv_lock_filename = csv_filename + LOCK_SUFFIX
         self.days_to_query = days_to_query
+        self.begin_date = None
+        self.end_date = None
 
         self.username = username
         self.password = password
@@ -140,6 +144,8 @@ class CSVGenerator:
         self.csv_elements = []
 
         self.csv_generator_object = CSVGeneratorObject(self)
+        
+        self.vector_header_dict = {}
 
         self.pool = QThreadPool()
 
@@ -150,13 +156,21 @@ class CSVGenerator:
     def generate_csv(self):
         # dates
         now = datetime.now()
-        end_date = now
-        begin_date = now - timedelta(days=self.days_to_query)
+        self.end_date = now
+        self.begin_date = now - timedelta(days=self.days_to_query)
 
         current_x = self.left
         current_y = self.bottom
 
         serial_no = 1
+        
+        # get header dict
+        insightcloud_query = InsightCloudQuery(username=self.username, password=self.password, client_id=self.client_id, client_secret=self.client_secret)
+        insightcloud_query.log_in()
+        insightcloud_query.hit_test_endpoint()
+        insightcloud_params = InsightCloudParams(top=self.top, bottom=self.bottom, left=self.left, right=self.right, time_begin=self.begin_date, time_end=self.end_date)
+        header_result = insightcloud_query.get_vector_result(insightcloud_params)
+        self.vector_header_dict = insightcloud_query.get_vector_data(header_result)
 
         for next_x in drange(self.left + INCREMENTAL_INTERVAL, self.right, INCREMENTAL_INTERVAL):
             for next_y in drange(self.bottom + INCREMENTAL_INTERVAL, self.top, INCREMENTAL_INTERVAL):
@@ -168,7 +182,7 @@ class CSVGenerator:
                 
                 csv_runnable = CSVRunnable(username, password, client_id, client_secret,
                                            serial_no, next_y, current_x, next_x,
-                                           current_y, begin_date, end_date)
+                                           current_y, self.begin_date, self.end_date, self.vector_header_dict)
                 csv_runnable.csv_object.new_csv_element.connect(self.csv_generator_object.callback)
                 self.pool.start(csv_runnable)
 
@@ -185,8 +199,14 @@ class CSVGenerator:
         log.info("Sort complete")
         # write file
         csv_file = open(self.csv_filename, 'w')
+        
         # write the header
-        csv_file.write(CSVOutput.get_csv_header())
+        header = CSVOutput.get_csv_header()
+        if self.vector_header_dict:
+            for term in self.vector_header_dict:
+                header = header + str(term) + ","
+        header = header[:-1]
+        csv_file.write(header)
         csv_file.write("\n")
 
         for csv_element in self.csv_elements:
@@ -216,7 +236,7 @@ class CSVObject(QObject):
 
 class CSVRunnable(QRunnable):
     def __init__(self, client_id, client_secret, username, password,
-                 serial_no, top, left, right, bottom, time_begin, time_end):
+                 serial_no, top, left, right, bottom, time_begin, time_end, vector_header_dict):
         QRunnable.__init__(self)
         self.username = username
         self.password = password
@@ -229,6 +249,7 @@ class CSVRunnable(QRunnable):
         self.bottom = bottom
         self.time_begin = time_begin
         self.time_end = time_end
+        self.vector_header_dict = vector_header_dict
         self.csv_object = CSVObject()
         
     def run(self):
@@ -237,8 +258,7 @@ class CSVRunnable(QRunnable):
         insightcloud_params = InsightCloudParams(top=self.top, bottom=self.bottom, left=self.left, right=self.right,
                                                  time_begin=self.time_begin, time_end=self.time_end)
         csv_element = CSVOutput(serial_no=self.serial_no, top=self.top, left=self.left, right=self.right,
-                                bottom=self.bottom,
-                                polygon=gbd_params.polygon)
+                                bottom=self.bottom, polygon=gbd_params.polygon, vector_header_dict=self.vector_header_dict)
 
         gbd_query = GBDQuery(username=self.username, password=self.password, client_id=self.client_id, client_secret=self.client_secret)
         log.info("Starting GBD Query with params: " + str(gbd_params.__dict__))
@@ -246,18 +266,15 @@ class CSVRunnable(QRunnable):
         gbd_query.hit_test_endpoint()
 
         # build insightcloud query
-        insightcloud_query = InsightCloudQuery(username=self.username, password=self.password)
+        insightcloud_query = InsightCloudQuery(username=self.username, password=self.password, client_id=self.client_id, client_secret=self.client_secret)
         log.info("Starting InsightCloud queries with params: " + str(insightcloud_params.__dict__))
-        insightcloud_query.log_into_monocle_3()
+        insightcloud_query.log_in()
+        insightcloud_query.hit_test_endpoint()
     
         gbd_query.do_aoi_search(gbd_params, csv_element)
         log.info("GBD Query complete for args: " + str(gbd_params.__dict__))
-        insightcloud_query.query_osm(insightcloud_params, csv_element)
-        log.info("OSM Query complete for args: " + str(insightcloud_params.__dict__))
-        insightcloud_query.query_twitter(insightcloud_params, csv_element)
-        log.info("Twitter Query complete for args: " + str(insightcloud_params.__dict__))
-        insightcloud_query.query_rss(insightcloud_params, csv_element)
-        log.info("RSS Query complete for args: " + str(insightcloud_params.__dict__))
+        insightcloud_query.query_vector(insightcloud_params, csv_element)
+        log.info("Vector Query complete for args: " + str(insightcloud_params.__dict__))
 
         self.csv_object.new_csv_element.emit(csv_element)
 

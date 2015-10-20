@@ -1918,5 +1918,5 @@ class JSONOSMTest(unittest.TestCase):
 }"""
         csv_element = CSVOutput.CSVOutput(left=32.3964, right=37.2633, bottom=34.7208, top=46.631, polygon=None)
         osm_query = InfoCubeInsightCloudQuery.InsightCloudQuery(None, None)
-        osm_query.process_osm_data(osm_str, csv_element)
+        osm_query.process_vector_data(osm_str, csv_element)
         self.assertEqual(csv_element.num_osm, 657759)
