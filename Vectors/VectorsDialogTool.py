@@ -12,6 +12,7 @@ from VectorsInsightCloudQuery import InsightCloudSourcesParams, InsightCloudGeom
 from PyQt4.QtGui import QStandardItem, QStandardItemModel, QProgressBar, QFileDialog, QSortFilterProxyModel
 from PyQt4.QtCore import Qt, QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal, QVariant
 from qgis.core import QgsVectorLayer, QgsMapLayerRegistry
+from ..Settings import SettingsOps
 
 import os
 import re
@@ -210,10 +211,10 @@ class VectorsDialogTool(QObject):
             should_add = True
             self.items[source][type_key] = []
         if should_add:
-            username, password, client_id, client_secret, max_items_to_return = VectorsProcessForm.get_settings()
+            username, password, max_items_to_return = SettingsOps.get_settings()
             item_params = InsightCloudItemsParams(type_params.sources_params,
                                                   source, type_key)
-            item_runnable = ItemRunnable(username, password, client_id, client_secret, item_params)
+            item_runnable = ItemRunnable(username, password, username, password, item_params)
             item_runnable.item_object.task_complete.connect(self.on_new_items)
             self.search_thread_pool.start(item_runnable)
 
@@ -452,11 +453,11 @@ class VectorsDialogTool(QObject):
         """
         self.search_thread_pool.waitForDone(0)
         # self.init_vector_layers()
-        username, password, client_id, client_secret, max_items_to_return = VectorsProcessForm.get_settings()
+        username, password, max_items_to_return = SettingsOps.get_settings()
         errors = []
-        VectorsProcessForm.validate_stored_info(username, password, client_id, client_secret, max_items_to_return, errors)
+        SettingsOps.validate_stored_info(username, password, max_items_to_return, errors)
         if len(errors) == 0:
-            source_runnable = SourceRunnable(username, password, client_id, client_secret, DEFAULT_ORDER_PARAMS)
+            source_runnable = SourceRunnable(username, password, username, password, DEFAULT_ORDER_PARAMS)
             source_runnable.source_object.task_complete.connect(self.on_new_source)
             self.init_progress_bar()
             self.search_thread_pool.start(source_runnable)
@@ -481,9 +482,9 @@ class VectorsDialogTool(QObject):
         self.written_first_point = False
         self.written_first_polygon = False
 
-        username, password, client_id, client_secret, max_items_to_return = VectorsProcessForm.get_settings()
-        if VectorsProcessForm.validate_stored_settings(self.iface, username, password, client_id, client_secret, max_items_to_return):
-            source_runnable = SourceRunnable(username, password, client_id, client_secret, search_params)
+        username, password, max_items_to_return = SettingsOps.get_settings()
+        if VectorsProcessForm.validate_stored_settings(self.iface, username, password, username, password, max_items_to_return):
+            source_runnable = SourceRunnable(username, password, username, password, search_params)
             source_runnable.source_object.task_complete.connect(self.on_new_source)
             self.init_progress_bar()
             self.search_thread_pool.start(source_runnable)
@@ -494,8 +495,8 @@ class VectorsDialogTool(QObject):
         :param geometry_params: The InsightCloudGeometryParams for the search
         :return: None
         """
-        username, password, client_id, client_secret, max_items_to_return = VectorsProcessForm.get_settings()
-        geometry_runnable = GeometryRunnable(username, password, client_id, client_secret, geometry_params)
+        username, password, max_items_to_return = SettingsOps.get_settings()
+        geometry_runnable = GeometryRunnable(username, password, username, password, geometry_params)
         geometry_runnable.geometry_object.task_complete.connect(self.on_new_geometries)
         self.init_progress_bar()
         self.search_thread_pool.start(geometry_runnable)
@@ -506,8 +507,8 @@ class VectorsDialogTool(QObject):
         :param types_params: The InsightCloudTypesParams for the search
         :return: None
         """
-        username, password, client_id, client_secret, max_items_to_return = VectorsProcessForm.get_settings()
-        types_runnable = TypeRunnable(username, password, client_id, client_secret, types_params)
+        username, password, max_items_to_return = SettingsOps.get_settings()
+        types_runnable = TypeRunnable(username, password, username, password, types_params)
         types_runnable.type_object.task_complete.connect(self.on_new_types)
         self.init_progress_bar()
         self.search_thread_pool.start(types_runnable)
@@ -518,8 +519,8 @@ class VectorsDialogTool(QObject):
         :param items_params: The InsightCloudItemsParams for the search
         :return: None
         """
-        username, password, client_id, client_secret, max_items_to_return = VectorsProcessForm.get_settings()
-        items_runnable = ItemRunnable(username, password, client_id, client_secret, items_params)
+        username, password, max_items_to_return = SettingsOps.get_settings()
+        items_runnable = ItemRunnable(username, password, username, password, items_params)
         items_runnable.item_object.task_complete.connect(self.on_new_items)
         self.init_progress_bar()
         self.search_thread_pool.start(items_runnable)
@@ -629,7 +630,7 @@ class VectorsDialogTool(QObject):
 
         self.init_json_progress_bar(bar_max)
 
-        username, password, client_id, client_secret, max_items_to_return = VectorsProcessForm.get_settings()
+        username, password,  max_items_to_return = SettingsOps.get_settings()
 
         for source_key in self.sources.keys():
             source_item = self.sources[source_key]
@@ -638,7 +639,7 @@ class VectorsDialogTool(QObject):
                     type_item = self.types_dict[item_key]
                     if type_item.is_checked and type_item.total_count > 0:
                         item_params = InsightCloudItemsParams(source_item.source_params, source_key, item_key)
-                        task = JSONItemRunnable(username, password, client_id, client_secret, item_params)
+                        task = JSONItemRunnable(username, password, username, password, item_params)
                         task.json_item_object.task_complete.connect(self.on_new_json_items)
                         task.json_item_object.task_cancel.connect(self.cancel_json_threads)
                         self.json_thread_pool.start(task)
@@ -682,8 +683,8 @@ class VectorsDialogTool(QObject):
         """
         errors = []
         # validate settings
-        username, password, client_id, client_secret, max_items_to_return = VectorsProcessForm.get_settings()
-        VectorsProcessForm.validate_stored_info(username, password, client_id, client_secret, max_items_to_return, errors)
+        username, password, max_items_to_return = SettingsOps.get_settings()
+        SettingsOps.validate_stored_info(username, password, max_items_to_return, errors)
         # must ensure there's something to export
         if not self.dialog_base.types_list_view.model() or not self.dialog_base.data_sources_list_view.model():
             errors.append("Please search for data before attempting to export.")
@@ -785,7 +786,7 @@ class SourceRunnable(QRunnable):
         Runs the sources query and emits the results
         :return: None
         """
-        query = InsightCloudQuery(self.username, self.password, self.client_id, self.client_secret)
+        query = InsightCloudQuery(self.username, self.password)
         query.log_in()
         new_sources = query.query_sources(source_params=self.source_params)
         self.source_object.task_complete.emit(self.source_params, new_sources)
@@ -827,7 +828,7 @@ class GeometryRunnable(QRunnable):
         Runs the geometry query and emits the results
         :return: None
         """
-        query = InsightCloudQuery(self.username, self.password, self.client_id, self.client_secret)
+        query = InsightCloudQuery(self.username, self.password)
         query.log_in()
         new_geometries = query.query_geometries(geometry_params=self.geometry_params)
         self.geometry_object.task_complete.emit(self.geometry_params, new_geometries)
@@ -869,7 +870,7 @@ class TypeRunnable(QRunnable):
         Runs the types query and emits the results
         :return: None
         """
-        query = InsightCloudQuery(self.username, self.password, self.client_id, self.client_secret)
+        query = InsightCloudQuery(self.username, self.password)
         query.log_in()
         new_types = query.query_types(self.type_params)
         self.type_object.task_complete.emit(self.type_params, new_types)
@@ -911,7 +912,7 @@ class ItemRunnable(QRunnable):
         Runs the items query and emits the results
         :return: None
         """
-        query = InsightCloudQuery(self.username, self.password, self.client_id, self.client_secret)
+        query = InsightCloudQuery(self.username, self.password)
         query.log_in()
         new_items = query.query_items(self.item_params)
         self.item_object.task_complete.emit(self.item_params, new_items)
@@ -988,7 +989,7 @@ class JSONItemRunnable(QRunnable):
         :return: None
         """
         try:
-            query = InsightCloudQuery(self.username, self.password, self.client_id, self.client_secret)
+            query = InsightCloudQuery(self.username, self.password)
             query.log_in()
             new_items = query.query_items(self.items_params, True)
             self.json_item_object.task_complete.emit(self.items_params, new_items)

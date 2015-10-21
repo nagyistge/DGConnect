@@ -23,6 +23,8 @@
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, pyqtSlot
 from PyQt4.QtGui import QAction, QIcon
 # Initialize Qt resources from file resources.py
+from Settings import Settings
+from Settings.SettingsTool import SettingsTool
 import resources
 
 # Import the code for the DockWidget
@@ -40,6 +42,12 @@ class DGX:
         if self.about:
             self.about = None
         self.about_is_active = False
+
+    @pyqtSlot()
+    def on_settings_close(self):
+        if self.settings:
+            self.settings = None
+        self.settings_is_active = False
 
     """QGIS Plugin Implementation."""
 
@@ -83,10 +91,12 @@ class DGX:
         self.about_is_active = False
         self.infocube_is_active = False
         self.vectors_is_active = False
+        self.settings_is_active = False
 
         self.about = None
         self.infocube = None
         self.vectors = None
+        self.settings = None
 
 
     # noinspection PyMethodMayBeStatic
@@ -185,13 +195,19 @@ class DGX:
                         text=self.tr(u'About'),
                         callback=self.run_about,
                         parent=self.iface.mainWindow())
+        '''
         self.add_action(':/plugins/DGX/InfoCube.png',
                         text=self.tr(u'InfoCube'),
                         callback=self.run_infocube,
                         parent=self.iface.mainWindow())
+        '''
         self.add_action(':/plugins/DGX/Vectors.png',
                         text=self.tr(u'Vectors'),
                         callback=self.run_vectors,
+                        parent=self.iface.mainWindow())
+        self.add_action(':/plugins/DGX/Settings.png',
+                        text=self.tr(u'Settings'),
+                        callback=self.run_settings,
                         parent=self.iface.mainWindow())
 
     #--------------------------------------------------------------------------
@@ -221,6 +237,7 @@ class DGX:
         self.about_is_active = False
         self.infocube_is_active = False
         self.vectors_is_active = False
+        self.settings_is_active = False
 
 
     def unload(self):
@@ -279,3 +296,14 @@ class DGX:
                 self.vectors = VectorsTool(self.iface)
 
         self.vectors.run()
+
+    def run_settings(self):
+        if not self.settings_is_active:
+            self.settings_is_active = True
+
+            if self.settings is None:
+                self.settings = SettingsTool(self.iface)
+                self.settings.dialog.accepted.connect(self.on_settings_close)
+                self.settings.dialog.rejected.connect(self.on_settings_close)
+
+                self.settings.dialog.show()

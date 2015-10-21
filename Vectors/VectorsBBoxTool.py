@@ -6,8 +6,8 @@ from qgis.gui import *
 from qgis.core import *
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
-from VectorsSettingsTool import VectorsSettingsTool
 import VectorsProcessForm
+from ..Settings import SettingsOps
 
 
 class VectorsBBoxTool(QgsMapToolEmitPoint):
@@ -57,20 +57,7 @@ class VectorsBBoxTool(QgsMapToolEmitPoint):
         self.bbox_ui.left.textChanged.connect(self.on_left)
         self.bbox_ui.right.textChanged.connect(self.on_right)
         # set up button
-        self.bbox_ui.settings_button.clicked.connect(lambda: self.settings_button_clicked())
         self.bbox_ui.search_button.clicked.connect(lambda: self.search_button_clicked())
-
-    def settings_button_clicked(self):
-        """
-        Validates and runs the settings UI if validation successful
-        :return: None
-        """
-        # can't change settings during export
-        if self.dialog_tool.is_exporting():
-            self.iface.messageBar().pushMessage("Error", "Cannot alter settings while export is running.",
-                                                level=QgsMessageBar.CRITICAL)
-        else:
-            VectorsSettingsTool(self.iface)
 
     def search_button_clicked(self):
         """
@@ -245,7 +232,7 @@ class VectorsBBoxTool(QgsMapToolEmitPoint):
         :param new_top: The new top coordinate
         :return: None
         """
-        if VectorsProcessForm.validate_is_float(new_top) and (self.top is None or float(self.top) != float(new_top)):
+        if SettingsOps.validate_is_float(new_top) and (self.top is None or float(self.top) != float(new_top)):
             self.top = new_top
             self.draw_new_rect()
 
@@ -256,7 +243,7 @@ class VectorsBBoxTool(QgsMapToolEmitPoint):
         :param new_bottom: The new bottom coordinate
         :return: None
         """
-        if VectorsProcessForm.validate_is_float(new_bottom) and (self.bottom is None or float(self.bottom) != float(new_bottom)):
+        if SettingsOps.validate_is_float(new_bottom) and (self.bottom is None or float(self.bottom) != float(new_bottom)):
             self.bottom = new_bottom
             self.draw_new_rect()
 
@@ -267,7 +254,7 @@ class VectorsBBoxTool(QgsMapToolEmitPoint):
         :param new_left: The new left coordinate
         :return: None
         """
-        if VectorsProcessForm.validate_is_float(new_left) and (self.left is None or float(self.left) != float(new_left)):
+        if SettingsOps.validate_is_float(new_left) and (self.left is None or float(self.left) != float(new_left)):
             self.left = new_left
             self.draw_new_rect()
 
@@ -278,6 +265,6 @@ class VectorsBBoxTool(QgsMapToolEmitPoint):
         :param new_right: The new right coordinate
         :return: None
         """
-        if VectorsProcessForm.validate_is_float(new_right) and (self.right is None or float(self.right) != float(new_right)):
+        if SettingsOps.validate_is_float(new_right) and (self.right is None or float(self.right) != float(new_right)):
             self.right = new_right
             self.draw_new_rect()
