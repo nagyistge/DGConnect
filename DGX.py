@@ -20,18 +20,20 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, pyqtSlot
-from PyQt4.QtGui import QAction, QIcon
-# Initialize Qt resources from file resources.py
-import resources
-
-# Import the code for the DockWidget
-
 import os.path
 
 from About.AboutDialog import AboutDialog
+from Catalog.CatalogTool import CatalogTool
 from InfoCube.InfoCubeConnect import InfoCubeConnect
+from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt, pyqtSlot
+from PyQt4.QtGui import QAction, QIcon
 from Vectors.VectorsTool import VectorsTool
+import resources
+
+TOOL_CATALOG = "Catalog"
+TOOL_INFO_CUBE = "InfoCube"
+TOOL_VECTORS = "Vectors"
+TOOLS = [TOOL_CATALOG, TOOL_INFO_CUBE, TOOL_VECTORS]
 
 
 class DGX:
@@ -80,13 +82,14 @@ class DGX:
 
         #print "** INITIALIZING DGX"
 
-        self.about_is_active = False
-        self.infocube_is_active = False
-        self.vectors_is_active = False
-
         self.about = None
-        self.infocube = None
-        self.vectors = None
+        self.about_is_active = False
+
+        self.tool_is_active_dict = {}
+        self.tool_dict = {}
+        for tool_key in TOOLS:
+            self.tool_is_active_dict[tool_key] = False
+            self.tool_dict[tool_key] = None
 
 
     # noinspection PyMethodMayBeStatic
@@ -189,6 +192,10 @@ class DGX:
                         text=self.tr(u'InfoCube'),
                         callback=self.run_infocube,
                         parent=self.iface.mainWindow())
+        self.add_action(':/plugins/DGX/Catalog.png',
+                        text=self.tr(u'Catalog'),
+                        callback=self.run_catalog,
+                        parent=self.iface.mainWindow())
         self.add_action(':/plugins/DGX/Vectors.png',
                         text=self.tr(u'Vectors'),
                         callback=self.run_vectors,
@@ -211,16 +218,12 @@ class DGX:
 
         self.about = None
 
-        if self.infocube:
-            self.infocube.unload()
-        self.infocube = None
-        if self.vectors:
-            self.vectors.unload()
-        self.vectors = None
-
-        self.about_is_active = False
-        self.infocube_is_active = False
-        self.vectors_is_active = False
+        for tool_key in self.tool_dict:
+            tool = self.tool_dict.get(tool_key)
+            if tool:
+                tool.unload()
+            self.tool_dict[tool_key] = None
+            self.tool_is_active_dict[tool_key] = False
 
 
     def unload(self):
@@ -249,33 +252,39 @@ class DGX:
 
             self.about.show()
 
+    def run_tool(self, target_tool_key):
+        # stop other tools
+        for tool_key in TOOLS:
+            if tool_key != target_tool_key:
+                if self.tool_is_active_dict[tool_key]:
+                    tool = self.tool_dict[tool_key]
+                    tool.unload()
+                    self.tool_dict[tool_key] = None
+                    self.tool_is_active_dict[tool_key] = False
+
+        # start target tool
+        if not self.tool_is_active_dict[target_tool_key]:
+            self.tool_is_active_dict[target_tool_key] = True
+
+            if self.tool_dict[target_tool_key] is None:
+                tool = None
+                if target_tool_key == TOOL_CATALOG:
+                    tool = CatalogTool(self.iface)
+                elif target_tool_key == TOOL_INFO_CUBE:
+                    tool = InfoCubeConnect(self.iface)
+                elif target_tool_key == TOOL_VECTORS:
+                    tool = VectorsTool(self.iface)
+                else:
+                    raise ValueError("Unable to run tool; target tool key is invalid: %s" % target_tool_key)
+                self.tool_dict[target_tool_key] = tool
+
+        self.tool_dict[target_tool_key].run()
+
     def run_infocube(self):
-        # deactivate vectors
-        if self.vectors_is_active:
-            self.vectors.unload()
-            self.vectors = None
-            self.vectors_is_active = False
+        self.run_tool(TOOL_INFO_CUBE)
 
-        if not self.infocube_is_active:
-            self.infocube_is_active = True
-
-            if self.infocube is None:
-                self.infocube = InfoCubeConnect(self.iface)
-                self.infocube.initGui()
-
-        self.infocube.run()
+    def run_catalog(self):
+        self.run_tool(TOOL_CATALOG)
 
     def run_vectors(self):
-        # deactivate infocube
-        if self.infocube_is_active:
-            self.infocube.unload()
-            self.infocube = None
-            self.infocube_is_active = False
-
-        if not self.vectors_is_active:
-            self.vectors_is_active = True
-
-            if self.vectors is None:
-                self.vectors = VectorsTool(self.iface)
-
-        self.vectors.run()
+        self.run_tool(TOOL_VECTORS)

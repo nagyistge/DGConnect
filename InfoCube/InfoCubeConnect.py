@@ -30,10 +30,7 @@ class InfoCubeConnect:
         # Save reference to the QGIS interface
         self.iface = iface
         self.action = None
-        self.dlg = None
-        self.bbox = None
-
-    def initGui(self):
+        
         # create and show the dialog
         self.dlg = InfoCubeDialog()
         self.dlg.message_bar = self.iface.messageBar()
