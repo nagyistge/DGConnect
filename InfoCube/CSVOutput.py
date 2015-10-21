@@ -31,8 +31,6 @@ ARG_PASSWORD = "password"
 
 ARG_DAYS_TO_QUERY = "days_to_query"
 
-LOCK_SUFFIX = ".lock"
-
 class CSVOutput:
     serial_no_counter = 1
 
@@ -113,7 +111,6 @@ class CSVGenerator:
         self.right = right
         self.bottom = bottom
         self.csv_filename = csv_filename
-        self.csv_lock_filename = csv_filename + LOCK_SUFFIX
         self.days_to_query = days_to_query
         self.begin_date = None
         self.end_date = None
@@ -122,9 +119,6 @@ class CSVGenerator:
         self.password = password
         self.client_id = client_id
         self.client_secret = client_secret
-
-        # create lock file
-        open(self.csv_lock_filename, 'a').close()
 
         # throw up a progress dialog
         min_progress = 0.0
@@ -215,11 +209,6 @@ class CSVGenerator:
 
         csv_file.close()
         log.info("Write complete")
-
-        # remove lock
-        if os.path.exists(self.csv_lock_filename):
-            os.remove(self.csv_lock_filename)
-        log.info("Removal of lock file complete")
 
         if self.progress_dialog:
             self.progress_dialog.close()

@@ -226,9 +226,6 @@ def validate_output_path(ui, errors):
     # check if regex matches
     elif re.match(ENDS_WITH_SUFFIX_REGEX, ui.select_file.text()) is None:
         errors.append("Output file must be a csv file.")
-    # check if lock file exists
-    elif os.path.exists(ui.select_file.text() + CSVOutput.LOCK_SUFFIX):
-        errors.append("Lock file still exists. Please wait until output is complete or delete if output failed.")
 
 def validate_insightcloud_info(ui, errors):
     """
