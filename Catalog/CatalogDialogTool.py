@@ -7,6 +7,7 @@ from qgis.core import QgsVectorLayer, QgsMapLayerRegistry
 import re
 
 from CatalogGBDQuery import GBDQuery, GBDOrderParams
+from ..Settings import SettingsOps
 import CatalogProcessForm
 from PyQt4.QtCore import Qt, QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal, QVariant
 from PyQt4.QtGui import QStandardItem, QStandardItemModel, QProgressBar, QFileDialog, QSortFilterProxyModel
@@ -32,6 +33,10 @@ class CatalogDialogTool(QObject):
         self.progress_message_bar = None
         self.json_progress_message_bar = None
         self.json_progress = None
+        self.search_lock = Lock()
+        self.json_lock = Lock()
+        self.search_thread_pool = QThreadPool()
+        self.json_thread_pool = QThreadPool()
 
 
     def init_progress_bar(self):
@@ -62,3 +67,37 @@ class CatalogDialogTool(QObject):
         self.json_progress.setAlignment(Qt.AlignLeft | Qt.AlignCenter)
         self.json_progress_message_bar.layout().addWidget(self.json_progress)
         self.iface.messageBar().pushWidget(self.json_progress_message_bar, self.iface.messageBar().INFO)
+
+    def is_exporting(self):
+        """
+        Check to see if the system is still exporting (checks if there's work in the json thread pool)
+        :return: True if exporting; False otherwise
+        """
+        return self.get_json_active_thread_count() > 0
+
+    def is_searching(self):
+        """
+        Check to see if the system is still searching (checks if there's work in the search thread pool)
+        :return: True if searching; False otherwise
+        """
+        return self.get_search_active_thread_count() > 0
+
+    def get_search_active_thread_count(self):
+        """
+        Gets the number of active threads in the search thread pool
+        :return:
+        """
+        with self.search_lock:
+            return self.search_thread_pool.activeThreadCount()
+
+    def get_json_active_thread_count(self):
+        with self.json_lock:
+            return self.json_thread_pool.activeThreadCount()
+
+    def query_catalog(self, params):
+        username, password, max_items_to_return = SettingsOps.get_settings()
+        gbd_query = GBDQuery(username=username, password=password, client_id=username, client_secret=password)
+        gbd_query.log_in()
+        gbd_query.hit_test_endpoint()
+        result_data = gbd_query.do_aoi_search(params)
+        self.iface.messageBar().pushMessage("Blah", "result_data=" + str(result_data))

@@ -93,11 +93,10 @@ class GBDQuery(OAuth2Query):
     def __init__(self, username, password, client_id, client_secret, grant_type='password'):
         super(self.__class__, self).__init__(username, password, client_id, client_secret, grant_type)
 
-    def do_aoi_search(self, order_params, csv_element):
+    def do_aoi_search(self, order_params):
         """
         Performs an AOI search for strips in GBD and generates stats from them
         :param order_params: The order params for the GBD query
-        :param csv_element: The entry in the CSV row to update
         :return:
         """
         data = {
@@ -119,10 +118,11 @@ class GBDQuery(OAuth2Query):
             response = self.opener.open(request)
             response_data = response.read()
             result_data = json.loads(response_data, strict=False)
-            self.update_csv_data(order_params.time_end, result_data, csv_element)
+            return result_data
         except Exception, e:
             QgsMessageLog.instance().logMessage("Exception detected during aoi search: " + str(e), TAG_NAME,
                                                 level=QgsMessageLog.CRITICAL)
+        return None
 
     @classmethod
     def update_csv_data(cls, end_date, json_data, csv_element):

@@ -4,22 +4,12 @@ __author__ = 'mtrotter'
 
 from qgis.gui import QgsMessageBar
 from PyQt4 import QtGui
-from PyQt4.QtCore import QSettings
 from os.path import expanduser
 from CatalogGBDQuery import GBDQuery, GBDOrderParams
 
 import re
 import os
 
-
-# constants for plugin settings
-PLUGIN_NAME = "DGConnect"
-USERNAME = "insightcloud.username"
-PASSWORD = "insightcloud.password"
-CLIENT_ID = "insightcloud.client_id"
-CLIENT_SECRET = "insightcloud.client_secret"
-MAX_ITEMS_TO_RETURN = "max.items.to.return"
-SELECT_FILE = "select.file"
 
 # file filter
 DEFAULT_SUFFIX = "csv"
@@ -38,28 +28,6 @@ VALIDATION_AOI_DIFF = 10
 # simple regex validator for data; make sure there's something there
 ENDS_WITH_SUFFIX_REGEX = re.compile(".+\." + DEFAULT_SUFFIX + "$")
 
-def read_setting(key, object_type=str):
-    """
-    Loads the value from the QSettings specified by the key
-    :param key: Key from the QSettings maps
-    :param object_type: Type to return (defaults to str)
-    :return: The value if present; else ""
-    """
-    s = QSettings()
-    if s.contains(key):
-        return s.value(key, type=object_type)
-    return ""
-
-def write_setting(key, value):
-    """
-    Writes the key with the value specified to the QSettings map
-    :param key: The key in the map to write to
-    :param value: The value to write
-    :return: None
-    """
-    s = QSettings()
-    s.setValue(key, value)
-
 def search_clicked(dialog_tool, left, right, top, bottom, query=None):
     """
     Action performed when the ok button is clicked
@@ -73,7 +41,7 @@ def search_clicked(dialog_tool, left, right, top, bottom, query=None):
                                                    level=QgsMessageBar.CRITICAL)
         return
     params = GBDOrderParams(top=top, right=right, bottom=bottom, left=left, time_begin=None, time_end=None)
-    dialog_tool.query_sources(params)
+    dialog_tool.query_catalog(params)
 
 
 def cancel_clicked(ui):
@@ -83,30 +51,6 @@ def cancel_clicked(ui):
     :return: None
     """
     ui.dialog.reject()
-
-def load_settings(ui):
-    """
-    Reads the QSettings file and fills in the relevant fields with stored data if present
-    :param ui: The GUI object to update
-    :return: None
-    """
-
-    ui.username.setText(read_setting(PLUGIN_NAME + "/" + USERNAME))
-    ui.password.setText(read_setting(PLUGIN_NAME + "/" + PASSWORD))
-    ui.client_id.setText(read_setting(PLUGIN_NAME + "/" + CLIENT_ID))
-    ui.client_secret.setText(read_setting(PLUGIN_NAME + "/" + CLIENT_SECRET))
-    ui.max_items_to_return.setText(read_setting(PLUGIN_NAME + "/" + MAX_ITEMS_TO_RETURN))
-
-def get_settings():
-    max_settings_to_return_str = read_setting(PLUGIN_NAME + "/" + MAX_ITEMS_TO_RETURN)
-    max_settings_to_return = None
-    if validate_is_int(max_settings_to_return_str):
-        max_settings_to_return = int(max_settings_to_return_str)
-    return read_setting(PLUGIN_NAME + "/" + USERNAME), \
-           read_setting(PLUGIN_NAME + "/" + PASSWORD), \
-           read_setting(PLUGIN_NAME + "/" + CLIENT_ID), \
-           read_setting(PLUGIN_NAME + "/" + CLIENT_SECRET), \
-           max_settings_to_return
 
 def select_file_clicked(ui):
     """
@@ -179,61 +123,6 @@ def validate_info(ui, errors):
                           + str(VALIDATION_MAX_EXPORT))
     else:
         errors.append("Supplied Max Items to Return (" + max_items_to_return.text() + ") is not an integer.")
-
-def validate_stored_settings(iface, username, password, client_id, client_secret, max_items_to_return):
-    """
-    Validates the settings in the stored settings
-    :param iface: QGIS interface to push messages to
-    :param username: Username for OAuth2 authentication
-    :param password: Password for OAuth2 authentication
-    :param client_id: Client ID for OAuth2 authentication
-    :param client_secret: Client Secret for OAuth2 authentication
-    :param max_items_to_return: Max items to return for export
-    :return: True if no problems; False otherwise
-    """
-    errors = []
-    if validate_stored_info(username, password, client_id, client_secret, max_items_to_return, errors):
-        iface.messageBar().pushMessage("Info", "Successfully checked settings. Launching queries...")
-        return True
-    else:
-        iface.messageBar().pushMessage("Error", "Unable to validate settings due to:<br />" + "<br />".join(errors))
-        return False
-
-def validate_stored_info(username, password, client_id, client_secret, max_items_to_return, errors):
-    """
-    Validates the username and password in the stored setting, writing any errors to the provided list
-    :param username: Username for OAuth2 authentication
-    :param password: Password for OAuth2 authentication
-    :param client_id: Client ID for OAuth2 authentication
-    :param client_secret: Client Secret for OAuth2 authentication
-    :param errors: List of errors
-    :return: True if all validation passes; False if there are errors
-    """
-    # check credentials
-    is_field_good = True
-    if not username or len(username) == 0:
-        is_field_good = False
-        errors.append("No username provided.")
-    if not password or len(password) == 0:
-        is_field_good = False
-        errors.append("No password provided.")
-    if not client_id or len(client_id) == 0:
-        is_field_good = False
-        errors.append("No client ID provided.")
-    if not client_secret or len(client_secret) == 0:
-        is_field_good = False
-        errors.append("No client secret provided.")
-    if is_field_good:
-        query = GBDQuery(username=username, password=password, client_id=client_id, client_secret=client_secret)
-        query.log_in()
-        query.hit_test_endpoint()
-        if not query.is_login_successful:
-            errors.append("Unable to verify credentials. See logs for details.")
-            is_field_good = False
-    if not max_items_to_return or max_items_to_return < VALIDATION_MIN_EXPORT or max_items_to_return \
-            > VALIDATION_MAX_EXPORT:
-        is_field_good = False
-    return is_field_good
 
 def validate_bbox_fields(left, right, top, bottom, errors):
     """
