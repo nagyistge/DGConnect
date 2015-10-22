@@ -34,12 +34,14 @@ HEADER_AUTHORIZATION = 'Authorization'
 HEADER_USER_AGENT = 'User-Agent'
 HEADER_CONTENT_TYPE = 'Content-Type'
 
+CONTENT_TYPE_JSON = 'application/json'
+
 # tag name
-TAG_NAME = 'Vectors (UVI)'
+TAG_NAME = 'DGX'
 
 class OAuth2Query(object):
     """
-    Class for querying to get data for InfoCube
+    Class for querying to get data for Catalog
     """
 
     def __init__(self, username, password, client_id, client_secret, grant_type='password'):

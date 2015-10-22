@@ -15,7 +15,7 @@ from qgis.core import QgsMessageLog
 
 from base64 import b64encode
 
-from CatalogOAuth2Query import OAuth2Query
+from ..Common.OAuth2Query import OAuth2Query
 
 # User Agent String; let's pretend we're chromium on Ubuntu
 USER_AGENT_STRING = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) ' \

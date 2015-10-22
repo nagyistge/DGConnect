@@ -13,7 +13,7 @@ import cookielib
 
 import json
 
-from VectorsOAuth2Query import OAuth2Query
+from ..Common.OAuth2Query import OAuth2Query
 
 from qgis.core import QgsFeature, QgsGeometry, QgsPoint, QgsFields, QgsField, QgsMessageLog
 

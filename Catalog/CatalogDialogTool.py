@@ -8,7 +8,7 @@ import re
 
 from CatalogGBDQuery import GBDQuery, GBDOrderParams
 from ..Settings import SettingsOps
-import CatalogProcessForm
+from ..BBox import BBoxTool
 from PyQt4.QtCore import Qt, QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal, QVariant
 from PyQt4.QtGui import QStandardItem, QStandardItemModel, QProgressBar, QFileDialog, QSortFilterProxyModel
 
@@ -18,7 +18,7 @@ class CatalogDialogTool(QObject):
     Tool for managing the search and export functionality
     """
 
-    def __init__(self, iface, dialog_base):
+    def __init__(self, iface, dialog_base, bbox_tool):
         """
         Constructor for the dialog tool
         :param iface: The QGIS Interface
@@ -28,6 +28,7 @@ class CatalogDialogTool(QObject):
         QObject.__init__(self, None)
         self.iface = iface
         self.dialog_base = dialog_base
+        self.bbox_tool = bbox_tool
         self.search_thread_pool = QThreadPool()
         self.json_thread_pool = QThreadPool()
         self.progress_message_bar = None
@@ -37,6 +38,8 @@ class CatalogDialogTool(QObject):
         self.json_lock = Lock()
         self.search_thread_pool = QThreadPool()
         self.json_thread_pool = QThreadPool()
+        self.dialog_base.search_button.clicked.connect(self.search_button_clicked)
+        #self.dialog_base.export_button.clicked.connect(self.export)
 
 
     def init_progress_bar(self):
@@ -93,6 +96,33 @@ class CatalogDialogTool(QObject):
     def get_json_active_thread_count(self):
         with self.json_lock:
             return self.json_thread_pool.activeThreadCount()
+
+    def search_button_clicked(self):
+        """
+        Validates and runs the search if validation successful
+        :return: None
+        """
+        # can't run search during export
+        if self.is_exporting():
+            self.iface.messageBar().pushMessage("Error", "Cannot run search while export is running.",
+                                                level=QgsMessageBar.CRITICAL)
+        # can't run multiple search
+        elif self.is_searching():
+            self.iface.messageBar().pushMessage("Error", "Cannot run a new search while a search is running.",
+                                                level=QgsMessageBar.CRITICAL)
+        else:
+            self.search()
+
+    def search(self):
+        errors = []
+        if not self.bbox_tool.validate_bbox(errors):
+            self.iface.messageBar().pushMessage("ERROR", "The following errors occurred:<br />" +
+                                                       "<br />".join(errors),
+                                                       level=QgsMessageBar.CRITICAL)
+            return
+        params = GBDOrderParams(top=self.bbox_tool.top, right=self.bbox_tool.right, bottom=self.bbox_tool.bottom, left=self.bbox_tool.left, 
+                                time_begin=None, time_end=None)
+        self.query_catalog(params)
 
     def query_catalog(self, params):
         username, password, max_items_to_return = SettingsOps.get_settings()

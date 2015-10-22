@@ -25,11 +25,10 @@ class CatalogTool:
 
         # Create the dialog (after translation) and keep reference
         self.dlg = CatalogDialog(self.iface.mainWindow())
-
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dlg)
 
-        self.dialog_tool = CatalogDialogTool(self.iface, self.dlg.dialog_base)
         self.bbox_tool = BBoxTool(self.iface)
+        self.dialog_tool = CatalogDialogTool(self.iface, self.dlg.dialog_base, self.bbox_tool)
 
     def unload(self):
         self.bbox_tool.reset()
