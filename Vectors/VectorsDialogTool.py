@@ -346,18 +346,17 @@ class VectorsDialogTool(QObject):
         # update info
         self.iface.messageBar().pushMessage("Error", "Error encountered during export.", level=QgsMessageBar.CRITICAL)
 
-    def __init__(self, iface, bbox_gui, dialog_base):
+    def __init__(self, iface, dialog_base, bbox_tool):
         """
         Constructor for the DialogTool
         :param iface: The QGIS Interface
-        :param bbox_gui: The Boundary Box GUI
         :param dialog_base: The Dialog GUI
         :return: DialogTool
         """
         QObject.__init__(self, None)
         self.iface = iface
-        self.bbox_gui = bbox_gui
         self.dialog_base = dialog_base
+        self.bbox_tool = bbox_tool
         self.sources = {}
         self.geometries = {}
         self.types_dict = {}
@@ -371,6 +370,7 @@ class VectorsDialogTool(QObject):
         self.point_vector_layer = None
         self.line_vector_layer = None
         self.polygon_vector_layer = None
+        self.dialog_base.search_button.clicked.connect(self.search_button_clicked)
         self.dialog_base.export_button.clicked.connect(self.export)
         # self.query_initial_sources()
         self.file_dict = {}
@@ -445,6 +445,22 @@ class VectorsDialogTool(QObject):
         point_data_provider.addAttributes(attribute_fields)
         line_data_provider.addAttributes(attribute_fields)
         polygon_data_provider.addAttributes(attribute_fields)
+
+    def search_button_clicked(self):
+        """
+        Validates and runs the search if validation successful
+        :return: None
+        """
+        # can't run search during export
+        if self.is_exporting():
+            self.iface.messageBar().pushMessage("Error", "Cannot run search while export is running.",
+                                                level=QgsMessageBar.CRITICAL)
+        # can't run multiple search
+        elif self.is_searching():
+            self.iface.messageBar().pushMessage("Error", "Cannot run a new search while a search is running.",
+                                                level=QgsMessageBar.CRITICAL)
+        else:
+            VectorsProcessForm.search_clicked(self.bbox_tool, self)
 
     def query_initial_sources(self):
         """

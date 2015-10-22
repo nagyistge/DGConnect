@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'UVITool_dialog_base.ui'
+# Form implementation generated from reading ui file 'Vectors_dialog_base.ui'
 #
 # Created: Wed Aug 19 13:37:15 2015
 #      by: PyQt4 UI code generator 4.10.4
@@ -128,6 +128,10 @@ class Ui_VectorsDialog(object):
         self.verticalLayout.addWidget(self.line_3)
         self.button_layout = QtGui.QHBoxLayout()
         self.button_layout.setObjectName(_fromUtf8("button_layout"))
+        self.search_button = QtGui.QPushButton(self.dockWidgetContents)
+        self.search_button.setDefault(True)
+        self.search_button.setObjectName(_fromUtf8("search_button"))
+        self.button_layout.addWidget(self.search_button)
         self.export_button = QtGui.QPushButton(self.dockWidgetContents)
         self.export_button.setDefault(True)
         self.export_button.setObjectName(_fromUtf8("export_button"))
@@ -144,5 +148,5 @@ class Ui_VectorsDialog(object):
         self.data_source_group_box.setTitle(_translate("DockWidget", "Data Sources", None))
         self.geometry_group_box.setTitle(_translate("DockWidget", "Geometry", None))
         self.types_group_box.setTitle(_translate("DockWidget", "Types", None))
+        self.search_button.setText(_translate("DockWidget", "Search", None))
         self.export_button.setText(_translate("DockWidget", "Export", None))
-

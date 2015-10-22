@@ -23,8 +23,8 @@ VectorsTool
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt4.QtGui import QAction, QIcon
 # Import the code for the dialog
-from Vectors_dialog import VectorsDialog, VectorsBBoxDialog
-from VectorsBBoxTool import VectorsBBoxTool
+from Vectors_dialog import VectorsDialog
+from ..BBox.BBoxTool import BBoxTool
 from VectorsDialogTool import VectorsDialogTool
 from PyQt4.QtCore import Qt
 import os.path
@@ -46,21 +46,14 @@ class VectorsTool:
 
         # Create the dialog (after translation) and keep reference
         self.dlg = VectorsDialog(self.iface.mainWindow())
-        self.bbox_dlg = VectorsBBoxDialog(self.dlg)
-        self.dlg.bbox_dialog = self.bbox_dlg
-        self.bbox_dlg.uvi_tool_dialog = self.dlg
+        self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dlg)
 
-        self.iface.addDockWidget(Qt.RightDockWidgetArea, self.bbox_dlg)
-        self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dlg)
-
-        self.bbox_tool = VectorsBBoxTool(self.iface, self.bbox_dlg.bbox)
-        self.dialog_tool = VectorsDialogTool(self.iface, self.bbox_dlg.bbox, self.dlg.dialog_base)
-        self.bbox_tool.dialog_tool = self.dialog_tool
+        self.bbox_tool = BBoxTool(self.iface)
+        self.dialog_tool = VectorsDialogTool(self.iface, self.dlg.dialog_base, self.bbox_tool)
 
     def unload(self):
         self.bbox_tool.reset()
         self.dlg.close()
-        self.bbox_dlg.close()
         # remove the tool
         self.iface.mapCanvas().unsetMapTool(self.bbox_tool)
 
@@ -69,6 +62,5 @@ class VectorsTool:
         self.iface.mapCanvas().setMapTool(self.bbox_tool)
         # show the dialog
         self.dlg.show()
-        self.bbox_dlg.show()
 
 
