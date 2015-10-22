@@ -2,8 +2,8 @@
 from PyQt4.QtCore import QTranslator, qVersion, QCoreApplication
 from PyQt4.QtGui import QAction, QIcon
 # Import the code for the dialog
+from ..BBox.BBoxTool import BBoxTool
 from CatalogDialog import CatalogDialog
-from CatalogBBoxTool import CatalogBBoxTool
 from CatalogDialogTool import CatalogDialogTool
 from PyQt4.QtCore import Qt
 import os.path
@@ -29,8 +29,7 @@ class CatalogTool:
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dlg)
 
         self.dialog_tool = CatalogDialogTool(self.iface, self.dlg.dialog_base)
-        self.bbox_tool = CatalogBBoxTool(self.iface, self.dlg.dialog_base)
-        self.bbox_tool.dialog_tool = self.dialog_tool
+        self.bbox_tool = BBoxTool(self.iface)
 
     def unload(self):
         self.bbox_tool.reset()
