@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'CatalogDialogBase.ui'
+# Form implementation generated from reading ui file 'CatalogDialogUi.ui'
 #
 # Created: Wed Aug 19 13:37:15 2015
 #      by: PyQt4 UI code generator 4.10.4
@@ -23,7 +23,7 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
 
-class Ui_CatalogDialog(object):
+class CatalogDialogUi(object):
     def setupUi(self, DockWidget):
         DockWidget.setObjectName(_fromUtf8("DockWidget"))
         DockWidget.resize(496, 541)

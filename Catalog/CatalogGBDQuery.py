@@ -60,7 +60,7 @@ KEY_JSON_PROPERTIES = u'properties'
 KEY_JSON_TIMESTAMP = u'timestamp'
 
 # tag name
-TAG_NAME = 'DGX Catalog'
+TAG_NAME = 'DGX'
 
 class GBDOrderParams:
     """

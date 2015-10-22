@@ -1,19 +1,13 @@
 # -*- coding: utf-8 -*-
-__author__ = 'Michael Trotter <michael.trotter@digitalglobe.com>'
-
-from string import Template
-
+from base64 import b64encode
+import cookielib
 from datetime import timedelta, datetime
-
 import json
-
+from qgis.core import QgsMessageLog
+from string import Template
 import urllib
 import urllib2
-import cookielib
 
-from qgis.core import QgsMessageLog
-
-from base64 import b64encode
 
 # User Agent String; let's pretend we're chromium on Ubuntu
 USER_AGENT_STRING = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) ' \
@@ -33,7 +27,6 @@ KEY_TOKEN_TYPE = 'token_type'
 HEADER_AUTHORIZATION = 'Authorization'
 HEADER_USER_AGENT = 'User-Agent'
 HEADER_CONTENT_TYPE = 'Content-Type'
-
 CONTENT_TYPE_JSON = 'application/json'
 
 # tag name

@@ -39,7 +39,7 @@ class CatalogDialogTool(QObject):
         self.search_thread_pool = QThreadPool()
         self.json_thread_pool = QThreadPool()
         self.dialog_base.search_button.clicked.connect(self.search_button_clicked)
-        #self.dialog_base.export_button.clicked.connect(self.export)
+        self.dialog_base.export_button.clicked.connect(self.export_button_clicked)
 
 
     def init_progress_bar(self):
@@ -71,6 +71,7 @@ class CatalogDialogTool(QObject):
         self.json_progress_message_bar.layout().addWidget(self.json_progress)
         self.iface.messageBar().pushWidget(self.json_progress_message_bar, self.iface.messageBar().INFO)
 
+
     def is_exporting(self):
         """
         Check to see if the system is still exporting (checks if there's work in the json thread pool)
@@ -78,12 +79,14 @@ class CatalogDialogTool(QObject):
         """
         return self.get_json_active_thread_count() > 0
 
+
     def is_searching(self):
         """
         Check to see if the system is still searching (checks if there's work in the search thread pool)
         :return: True if searching; False otherwise
         """
         return self.get_search_active_thread_count() > 0
+
 
     def get_search_active_thread_count(self):
         """
@@ -93,9 +96,11 @@ class CatalogDialogTool(QObject):
         with self.search_lock:
             return self.search_thread_pool.activeThreadCount()
 
+
     def get_json_active_thread_count(self):
         with self.json_lock:
             return self.json_thread_pool.activeThreadCount()
+
 
     def search_button_clicked(self):
         """
@@ -113,6 +118,7 @@ class CatalogDialogTool(QObject):
         else:
             self.search()
 
+
     def search(self):
         errors = []
         if not self.bbox_tool.validate_bbox(errors):
@@ -124,6 +130,7 @@ class CatalogDialogTool(QObject):
                                 time_begin=None, time_end=None)
         self.query_catalog(params)
 
+
     def query_catalog(self, params):
         username, password, max_items_to_return = SettingsOps.get_settings()
         gbd_query = GBDQuery(username=username, password=password, client_id=username, client_secret=password)
@@ -131,3 +138,8 @@ class CatalogDialogTool(QObject):
         gbd_query.hit_test_endpoint()
         result_data = gbd_query.do_aoi_search(params)
         self.iface.messageBar().pushMessage("Blah", "result_data=" + str(result_data))
+
+
+    def export_button_clicked(self):
+        print "not implemented"
+

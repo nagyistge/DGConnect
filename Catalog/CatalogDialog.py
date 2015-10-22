@@ -23,8 +23,8 @@
 
 import os
 
+import CatalogDialogUi
 from PyQt4 import QtGui, uic
-import CatalogDialogBase
 
 
 class CatalogDialog(QtGui.QDockWidget):
@@ -36,7 +36,7 @@ class CatalogDialog(QtGui.QDockWidget):
         # self.<objectname>, and you can use autoconnect slots - see
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
-        self.dialog_base = CatalogDialogBase.Ui_CatalogDialog()
+        self.dialog_base = CatalogDialogUi.CatalogDialogUi()
         self.setupUi()
         self.bbox_dialog = None
 

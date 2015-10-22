@@ -73,7 +73,7 @@ SLASH = '/'
 
 ITEMS_TO_RETURN = 500
 
-TAG_NAME = 'Vectors (UVI)'
+TAG_NAME = 'DGX'
 
 class InsightCloudSourcesParams:
     """
