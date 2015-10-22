@@ -1,16 +1,21 @@
-
-
 __author__ = 'Michael Trotter <michael.trotter@digitalglobe.com>'
 
 from qgis.gui import *
 from qgis.core import *
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
-from VectorsSettingsTool import VectorsSettingsTool
-import VectorsProcessForm
+from ..Settings import SettingsOps
 
 
-class VectorsBBoxTool(QgsMapToolEmitPoint):
+VALIDATION_LAT_LOWER = -90.0
+VALIDATION_LAT_UPPER = 90.0
+VALIDATION_LONG_LOWER = -180.0
+VALIDATION_LONG_UPPER = 180.0
+
+VALIDATION_AOI_DIFF = 10
+
+
+class BBoxTool(QgsMapToolEmitPoint):
     """
     Tool to draw rectangles on a map and update the Ui_DGConnect GUI
     """
@@ -20,15 +25,13 @@ class VectorsBBoxTool(QgsMapToolEmitPoint):
     new_left = pyqtSignal(str)
     new_right = pyqtSignal(str)
 
-    def __init__(self, iface, bbox_ui):
+    def __init__(self, iface):
         """
         Constructor
         :param iface: QGIS Interface
-        :param bbox_ui: The Boundary Box GUI
         :return: BBoxTool
         """
         QgsMapToolEmitPoint.__init__(self, iface.mapCanvas())
-        self.dialog_tool = None
         self.iface = iface
         self.canvas = iface.mapCanvas()
         self.rubber_band = QgsRubberBand(self.canvas, QGis.Polygon)
@@ -40,53 +43,19 @@ class VectorsBBoxTool(QgsMapToolEmitPoint):
         self.end_point = None
         self.is_emitting = False
         self.wgs_84 = QgsCoordinateReferenceSystem(4326)
-        self.bbox_ui = bbox_ui
         # slots for the text fields
         self.top = None
         self.bottom = None
         self.left = None
         self.right = None
-        # connect the signals and slot
-        self.new_top.connect(self.bbox_ui.on_new_top)
-        self.new_bottom.connect(self.bbox_ui.on_new_bottom)
-        self.new_left.connect(self.bbox_ui.on_new_left)
-        self.new_right.connect(self.bbox_ui.on_new_right)
-        # and vice versa
-        self.bbox_ui.top.textChanged.connect(self.on_top)
-        self.bbox_ui.bottom.textChanged.connect(self.on_bottom)
-        self.bbox_ui.left.textChanged.connect(self.on_left)
-        self.bbox_ui.right.textChanged.connect(self.on_right)
-        # set up button
-        self.bbox_ui.settings_button.clicked.connect(lambda: self.settings_button_clicked())
-        self.bbox_ui.search_button.clicked.connect(lambda: self.search_button_clicked())
-
-    def settings_button_clicked(self):
+        
+    def validate_bbox(self, errors):
         """
-        Validates and runs the settings UI if validation successful
+        Validates the boundary box fields (top, left, right, bottom)
+        :param errors: The list of errors occurred thus far
         :return: None
         """
-        # can't change settings during export
-        if self.dialog_tool.is_exporting():
-            self.iface.messageBar().pushMessage("Error", "Cannot alter settings while export is running.",
-                                                level=QgsMessageBar.CRITICAL)
-        else:
-            VectorsSettingsTool(self.iface)
-
-    def search_button_clicked(self):
-        """
-        Validates and runs the search if validation successful
-        :return: None
-        """
-        # can't run search during export
-        if self.dialog_tool.is_exporting():
-            self.iface.messageBar().pushMessage("Error", "Cannot run search while export is running.",
-                                                level=QgsMessageBar.CRITICAL)
-        # can't run multiple search
-        elif self.dialog_tool.is_searching():
-            self.iface.messageBar().pushMessage("Error", "Cannot run a new search while a search is running.",
-                                                level=QgsMessageBar.CRITICAL)
-        else:
-            VectorsProcessForm.search_clicked(self.bbox_ui, self.dialog_tool)
+        return validate_bbox_fields(left=self.left, right=self.right, top=self.top, bottom=self.bottom, errors=errors)
 
     def reset(self):
         """
@@ -231,7 +200,7 @@ class VectorsBBoxTool(QgsMapToolEmitPoint):
         :return: None
         """
         # all points must be valid
-        if not VectorsProcessForm.validate_bbox_fields(self.left, self.right, self.top, self.bottom, []):
+        if not validate_bbox_fields(self.left, self.right, self.top, self.bottom, []):
             return
         # convert points from wgs84
         x_upper_left = self.transform_point_from_wgs_84(float(self.left), float(self.top))
@@ -245,7 +214,7 @@ class VectorsBBoxTool(QgsMapToolEmitPoint):
         :param new_top: The new top coordinate
         :return: None
         """
-        if VectorsProcessForm.validate_is_float(new_top) and (self.top is None or float(self.top) != float(new_top)):
+        if SettingsOps.validate_is_float(new_top) and (self.top is None or float(self.top) != float(new_top)):
             self.top = new_top
             self.draw_new_rect()
 
@@ -256,7 +225,7 @@ class VectorsBBoxTool(QgsMapToolEmitPoint):
         :param new_bottom: The new bottom coordinate
         :return: None
         """
-        if VectorsProcessForm.validate_is_float(new_bottom) and (self.bottom is None or float(self.bottom) != float(new_bottom)):
+        if SettingsOps.validate_is_float(new_bottom) and (self.bottom is None or float(self.bottom) != float(new_bottom)):
             self.bottom = new_bottom
             self.draw_new_rect()
 
@@ -267,7 +236,7 @@ class VectorsBBoxTool(QgsMapToolEmitPoint):
         :param new_left: The new left coordinate
         :return: None
         """
-        if VectorsProcessForm.validate_is_float(new_left) and (self.left is None or float(self.left) != float(new_left)):
+        if SettingsOps.validate_is_float(new_left) and (self.left is None or float(self.left) != float(new_left)):
             self.left = new_left
             self.draw_new_rect()
 
@@ -278,6 +247,74 @@ class VectorsBBoxTool(QgsMapToolEmitPoint):
         :param new_right: The new right coordinate
         :return: None
         """
-        if VectorsProcessForm.validate_is_float(new_right) and (self.right is None or float(self.right) != float(new_right)):
+        if SettingsOps.validate_is_float(new_right) and (self.right is None or float(self.right) != float(new_right)):
             self.right = new_right
             self.draw_new_rect()
+
+
+def validate_bbox_fields(left, right, top, bottom, errors):
+    """
+    Validates the boundary box fields (top, left, right, bottom)
+    :param left: The left value of the box
+    :param right: The right value of the box
+    :param top: The top value of the box
+    :param bottom: The bottom value of the box
+    :param errors: THe list of error occurred thus far
+    :return: True if there are no errors; False otherwise
+    """
+    is_left_valid = validate_bbox_field(left, "Left", VALIDATION_LONG_LOWER, VALIDATION_LONG_UPPER, errors)
+    is_right_valid = validate_bbox_field(right, "Right", VALIDATION_LONG_LOWER, VALIDATION_LONG_UPPER, errors)
+    is_top_valid = validate_bbox_field(top, "Top", VALIDATION_LAT_LOWER, VALIDATION_LAT_UPPER, errors)
+    is_bottom_valid = validate_bbox_field(bottom, "Bottom", VALIDATION_LAT_LOWER, VALIDATION_LAT_UPPER, errors)
+
+    is_valid = is_left_valid and is_right_valid and is_top_valid and is_bottom_valid
+
+    left_float = float(left)
+    right_float = float(right)
+    bottom_float = float(bottom)
+    top_float = float(top)
+    # check that right > left
+    if is_left_valid and is_right_valid and left_float > right_float:
+        errors.append("Provided left (%s) is greater than right (%s)" % (left, right))
+        is_valid = False
+    elif abs(right_float - left_float) > VALIDATION_AOI_DIFF:
+        errors.append("Provided left (%s) is greater than 10 degrees away from right (%s)" % (left, right))
+        is_valid = False
+
+    if is_top_valid and is_bottom_valid and bottom_float > top_float:
+        errors.append("Provided bottom (%s) is greater than top (%s)" % (bottom, top))
+        is_valid = False
+    elif abs(top_float - bottom_float) > VALIDATION_AOI_DIFF:
+        errors.append("Provided top (%s) is greater than 10 degrees away from bottom (%s)" % (top, bottom))
+        is_valid = False
+
+    return is_valid
+
+def validate_bbox_field(field_value, field_name, lower_bound, upper_bound, errors):
+    """
+    Performs value validation on a given box field
+    :param field_value: The text value of the field
+    :param field_name: The name of the field
+    :param lower_bound: The lower bound of values for the field
+    :param upper_bound: The upper bound of values for the field
+    :param errors: List of errors that have occurred so far
+    :return: True if there are no errors; False otherwise
+    """
+    is_field_valid = True
+    if field_value is None or len(field_value) <= 0:
+        is_field_valid = False
+        errors.append("No %s provided." % field_name)
+    else:
+        # try parsing field value
+        try:
+            float_value = float(field_value)
+            if float_value < lower_bound:
+                is_field_valid = False
+                errors.append("Provided %s (%s) is below threshold of %s."  % (field_name, field_value, lower_bound))
+            elif float_value > upper_bound:
+                is_field_valid = False
+                errors.append("Provided %s (%s) is above threshold of %s." % (field_name, field_value, upper_bound))
+        except ValueError, e:
+            is_field_valid = False
+            errors.append("Provided %s (%s) is not a number" % (field_name, field_value))
+    return is_field_valid

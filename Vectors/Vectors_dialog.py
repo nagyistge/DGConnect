@@ -24,7 +24,6 @@
 import os
 
 from PyQt4 import QtGui, uic
-import Vectors_BBox
 import Vectors_dialog_base
 
 
@@ -43,14 +42,3 @@ class VectorsDialog(QtGui.QDockWidget):
 
     def setupUi(self):
         self.dialog_base.setupUi(self)
-
-class VectorsBBoxDialog(QtGui.QDockWidget):
-    def __init__(self, parent=None):
-        super(VectorsBBoxDialog, self).__init__(parent)
-        self.bbox = Vectors_BBox.Vectors_BBox()
-        self.setupUi()
-        self.uvi_tool_dialog = None
-
-    def setupUi(self):
-        self.bbox.setupUi(self)
-
