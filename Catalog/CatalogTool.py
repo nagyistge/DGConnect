@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from PyQt4.QtCore import QTranslator, qVersion, QCoreApplication
 from PyQt4.QtGui import QAction, QIcon
-# Import the code for the dialog
 from ..BBox.BBoxTool import BBoxTool
 from CatalogDialog import CatalogDialog
 from CatalogDialogTool import CatalogDialogTool
@@ -24,15 +23,15 @@ class CatalogTool:
         self.iface = iface
 
         # Create the dialog (after translation) and keep reference
-        self.dlg = CatalogDialog(self.iface.mainWindow())
-        self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dlg)
+        self.dialog = CatalogDialog(self.iface.mainWindow())
+        self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.dialog)
 
         self.bbox_tool = BBoxTool(self.iface)
-        self.dialog_tool = CatalogDialogTool(self.iface, self.dlg.dialog_base, self.bbox_tool)
+        self.dialog_tool = CatalogDialogTool(self.iface, self.dialog.dialog_ui, self.bbox_tool)
 
     def unload(self):
         self.bbox_tool.reset()
-        self.dlg.close()
+        self.dialog.close()
         # remove the tool
         self.iface.mapCanvas().unsetMapTool(self.bbox_tool)
 
@@ -40,4 +39,4 @@ class CatalogTool:
         """Run method that performs all the real work"""
         self.iface.mapCanvas().setMapTool(self.bbox_tool)
         # show the dialog
-        self.dlg.show()
+        self.dialog.show()

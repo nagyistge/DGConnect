@@ -7,10 +7,11 @@ from qgis.core import QgsVectorLayer, QgsMapLayerRegistry
 import re
 
 from CatalogGBDQuery import GBDQuery, GBDOrderParams
-from ..Settings import SettingsOps
-from ..BBox import BBoxTool
-from PyQt4.QtCore import Qt, QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal, QVariant
+from PyQt4.QtCore import Qt, QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal, QVariant, QAbstractTableModel
 from PyQt4.QtGui import QStandardItem, QStandardItemModel, QProgressBar, QFileDialog, QSortFilterProxyModel
+
+from ..BBox import BBoxTool
+from ..Settings import SettingsOps
 
 
 class CatalogDialogTool(QObject):
@@ -18,7 +19,7 @@ class CatalogDialogTool(QObject):
     Tool for managing the search and export functionality
     """
 
-    def __init__(self, iface, dialog_base, bbox_tool):
+    def __init__(self, iface, dialog_ui, bbox_tool):
         """
         Constructor for the dialog tool
         :param iface: The QGIS Interface
@@ -27,7 +28,7 @@ class CatalogDialogTool(QObject):
         """
         QObject.__init__(self, None)
         self.iface = iface
-        self.dialog_base = dialog_base
+        self.dialog_ui = dialog_ui
         self.bbox_tool = bbox_tool
         self.search_thread_pool = QThreadPool()
         self.json_thread_pool = QThreadPool()
@@ -38,8 +39,8 @@ class CatalogDialogTool(QObject):
         self.json_lock = Lock()
         self.search_thread_pool = QThreadPool()
         self.json_thread_pool = QThreadPool()
-        self.dialog_base.search_button.clicked.connect(self.search_button_clicked)
-        self.dialog_base.export_button.clicked.connect(self.export_button_clicked)
+        self.dialog_ui.search_button.clicked.connect(self.search_button_clicked)
+        self.dialog_ui.export_button.clicked.connect(self.export_button_clicked)
 
 
     def init_progress_bar(self):
@@ -137,9 +138,126 @@ class CatalogDialogTool(QObject):
         gbd_query.log_in()
         gbd_query.hit_test_endpoint()
         result_data = gbd_query.do_aoi_search(params)
+        
+        if result_data:
+#             model = self.dialog_ui.table_view.model()
+#             if not model:
+#                 model = CatalogTableModel(self.dialog_ui.table_view)
+                
+            results = result_data[u"results"]
+            acquisitions = []
+            
+            for acquisition in results:
+                identifier = str(acquisition[u"identifier"])
+                
+                properties = acquisition[u"properties"]
+                timestamp = properties[u"timestamp"]
+
+#                 "sunElevation": "58.0927",
+#                 "targetAzimuth": "81.89071",
+#                 "browseURL": "https://browse.digitalglobe.com/imagefinder/showBrowseMetadata?catalogId=1010010003050D00",
+#                 "": "2004-06-15T00: 00: 00.000Z",
+#                 "panResolution": "0.714104414",
+#                 "offNadirAngle": "24.0",
+#                 "footprintWkt": "POLYGON((-0.09513235310.0801653768, 0.089107919620.08455198414, 0.089543398410.0238056134, 0.09000903295-0.03701337663, 0.09023406614-0.06588638216, -0.09589774085-0.0720278433, -0.09575256441-0.04281574741, -0.095448723830.01871460337, -0.09513235310.0801653768))",
+#                 "cloudCover": "12.0",
+#                 "catalogID": "1010010003050D00",
+#                 "sunAzimuth": "41.47571",
+#                 "imageBands": "Pan_MS1",
+#                 "sensorPlatformName": "QUICKBIRD02",
+#                 "multiResolution": "2.854645729",
+#                 "vendorName": "DigitalGlobe"
+                
+                new_item = AcquisitionItem(identifier, timestamp)
+                acquisitions.append(new_item)
+                
+            model = CatalogTableModel(acquisitions, self.dialog_ui.table_view)
+            self.dialog_ui.table_view.setModel(model)
+        
         self.iface.messageBar().pushMessage("Blah", "result_data=" + str(result_data))
 
 
     def export_button_clicked(self):
         print "not implemented"
 
+
+class CatalogTableModel(QAbstractTableModel):
+    
+    def __init__(self, data, parent=None):
+        QAbstractTableModel.__init__(self, parent)
+        self.data = data
+        
+    def data(self, index, role): 
+#         if not index.isValid():
+#             return QVariant()
+        return self.data[index.row()].get_property(index.column()) 
+    
+    def rowCount(self, parent=None):
+        return len(self.data)
+    
+    def columnCount(self, parent=None):
+        return AcquisitionItem.PROPERTIES_COUNT
+
+
+class AcquisitionItem(QStandardItem):
+    """
+    Entry in the GUI model of acquisitions
+    """
+    
+    PROPERTIES_COUNT = 2
+    properties_dict = {}
+    
+    def __init__(self, identifier, timestamp, *__args):
+        """
+        Constructor
+        :param identifier: 
+        :param __args: Additional args
+        :return: SourceItem
+        """
+        QStandardItem.__init__(self, *__args)
+        self._identifier = identifier
+        self.properties = [identifier, timestamp]
+        self.change_text()
+        self.setEditable(False)
+
+    @property
+    def identifier(self):
+        return self._identifier
+
+    @property
+    def timestamp(self):
+        return self.timestamp
+
+    @timestamp.setter
+    def timestamp(self, timestamp):
+        self._timestamp = timestamp
+
+    def change_text(self):
+        self.setText(self._identifier)
+    
+    def get_property(self, property_index):
+        return self.properties[property_index]
+
+    def __hash__(self):
+        return hash(self._identifier)
+
+    def __eq__(self, other):
+        return self._identifier == other.identifier
+
+    def __ne__(self, other):
+        return self._identifier != other.identifier
+
+    def __le__(self, other):
+        return self._identifier <= other.identifier
+
+    def __lt__(self, other):
+        return self._identifier < other.identifier
+
+    def __ge__(self, other):
+        return self._identifier >= other.identifier
+
+    def __gt__(self, other):
+        return self._identifier > other.identifier
+
+    def __cmp__(self, other):
+        return cmp(self._identifier, other.identifier)

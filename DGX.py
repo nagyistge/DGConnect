@@ -268,11 +268,6 @@ class DGX:
             self.infocube.unload()
             self.infocube = None
             self.infocube_is_active = False
-        # deactivate vectors
-        if self.vectors_is_active:
-            self.vectors.unload()
-            self.vectors = None
-            self.vectors_is_active = False
 
         if not self.catalog_is_active:
             self.catalog_is_active = True
@@ -304,11 +299,6 @@ class DGX:
         self.infocube.run()
 
     def run_vectors(self):
-        # deactivate catalog
-        if self.catalog_is_active:
-            self.catalog.unload()
-            self.catalog = None
-            self.catalog_is_active = False
         # deactivate infocube
         if self.infocube_is_active:
             self.infocube.unload()
