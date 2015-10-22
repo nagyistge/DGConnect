@@ -1,6 +1,6 @@
 from PyQt4.QtCore import QSettings
 from qgis._gui import QgsMessageBar
-from Vectors.VectorsInsightCloudQuery import InsightCloudQuery
+from ..Vectors.VectorsInsightCloudQuery import InsightCloudQuery
 
 __author__ = 'mtrotter'
 
