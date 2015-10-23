@@ -3,11 +3,11 @@ from multiprocessing import Lock
 import os
 from qgis._core import QgsCoordinateReferenceSystem, QgsField
 from qgis._gui import QgsMessageBar
-from qgis.core import QgsVectorLayer, QgsMapLayerRegistry
+from qgis.core import QgsVectorLayer, QgsMapLayerRegistry, QgsMessageLog
 import re
 
 from CatalogGBDQuery import GBDQuery, GBDOrderParams
-from PyQt4.QtCore import Qt, QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal, QVariant, QAbstractTableModel
+from PyQt4.QtCore import Qt, QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal, QVariant, QAbstractTableModel, SIGNAL
 from PyQt4.QtGui import QStandardItem, QStandardItemModel, QProgressBar, QFileDialog, QSortFilterProxyModel
 
 from ..BBox import BBoxTool
@@ -140,41 +140,15 @@ class CatalogDialogTool(QObject):
         result_data = gbd_query.do_aoi_search(params)
         
         if result_data:
-#             model = self.dialog_ui.table_view.model()
-#             if not model:
-#                 model = CatalogTableModel(self.dialog_ui.table_view)
-                
             results = result_data[u"results"]
             acquisitions = []
             
-            for acquisition in results:
-                identifier = str(acquisition[u"identifier"])
-                
-                properties = acquisition[u"properties"]
-                timestamp = properties[u"timestamp"]
-
-#                 "sunElevation": "58.0927",
-#                 "targetAzimuth": "81.89071",
-#                 "browseURL": "https://browse.digitalglobe.com/imagefinder/showBrowseMetadata?catalogId=1010010003050D00",
-#                 "": "2004-06-15T00: 00: 00.000Z",
-#                 "panResolution": "0.714104414",
-#                 "offNadirAngle": "24.0",
-#                 "footprintWkt": "POLYGON((-0.09513235310.0801653768, 0.089107919620.08455198414, 0.089543398410.0238056134, 0.09000903295-0.03701337663, 0.09023406614-0.06588638216, -0.09589774085-0.0720278433, -0.09575256441-0.04281574741, -0.095448723830.01871460337, -0.09513235310.0801653768))",
-#                 "cloudCover": "12.0",
-#                 "catalogID": "1010010003050D00",
-#                 "sunAzimuth": "41.47571",
-#                 "imageBands": "Pan_MS1",
-#                 "sensorPlatformName": "QUICKBIRD02",
-#                 "multiResolution": "2.854645729",
-#                 "vendorName": "DigitalGlobe"
-                
-                new_item = AcquisitionItem(identifier, timestamp)
+            for acquisition_result in results:
+                new_item = Acquisition(acquisition_result)
                 acquisitions.append(new_item)
                 
             model = CatalogTableModel(acquisitions, self.dialog_ui.table_view)
             self.dialog_ui.table_view.setModel(model)
-        
-        self.iface.messageBar().pushMessage("Blah", "result_data=" + str(result_data))
 
 
     def export_button_clicked(self):
@@ -182,82 +156,76 @@ class CatalogDialogTool(QObject):
 
 
 class CatalogTableModel(QAbstractTableModel):
-    
+
     def __init__(self, data, parent=None):
         QAbstractTableModel.__init__(self, parent)
         self.data = data
-        
-    def data(self, index, role): 
-#         if not index.isValid():
-#             return QVariant()
-        return self.data[index.row()].get_property(index.column()) 
-    
+
+    def data(self, index, role=Qt.DisplayRole): 
+        if not index.isValid():
+            return None
+        elif role != Qt.DisplayRole:
+            return None
+        return self.data[index.row()].get_column_value(index.column()) 
+
     def rowCount(self, parent=None):
         return len(self.data)
-    
+
     def columnCount(self, parent=None):
-        return AcquisitionItem.PROPERTIES_COUNT
+        return len(Acquisition.COLUMNS)
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+            return Acquisition.COLUMNS[section]
+        return QAbstractTableModel.headerData(self, section, orientation, role)
+
+    def sort(self, column, order=Qt.AscendingOrder):
+        self.emit(SIGNAL("layoutAboutToBeChanged()"))
+        self.data = sorted(self.data, key=lambda acquisition: acquisition.get_column_value(column), reverse=(order==Qt.DescendingOrder))
+        self.emit(SIGNAL("layoutChanged()"))
 
 
-class AcquisitionItem(QStandardItem):
+class Acquisition:
     """
     Entry in the GUI model of acquisitions
     """
-    
-    PROPERTIES_COUNT = 2
-    properties_dict = {}
-    
-    def __init__(self, identifier, timestamp, *__args):
+
+    COLUMNS = ["Catalog ID", "Timestamp"]
+
+    def __init__(self, result):
         """
         Constructor
-        :param identifier: 
-        :param __args: Additional args
-        :return: SourceItem
+        :param result: acquisition result json 
+        :return: Acquisition
         """
-        QStandardItem.__init__(self, *__args)
-        self._identifier = identifier
-        self.properties = [identifier, timestamp]
-        self.change_text()
-        self.setEditable(False)
 
-    @property
-    def identifier(self):
-        return self._identifier
+        self.identifier = str(result[u"identifier"])
 
-    @property
-    def timestamp(self):
-        return self.timestamp
+        properties = result.get(u"properties")
 
-    @timestamp.setter
-    def timestamp(self, timestamp):
-        self._timestamp = timestamp
+        self.timestamp = properties.get(u"timestamp")
+        if self.timestamp:
+            self.timestamp = self.timestamp[:10] # remove time because it's always 00:00:00
 
-    def change_text(self):
-        self.setText(self._identifier)
-    
-    def get_property(self, property_index):
-        return self.properties[property_index]
+#         "sunElevation": "58.0927",
+#         "targetAzimuth": "81.89071",
+#         "browseURL": "https://browse.digitalglobe.com/imagefinder/showBrowseMetadata?catalogId=1010010003050D00",
+#         "": "2004-06-15T00: 00: 00.000Z",
+#         "panResolution": "0.714104414",
+#         "offNadirAngle": "24.0",
+#         "footprintWkt": "POLYGON((-0.09513235310.0801653768, 0.089107919620.08455198414, 0.089543398410.0238056134, 0.09000903295-0.03701337663, 0.09023406614-0.06588638216, -0.09589774085-0.0720278433, -0.09575256441-0.04281574741, -0.095448723830.01871460337, -0.09513235310.0801653768))",
+#         "cloudCover": "12.0",
+#         "catalogID": "1010010003050D00",
+#         "sunAzimuth": "41.47571",
+#         "imageBands": "Pan_MS1",
+#         "sensorPlatformName": "QUICKBIRD02",
+#         "multiResolution": "2.854645729",
+#         "vendorName": "DigitalGlobe"
 
-    def __hash__(self):
-        return hash(self._identifier)
+        self.column_values = []
+        self.column_values.append(self.identifier)
+        self.column_values.append(self.timestamp)
 
-    def __eq__(self, other):
-        return self._identifier == other.identifier
+    def get_column_value(self, property_index):
+        return self.column_values[property_index]
 
-    def __ne__(self, other):
-        return self._identifier != other.identifier
-
-    def __le__(self, other):
-        return self._identifier <= other.identifier
-
-    def __lt__(self, other):
-        return self._identifier < other.identifier
-
-    def __ge__(self, other):
-        return self._identifier >= other.identifier
-
-    def __gt__(self, other):
-        return self._identifier > other.identifier
-
-    def __cmp__(self, other):
-        return cmp(self._identifier, other.identifier)

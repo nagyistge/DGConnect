@@ -57,7 +57,11 @@ class CatalogDialogUi(object):
         self.verticalLayout.addLayout(self.button_layout)
         self.gridLayout.addLayout(self.verticalLayout, 1, 0, 1, 1)
         self.table_view = QtGui.QTableView(self.dockWidgetContents)
+        self.table_view.setSortingEnabled(True)
         self.table_view.setObjectName(_fromUtf8("table_view"))
+        self.table_view.horizontalHeader().setCascadingSectionResizes(False)
+        self.table_view.verticalHeader().setCascadingSectionResizes(False)
+        self.table_view.verticalHeader().setSortIndicatorShown(False)
         self.gridLayout.addWidget(self.table_view, 0, 0, 1, 1)
         DockWidget.setWidget(self.dockWidgetContents)
 
@@ -68,3 +72,4 @@ class CatalogDialogUi(object):
         DockWidget.setWindowTitle(_translate("DockWidget", "DGX Catalog", None))
         self.search_button.setText(_translate("DockWidget", "Search", None))
         self.export_button.setText(_translate("DockWidget", "Export", None))
+
