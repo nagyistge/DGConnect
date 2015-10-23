@@ -1,21 +1,17 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Michael Trotter <michael.trotter@digitalglobe.com>'
 
-from string import Template
-
+from base64 import b64encode
+import cookielib
 from datetime import timedelta, datetime
-
 import json
-
+from qgis.core import QgsMessageLog
+from string import Template
 import urllib
 import urllib2
-import cookielib
-
-from qgis.core import QgsMessageLog
-
-from base64 import b64encode
 
 from ..Common.OAuth2Query import OAuth2Query
+
 
 # User Agent String; let's pretend we're chromium on Ubuntu
 USER_AGENT_STRING = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) ' \
@@ -25,8 +21,8 @@ USER_AGENT_STRING = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, 
 POLYGON_TEMPLATE = Template("POLYGON (($left $bottom, $left $top, $right $top, $right $bottom, $left $bottom))")
 
 # gbd urls
-GBD_TOP_LEVEL_URL = 'https://iipbeta.digitalglobe.com/'
-GBD_SEARCH_AOI_AND_TIME_URL = GBD_TOP_LEVEL_URL + "raster-catalog/api/gbd/catalog/v1/search"
+TOP_LEVEL_URL = 'https://iipbeta.digitalglobe.com/'
+ACQUISITION_SEARCH_URL = TOP_LEVEL_URL + "raster-catalog/api/gbd/catalog/v1/search"
 
 # data format for parsing
 ISO_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
@@ -40,7 +36,6 @@ KEY_TOKEN_TYPE = 'token_type'
 HEADER_AUTHORIZATION = 'Authorization'
 HEADER_USER_AGENT = 'User-Agent'
 HEADER_CONTENT_TYPE = 'Content-Type'
-
 CONTENT_TYPE_JSON = 'application/json'
 
 # data keys and some values
@@ -48,7 +43,6 @@ KEY_DATA_SEARCH_AREA_WKT = 'searchAreaWkt'
 KEY_DATA_START_DATE = 'startDate'
 KEY_DATA_END_DATE = 'endDate'
 KEY_DATA_FILTERS = 'filters'
-VALUE_DATA_FILTERS = []
 KEY_DATA_TAG_RESULTS = 'tagResults'
 VALUE_DATA_TAG_RESULTS = False
 KEY_DATA_TYPES = 'types'
@@ -61,6 +55,7 @@ KEY_JSON_TIMESTAMP = u'timestamp'
 
 # tag name
 TAG_NAME = 'DGX'
+
 
 class GBDOrderParams:
     """
@@ -76,13 +71,13 @@ class GBDOrderParams:
         self.time_end = time_end
         self.polygon = self.build_polygon()
 
+
     def build_polygon(self):
         """
         Builds the polygon field from the POLYGON_TEMPLATE
         :return: The polygon field
         """
-        return POLYGON_TEMPLATE.substitute(top=str(self.top), right=(str(self.right)), bottom=str(self.bottom),
-                                           left=str(self.left))
+        return POLYGON_TEMPLATE.substitute(top=str(self.top), right=(str(self.right)), bottom=str(self.bottom), left=str(self.left))
 
 
 class GBDQuery(OAuth2Query):
@@ -93,36 +88,41 @@ class GBDQuery(OAuth2Query):
     def __init__(self, username, password, client_id, client_secret, grant_type='password'):
         super(self.__class__, self).__init__(username, password, client_id, client_secret, grant_type)
 
-    def do_aoi_search(self, order_params):
+
+    def acquisition_search(self, order_params):
         """
-        Performs an AOI search for strips in GBD and generates stats from them
+        Performs a search for acquisitions.
         :param order_params: The order params for the GBD query
         :return:
         """
-        data = {
+        # build request body json
+        request_body = {
             KEY_DATA_SEARCH_AREA_WKT: order_params.polygon,
-            KEY_DATA_FILTERS: VALUE_DATA_FILTERS,
+            KEY_DATA_FILTERS: [], # TODO text query goes here
             KEY_DATA_TAG_RESULTS: VALUE_DATA_TAG_RESULTS,
             KEY_DATA_TYPES: VALUE_DATA_TYPES
         }
         if order_params.time_begin:
-            data[KEY_DATA_START_DATE] = order_params.time_begin.isoformat() + 'Z'
+            request_body[KEY_DATA_START_DATE] = order_params.time_begin.isoformat() + 'Z'
         if order_params.time_end:
-            data[KEY_DATA_START_DATE] = order_params.time_end.isoformat() + 'Z'
-        
-        json_data = json.dumps(data)
+            request_body[KEY_DATA_END_DATE] = order_params.time_end.isoformat() + 'Z'
+        request_body_json = json.dumps(request_body)
+
+        # build header
         headers = self.headers.copy()
         headers[HEADER_CONTENT_TYPE] = CONTENT_TYPE_JSON
+
         try:
-            request = urllib2.Request(GBD_SEARCH_AOI_AND_TIME_URL, json_data, headers)
+            request = urllib2.Request(ACQUISITION_SEARCH_URL, request_body_json, headers)
             response = self.opener.open(request)
             response_data = response.read()
             result_data = json.loads(response_data, strict=False)
             return result_data
         except Exception, e:
-            QgsMessageLog.instance().logMessage("Exception detected during aoi search: " + str(e), TAG_NAME,
-                                                level=QgsMessageLog.CRITICAL)
+            QgsMessageLog.instance().logMessage("Exception during acquisition search: " + str(e), TAG_NAME, level=QgsMessageLog.CRITICAL)
+
         return None
+
 
     @classmethod
     def update_csv_data(cls, end_date, json_data, csv_element):
