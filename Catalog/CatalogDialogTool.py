@@ -149,6 +149,7 @@ class CatalogDialogTool(QObject):
                 
             model = CatalogTableModel(acquisitions, self.dialog_ui.table_view)
             self.dialog_ui.table_view.setModel(model)
+            self.dialog_ui.table_view.resizeColumnsToContents()
 
 
     def export_button_clicked(self):
@@ -190,8 +191,9 @@ class Acquisition:
     Entry in the GUI model of acquisitions
     """
 
-    COLUMNS = ["Catalog ID", "Timestamp"]
-
+    COLUMNS = ["Catalog ID", "Status", "Date", "Satellite", "Vendor", "Image Band", 
+               "Cloud %", "Sun Azm.", "Sun Elev.", "Multi Res.", "Pan Res.", "Off Nadir"]
+    
     def __init__(self, result):
         """
         Constructor
@@ -203,28 +205,33 @@ class Acquisition:
 
         properties = result.get(u"properties")
 
+        # determine status
+        available = properties.get(u"available")
+        ordered = properties.get(u"ordered")
+        self.status = "Available" if available else "Ordered" if ordered else "Unordered"
+
+        # get timestamp and remove time because it's always 00:00:00
         self.timestamp = properties.get(u"timestamp")
         if self.timestamp:
-            self.timestamp = self.timestamp[:10] # remove time because it's always 00:00:00
+            self.timestamp = self.timestamp[:10] 
 
-#         "sunElevation": "58.0927",
-#         "targetAzimuth": "81.89071",
-#         "browseURL": "https://browse.digitalglobe.com/imagefinder/showBrowseMetadata?catalogId=1010010003050D00",
-#         "": "2004-06-15T00: 00: 00.000Z",
-#         "panResolution": "0.714104414",
-#         "offNadirAngle": "24.0",
-#         "footprintWkt": "POLYGON((-0.09513235310.0801653768, 0.089107919620.08455198414, 0.089543398410.0238056134, 0.09000903295-0.03701337663, 0.09023406614-0.06588638216, -0.09589774085-0.0720278433, -0.09575256441-0.04281574741, -0.095448723830.01871460337, -0.09513235310.0801653768))",
-#         "cloudCover": "12.0",
-#         "catalogID": "1010010003050D00",
-#         "sunAzimuth": "41.47571",
-#         "imageBands": "Pan_MS1",
-#         "sensorPlatformName": "QUICKBIRD02",
-#         "multiResolution": "2.854645729",
-#         "vendorName": "DigitalGlobe"
+        self.sensor_platform_name = properties.get(u"sensorPlatformName")
+        self.vendor_name = properties.get(u"vendorName")
+        self.image_bands = properties.get(u"imageBands")
 
-        self.column_values = []
-        self.column_values.append(self.identifier)
-        self.column_values.append(self.timestamp)
+        self.cloud_cover = properties.get(u"cloudCover")
+        self.sun_azimuth = properties.get(u"sunAzimuth")
+        self.sun_elevation = properties.get(u"sunElevation")
+        self.multi_resolution = properties.get(u"multiResolution")
+        self.pan_resolution = properties.get(u"panResolution")
+        self.off_nadir_angle = properties.get(u"offNadirAngle")
+        
+        self.target_azimuth = properties.get(u"targetAzimuth")
+        self.browse_url = properties.get(u"browseURL")
+        self.footprint_wkt = properties.get(u"footprintWkt")
+
+        self.column_values = [self.identifier, self.status, self.timestamp, self.sensor_platform_name, self.vendor_name, self.image_bands,
+                              self.cloud_cover, self.sun_azimuth, self.sun_elevation, self.multi_resolution, self.pan_resolution, self.off_nadir_angle]
 
     def get_column_value(self, property_index):
         return self.column_values[property_index]
