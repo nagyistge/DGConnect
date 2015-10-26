@@ -336,7 +336,7 @@ class Acquisition:
         # determine status
         available = properties.get(u"available")
         ordered = properties.get(u"ordered")
-        self.status = "Available" if available else "Ordered" if ordered else "Unordered"
+        self.status = "Available" if to_bool(available) else "Ordered" if to_bool(ordered) else "Unordered"
 
         # get timestamp and remove time because it's always 00:00:00
         self.timestamp = properties.get(u"timestamp")
@@ -370,4 +370,10 @@ class Acquisition:
     @classmethod
     def get_csv_header(cls):
         return ",".join(Acquisition.COLUMNS)
+
+
+def to_bool(text):
+    if not text:
+        return False
+    return text.lower() == "true"
 
