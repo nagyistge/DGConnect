@@ -42,19 +42,37 @@ class CatalogDialogTool(QObject):
         self.dialog_ui.search_button.clicked.connect(self.search_button_clicked)
         self.dialog_ui.export_button.clicked.connect(self.export_button_clicked)
 
-    def init_progress_bar(self):
+    def init_progress_bar(self, progress_max):
         """
         Sets up the progress bar for search functionality
         :return: None
         """
         if not self.progress_message_bar:
             self.progress_message_bar = self.iface.messageBar().createMessage("Querying for data")
-            progress = QProgressBar()
-            progress.setMinimum(0)
-            progress.setMaximum(0)
-            progress.setAlignment(Qt.AlignLeft | Qt.AlignCenter)
-            self.progress_message_bar.layout().addWidget(progress)
+            self.progress_bar = QProgressBar()
+            self.progress_bar.setMinimum(0)
+            self.progress_bar.setMaximum(progress_max)
+            self.progress_bar.setAlignment(Qt.AlignLeft | Qt.AlignCenter)
+            self.progress_message_bar.layout().addWidget(self.progress_bar)
             self.iface.messageBar().pushWidget(self.progress_message_bar, self.iface.messageBar().INFO)
+
+    def clear_widgets(self):
+        """
+        Clears the progress bar for the UVI searches
+        :return: None
+        """
+        self.progress_bar = None
+        self.progress_message_bar = None
+        self.iface.messageBar().clearWidgets()
+
+    @pyqtSlot()
+    def on_acquisition_search_complete(self):
+        thread_count = self.get_search_active_thread_count()
+        if self.progress_message_bar:
+            self.progress_bar.setValue(self.progress_bar.value() + 1)
+        if thread_count == 0:
+            self.clear_widgets()
+            self.dialog_ui.table_view.resizeColumnsToContents()
 
     def is_searching(self):
         """
@@ -88,7 +106,6 @@ class CatalogDialogTool(QObject):
         else:
             self.search()
 
-
     def search(self):
         self.search_thread_pool.waitForDone(0)
         username, password, max_items_to_return = SettingsOps.get_settings()
@@ -96,28 +113,29 @@ class CatalogDialogTool(QObject):
         SettingsOps.validate_stored_info(username, password, max_items_to_return, errors)
 
         if len(errors) == 0:
-            self.init_progress_bar()
+            next_x_list = self.drange_list(float(self.bbox_tool.left) + CatalogDialogTool.INCREMENTAL_INTERVAL, 
+                                      float(self.bbox_tool.right), 
+                                      CatalogDialogTool.INCREMENTAL_INTERVAL)
+            next_y_list = self.drange_list(float(self.bbox_tool.bottom) + CatalogDialogTool.INCREMENTAL_INTERVAL, 
+                                      float(self.bbox_tool.top), 
+                                      CatalogDialogTool.INCREMENTAL_INTERVAL)
+            self.init_progress_bar(len(next_x_list) * len(next_y_list))
+
             # TODO reset model on subsequent searches
             model = CatalogTableModel(self.dialog_ui.table_view)
             self.dialog_ui.table_view.setModel(model)
 
             current_x = float(self.bbox_tool.left)
             current_y = float(self.bbox_tool.bottom)
-            for next_x in self.drange(float(self.bbox_tool.left) + CatalogDialogTool.INCREMENTAL_INTERVAL, 
-                                      float(self.bbox_tool.right), 
-                                      CatalogDialogTool.INCREMENTAL_INTERVAL):
-                for next_y in self.drange(float(self.bbox_tool.bottom) + CatalogDialogTool.INCREMENTAL_INTERVAL, 
-                                          float(self.bbox_tool.top), 
-                                          CatalogDialogTool.INCREMENTAL_INTERVAL):
-
+            for next_x in next_x_list:
+                for next_y in next_y_list:
                     acq_search_runnable = AcquisitionSearchRunnable(model, self, top=next_y, left=current_x, right=next_x, bottom=current_y)
-                    ####### csv_runnable.csv_object.new_csv_element.connect(self.csv_generator_object.callback)
+                    acq_search_runnable.acquisition_search_object.task_complete.connect(self.on_acquisition_search_complete)
                     self.search_thread_pool.start(acq_search_runnable)
                     current_y = next_y
-    
+
                 current_y = self.bbox_tool.bottom
                 current_x = next_x
-
 
     def search_for_acquisitions(self, params):
         acquisitions = []
@@ -132,21 +150,28 @@ class CatalogDialogTool(QObject):
             results = result_data[u"results"]
             for acquisition_result in results:
                 acquisitions.append(Acquisition(acquisition_result))
-
-        # TODO resize after all threads done
-        # self.dialog_ui.table_view.resizeColumnsToContents()
-
         return acquisitions
-
 
     def export_button_clicked(self):
         print "not implemented"
-        
-    def drange(self, start, stop, step):
+
+    def drange_list(self, start, stop, step):
+        drange_list = []
         r = start
         while r < stop:
-            yield r
+            drange_list.append(r)
             r += step
+        return drange_list
+
+
+class AcquisitionSearchObject(QObject):
+    """
+    QObject for holding the signal
+    """
+    task_complete = pyqtSignal()
+
+    def __init__(self, QObject_parent=None):
+        QObject.__init__(self, QObject_parent)
 
 
 class AcquisitionSearchRunnable(QRunnable):
@@ -159,11 +184,13 @@ class AcquisitionSearchRunnable(QRunnable):
         self.left = left
         self.right = right
         self.bottom = bottom
+        self.acquisition_search_object = AcquisitionSearchObject()
 
     def run(self):
         params = GBDOrderParams(top=self.top, right=self.right, bottom=self.bottom, left=self.left, time_begin=None, time_end=None)
         new_acquisitions = self.dialog_tool.search_for_acquisitions(params)
         self.model.add_data(new_acquisitions)
+        self.acquisition_search_object.task_complete.emit()
 
 
 class CatalogTableModel(QAbstractTableModel):
