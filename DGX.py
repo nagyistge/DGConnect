@@ -31,6 +31,7 @@ import resources
 import os.path
 
 from About.AboutDialog import AboutDialog
+from BBox.BBoxTool import BBoxTool
 from Catalog.CatalogTool import CatalogTool
 from InfoCube.InfoCubeConnect import InfoCubeConnect
 from Vectors.VectorsTool import VectorsTool
@@ -98,6 +99,7 @@ class DGX:
         self.infocube = None
         self.vectors = None
         self.settings = None
+        self.bbox = None
 
 
     # noinspection PyMethodMayBeStatic
@@ -271,9 +273,10 @@ class DGX:
 
         if not self.catalog_is_active:
             self.catalog_is_active = True
-
+            if not self.bbox:
+                self.bbox = BBoxTool(self.iface)
             if self.catalog is None:
-                self.catalog = CatalogTool(self.iface)
+                self.catalog = CatalogTool(self.iface, self.bbox)
 
         self.catalog.run()
 
@@ -307,9 +310,10 @@ class DGX:
 
         if not self.vectors_is_active:
             self.vectors_is_active = True
-
+            if not self.bbox:
+                self.bbox = BBoxTool(self.iface)
             if self.vectors is None:
-                self.vectors = VectorsTool(self.iface)
+                self.vectors = VectorsTool(self.iface, self.bbox)
 
         self.vectors.run()
 

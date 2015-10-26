@@ -33,7 +33,7 @@ import os.path
 class VectorsTool:
     """QGIS Plugin Implementation."""
 
-    def __init__(self, iface):
+    def __init__(self, iface, bbox_tool):
         """Constructor.
 
         :param iface: An interface instance that will be passed to this class
@@ -43,12 +43,12 @@ class VectorsTool:
         """
         # Save reference to the QGIS interface
         self.iface = iface
+        self.bbox_tool = bbox_tool
 
         # Create the dialog (after translation) and keep reference
         self.dlg = VectorsDialog(self.iface.mainWindow())
         self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dlg)
 
-        self.bbox_tool = BBoxTool(self.iface)
         self.dialog_tool = VectorsDialogTool(self.iface, self.dlg.dialog_base, self.bbox_tool)
 
     def unload(self):

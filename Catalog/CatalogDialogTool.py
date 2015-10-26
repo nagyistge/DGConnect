@@ -209,6 +209,8 @@ class CatalogDialogTool(QObject):
         while r < stop:
             drange_list.append(r)
             r += step
+        if not drange_list:
+            drange_list.append(stop)
         return drange_list
 
 

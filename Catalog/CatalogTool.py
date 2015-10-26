@@ -11,7 +11,7 @@ import os.path
 class CatalogTool:
     """QGIS Plugin Implementation."""
 
-    def __init__(self, iface):
+    def __init__(self, iface, bbox_tool):
         """Constructor.
 
         :param iface: An interface instance that will be passed to this class
@@ -21,12 +21,12 @@ class CatalogTool:
         """
         # Save reference to the QGIS interface
         self.iface = iface
+        self.bbox_tool = bbox_tool
 
         # Create the dialog (after translation) and keep reference
         self.dialog = CatalogDialog(self.iface.mainWindow())
         self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.dialog)
 
-        self.bbox_tool = BBoxTool(self.iface)
         self.dialog_tool = CatalogDialogTool(self.iface, self.dialog.dialog_ui, self.bbox_tool)
 
     def unload(self):
