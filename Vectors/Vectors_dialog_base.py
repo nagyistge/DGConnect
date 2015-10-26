@@ -144,7 +144,7 @@ class Ui_VectorsDialog(object):
         QtCore.QMetaObject.connectSlotsByName(DockWidget)
 
     def retranslateUi(self, DockWidget):
-        DockWidget.setWindowTitle(_translate("DockWidget", "UVITool", None))
+        DockWidget.setWindowTitle(_translate("DockWidget", "DGX Vectors", None))
         self.data_source_group_box.setTitle(_translate("DockWidget", "Data Sources", None))
         self.geometry_group_box.setTitle(_translate("DockWidget", "Geometry", None))
         self.types_group_box.setTitle(_translate("DockWidget", "Types", None))

@@ -1,10 +1,10 @@
 <RCC>
     <qresource prefix="/plugins/DGX" >
         <file>icon.png</file>
+        <file>About.png</file>
         <file>Catalog.png</file>
         <file>InfoCube.png</file>
-        <file>Vectors.png</file>
-        <file>About.png</file>
         <file>Settings.png</file>
+        <file>Vectors.png</file>
     </qresource>
 </RCC>
