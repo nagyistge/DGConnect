@@ -27,6 +27,10 @@ class SettingsTool:
                                                    SettingsOps.save_settings_clicked(self.dialog.ui,
                                                                                      self.iface,
                                                                                      self.dialog))
+        self.dialog.ui.buttonBox.accepted.connect(lambda:
+                                                  SettingsOps.save_settings_clicked(self.dialog.ui,
+                                                                                    self.iface,
+                                                                                    self.dialog))
         self.dialog.show()
 
 

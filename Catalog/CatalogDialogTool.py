@@ -9,18 +9,22 @@ import re
 
 from CatalogGBDQuery import GBDQuery, GBDOrderParams
 from PyQt4.QtCore import Qt, QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal, QVariant, QAbstractTableModel, SIGNAL
-from PyQt4.QtGui import QStandardItem, QStandardItemModel, QProgressBar, QFileDialog, QSortFilterProxyModel
+from PyQt4.QtGui import QStandardItem, QStandardItemModel, QProgressBar, QFileDialog, QSortFilterProxyModel, QFileDialog
 
 from ..BBox import BBoxTool
 from ..Settings import SettingsOps
+
+
+INCREMENTAL_INTERVAL = 1.0
+
+DEFAULT_SUFFIX = "csv"
+SELECT_FILTER = "CSV Files(*.csv)"
 
 
 class CatalogDialogTool(QObject):
     """
     Tool for managing the search and export functionality
     """
-
-    INCREMENTAL_INTERVAL = 1.0
 
     def __init__(self, iface, dialog_ui, bbox_tool):
         """
@@ -35,11 +39,15 @@ class CatalogDialogTool(QObject):
         self.dialog_ui = dialog_ui
         self.bbox_tool = bbox_tool
 
+        self.progress_bar = None
         self.progress_message_bar = None
         self.search_thread_pool = QThreadPool()
         self.search_lock = Lock()
+        self.export_thread_pool = QThreadPool()
+        self.export_lock = Lock()
         self.query = None
         self.previous_credentials = None
+        self.export_file = None
 
         self.dialog_ui.search_button.clicked.connect(self.search_button_clicked)
         self.dialog_ui.export_button.clicked.connect(self.export_button_clicked)
@@ -67,15 +75,6 @@ class CatalogDialogTool(QObject):
         self.progress_message_bar = None
         self.iface.messageBar().clearWidgets()
 
-    @pyqtSlot()
-    def on_acquisition_search_complete(self):
-        thread_count = self.get_search_active_thread_count()
-        if self.progress_message_bar:
-            self.progress_bar.setValue(self.progress_bar.value() + 1)
-        if thread_count == 0:
-            self.clear_widgets()
-            self.dialog_ui.table_view.resizeColumnsToContents()
-
     def is_searching(self):
         """
         Check to see if the system is still searching (checks if there's work in the search thread pool)
@@ -84,7 +83,11 @@ class CatalogDialogTool(QObject):
         return self.get_search_active_thread_count() > 0
 
     def is_exporting(self):
-        return False
+        """
+        Check to see if the system is still exporting (checks if there's work in the export thread pool)
+        :return: True if searching; False otherwise
+        """
+        return self.get_export_active_thread_count() > 0
 
     def get_search_active_thread_count(self):
         """
@@ -93,6 +96,14 @@ class CatalogDialogTool(QObject):
         """
         with self.search_lock:
             return self.search_thread_pool.activeThreadCount()
+
+    def get_export_active_thread_count(self):
+        """
+        Gets the number of active threads in the export thread pool
+        :return:
+        """
+        with self.export_lock:
+            return self.export_thread_pool.activeThreadCount()
 
     def search_button_clicked(self):
         """
@@ -108,6 +119,20 @@ class CatalogDialogTool(QObject):
         else:
             self.search()
 
+    def export_button_clicked(self):
+        """
+        Validates and runs the export if validation successful
+        :return: None
+        """
+        # can't run export during search
+        if self.is_searching():
+            self.iface.messageBar().pushMessage("Error", "Cannot run export while search is running.", level=QgsMessageBar.CRITICAL)
+        # can't run multiple exports
+        elif self.is_exporting():
+            self.iface.messageBar().pushMessage("Error", "Cannot run a new export while a export is running.", level=QgsMessageBar.CRITICAL)
+        else:
+            self.export()
+
     def search(self):
         self.search_thread_pool.waitForDone(0)
 
@@ -120,17 +145,13 @@ class CatalogDialogTool(QObject):
         self.previous_credentials = credentials
 
         if len(settings_errors) == 0:
-            next_x_list = self.drange_list(float(self.bbox_tool.left) + CatalogDialogTool.INCREMENTAL_INTERVAL, 
-                                      float(self.bbox_tool.right), 
-                                      CatalogDialogTool.INCREMENTAL_INTERVAL)
-            next_y_list = self.drange_list(float(self.bbox_tool.bottom) + CatalogDialogTool.INCREMENTAL_INTERVAL, 
-                                      float(self.bbox_tool.top), 
-                                      CatalogDialogTool.INCREMENTAL_INTERVAL)
+            next_x_list = self.drange_list(float(self.bbox_tool.left) + INCREMENTAL_INTERVAL, float(self.bbox_tool.right), INCREMENTAL_INTERVAL)
+            next_y_list = self.drange_list(float(self.bbox_tool.bottom) + INCREMENTAL_INTERVAL, float(self.bbox_tool.top), INCREMENTAL_INTERVAL)
             self.init_progress_bar(len(next_x_list) * len(next_y_list))
 
             # TODO reset model on subsequent searches
-            model = CatalogTableModel(self.dialog_ui.table_view)
-            self.dialog_ui.table_view.setModel(model)
+            self.model = CatalogTableModel(self.dialog_ui.table_view)
+            self.dialog_ui.table_view.setModel(self.model)
             if not self.query:
                 self.query = GBDQuery(username=username, password=password, client_id=username, client_secret=password)
 
@@ -138,15 +159,49 @@ class CatalogDialogTool(QObject):
             current_y = float(self.bbox_tool.bottom)
             for next_x in next_x_list:
                 for next_y in next_y_list:
-                    acq_search_runnable = AcquisitionSearchRunnable(self.query, model, self, top=next_y, left=current_x, right=next_x, bottom=current_y)
-                    acq_search_runnable.acquisition_search_object.task_complete.connect(self.on_acquisition_search_complete)
-                    self.search_thread_pool.start(acq_search_runnable)
+                    search_runnable = CatalogSearchRunnable(self.query, self.model, self, top=next_y, left=current_x, right=next_x, bottom=current_y)
+                    search_runnable.task_object.task_complete.connect(self.on_search_complete)
+                    self.search_thread_pool.start(search_runnable)
                     current_y = next_y
                 current_y = self.bbox_tool.bottom
                 current_x = next_x
 
-    def export_button_clicked(self):
-        print "not implemented"
+    def export(self):
+        self.export_thread_pool.waitForDone(0)
+        acquisitions = None
+        if self.model:
+            acquisitions = self.model.data
+
+        if not acquisitions:
+            self.iface.messageBar().pushMessage("Error", "No data to export.", level=QgsMessageBar.CRITICAL)
+        else:
+            # open file ui
+            select_file_ui = QFileDialog()
+            starting_file = self.export_file or os.path.expanduser("~")
+            self.export_file = select_file_ui.getSaveFileName(None, "Choose output file", starting_file, SELECT_FILTER)
+
+            self.init_progress_bar(0)
+            export_runnable = CatalogExportRunnable(acquisitions, self.export_file)
+            export_runnable.task_object.task_complete.connect(self.on_export_complete)
+            self.export_thread_pool.start(export_runnable)
+
+    @pyqtSlot()
+    def on_search_complete(self):
+        thread_count = self.get_search_active_thread_count()
+        if self.progress_message_bar:
+            self.progress_bar.setValue(self.progress_bar.value() + 1)
+        if thread_count == 0:
+            self.clear_widgets()
+            self.dialog_ui.table_view.resizeColumnsToContents()
+
+    @pyqtSlot()
+    def on_export_complete(self):
+        thread_count = self.get_export_active_thread_count()
+        if self.progress_message_bar:
+            self.progress_bar.setValue(self.progress_bar.value() + 1)
+        if thread_count == 0:
+            self.clear_widgets()
+            self.iface.messageBar().pushMessage("Info", 'File export has completed to "%s".' % self.export_file)
 
     def drange_list(self, start, stop, step):
         drange_list = []
@@ -157,7 +212,7 @@ class CatalogDialogTool(QObject):
         return drange_list
 
 
-class AcquisitionSearchObject(QObject):
+class CatalogTaskObject(QObject):
     """
     QObject for holding the signal
     """
@@ -167,7 +222,7 @@ class AcquisitionSearchObject(QObject):
         QObject.__init__(self, QObject_parent)
 
 
-class AcquisitionSearchRunnable(QRunnable):
+class CatalogSearchRunnable(QRunnable):
 
     def __init__(self, query, model, dialog_tool, top, left, right, bottom):
         QRunnable.__init__(self)
@@ -178,7 +233,7 @@ class AcquisitionSearchRunnable(QRunnable):
         self.left = left
         self.right = right
         self.bottom = bottom
-        self.acquisition_search_object = AcquisitionSearchObject()
+        self.task_object = CatalogTaskObject()
 
     def run(self):
         params = GBDOrderParams(top=self.top, right=self.right, bottom=self.bottom, left=self.left, time_begin=None, time_end=None)
@@ -190,7 +245,30 @@ class AcquisitionSearchRunnable(QRunnable):
             for acquisition_result in results:
                 acquisitions.append(Acquisition(acquisition_result))
             self.model.add_data(acquisitions)
-        self.acquisition_search_object.task_complete.emit()
+        self.task_object.task_complete.emit()
+
+
+class CatalogExportRunnable(QRunnable):
+
+    def __init__(self, acquisitions, export_filename):
+        QRunnable.__init__(self)
+        self.task_object = CatalogTaskObject()
+        self.acquisitions = acquisitions
+        self.export_filename = export_filename
+
+    def run(self):
+        export_file = open(self.export_filename, 'w')
+
+        header = Acquisition.get_csv_header()
+        export_file.write(header)
+        export_file.write("\n")
+
+        for acquisition in self.acquisitions:
+            export_file.write(str(acquisition))
+            export_file.write("\n")
+
+        export_file.close()
+        self.task_object.task_complete.emit()
 
 
 class CatalogTableModel(QAbstractTableModel):
@@ -281,6 +359,13 @@ class Acquisition:
         self.column_values = [self.identifier, self.status, self.timestamp, self.sensor_platform_name, self.vendor_name, self.image_bands,
                               self.cloud_cover, self.sun_azimuth, self.sun_elevation, self.multi_resolution, self.pan_resolution, self.off_nadir_angle]
 
+    def __str__(self):
+        return '"' + '","'.join(self.column_values) + '"'
+
     def get_column_value(self, property_index):
         return self.column_values[property_index]
+
+    @classmethod
+    def get_csv_header(cls):
+        return ",".join(Acquisition.COLUMNS)
 

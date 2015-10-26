@@ -32,7 +32,7 @@ def search_clicked(bbox_tool, dialog_tool):
     """
     errors = []
     if not bbox_tool.validate_bbox(errors):
-        dialog_tool.iface.messageBar().pushMessage("ERROR", "The following errors occurred:<br />" +
+        dialog_tool.iface.messageBar().pushMessage("Error", "The following errors occurred:<br />" +
                                                    "<br />".join(errors),
                                                    level=QgsMessageBar.CRITICAL)
         return
