@@ -71,7 +71,6 @@ class GBDOrderParams:
         self.time_end = time_end
         self.polygon = self.build_polygon()
 
-
     def build_polygon(self):
         """
         Builds the polygon field from the POLYGON_TEMPLATE
@@ -88,13 +87,15 @@ class GBDQuery(OAuth2Query):
     def __init__(self, username, password, client_id, client_secret, grant_type='password'):
         super(self.__class__, self).__init__(username, password, client_id, client_secret, grant_type)
 
-
     def acquisition_search(self, order_params):
         """
         Performs a search for acquisitions.
         :param order_params: The order params for the GBD query
         :return:
         """
+        self.log_in()
+        self.hit_test_endpoint()
+
         # build request body json
         request_body = {
             KEY_DATA_SEARCH_AREA_WKT: order_params.polygon,
@@ -122,7 +123,6 @@ class GBDQuery(OAuth2Query):
             QgsMessageLog.instance().logMessage("Exception during acquisition search: " + str(e), TAG_NAME, level=QgsMessageLog.CRITICAL)
 
         return None
-
 
     @classmethod
     def update_csv_data(cls, end_date, json_data, csv_element):
@@ -157,3 +157,4 @@ class GBDQuery(OAuth2Query):
                 csv_element.num_gbd_30_day += 1
             else:
                 csv_element.num_gbd_60_day += 1
+

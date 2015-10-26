@@ -38,6 +38,8 @@ class CatalogDialogTool(QObject):
         self.progress_message_bar = None
         self.search_thread_pool = QThreadPool()
         self.search_lock = Lock()
+        self.query = None
+        self.previous_credentials = None
 
         self.dialog_ui.search_button.clicked.connect(self.search_button_clicked)
         self.dialog_ui.export_button.clicked.connect(self.export_button_clicked)
@@ -108,11 +110,16 @@ class CatalogDialogTool(QObject):
 
     def search(self):
         self.search_thread_pool.waitForDone(0)
-        username, password, max_items_to_return = SettingsOps.get_settings()
-        errors = []
-        SettingsOps.validate_stored_info(username, password, max_items_to_return, errors)
 
-        if len(errors) == 0:
+        # validate credentials if credentials changed
+        settings_errors = []
+        username, password, max_items_to_return = SettingsOps.get_settings()
+        credentials = [username, password]
+        if not self.previous_credentials or self.previous_credentials != credentials:
+            SettingsOps.validate_stored_info(username, password, max_items_to_return, settings_errors)
+        self.previous_credentials = credentials
+
+        if len(settings_errors) == 0:
             next_x_list = self.drange_list(float(self.bbox_tool.left) + CatalogDialogTool.INCREMENTAL_INTERVAL, 
                                       float(self.bbox_tool.right), 
                                       CatalogDialogTool.INCREMENTAL_INTERVAL)
@@ -124,33 +131,19 @@ class CatalogDialogTool(QObject):
             # TODO reset model on subsequent searches
             model = CatalogTableModel(self.dialog_ui.table_view)
             self.dialog_ui.table_view.setModel(model)
+            if not self.query:
+                self.query = GBDQuery(username=username, password=password, client_id=username, client_secret=password)
 
             current_x = float(self.bbox_tool.left)
             current_y = float(self.bbox_tool.bottom)
             for next_x in next_x_list:
                 for next_y in next_y_list:
-                    acq_search_runnable = AcquisitionSearchRunnable(model, self, top=next_y, left=current_x, right=next_x, bottom=current_y)
+                    acq_search_runnable = AcquisitionSearchRunnable(self.query, model, self, top=next_y, left=current_x, right=next_x, bottom=current_y)
                     acq_search_runnable.acquisition_search_object.task_complete.connect(self.on_acquisition_search_complete)
                     self.search_thread_pool.start(acq_search_runnable)
                     current_y = next_y
-
                 current_y = self.bbox_tool.bottom
                 current_x = next_x
-
-    def search_for_acquisitions(self, params):
-        acquisitions = []
-        
-        username, password, max_items_to_return = SettingsOps.get_settings()
-        gbd_query = GBDQuery(username=username, password=password, client_id=username, client_secret=password)
-        gbd_query.log_in()
-        gbd_query.hit_test_endpoint()
-        result_data = gbd_query.acquisition_search(params)
-        
-        if result_data:
-            results = result_data[u"results"]
-            for acquisition_result in results:
-                acquisitions.append(Acquisition(acquisition_result))
-        return acquisitions
 
     def export_button_clicked(self):
         print "not implemented"
@@ -176,8 +169,9 @@ class AcquisitionSearchObject(QObject):
 
 class AcquisitionSearchRunnable(QRunnable):
 
-    def __init__(self, model, dialog_tool, top, left, right, bottom):
+    def __init__(self, query, model, dialog_tool, top, left, right, bottom):
         QRunnable.__init__(self)
+        self.query = query
         self.model = model
         self.dialog_tool = dialog_tool
         self.top = top
@@ -188,8 +182,14 @@ class AcquisitionSearchRunnable(QRunnable):
 
     def run(self):
         params = GBDOrderParams(top=self.top, right=self.right, bottom=self.bottom, left=self.left, time_begin=None, time_end=None)
-        new_acquisitions = self.dialog_tool.search_for_acquisitions(params)
-        self.model.add_data(new_acquisitions)
+        result_data = self.query.acquisition_search(params)
+
+        if result_data:
+            acquisitions = []
+            results = result_data[u"results"]
+            for acquisition_result in results:
+                acquisitions.append(Acquisition(acquisition_result))
+            self.model.add_data(acquisitions)
         self.acquisition_search_object.task_complete.emit()
 
 
@@ -227,7 +227,6 @@ class CatalogTableModel(QAbstractTableModel):
             self.emit(SIGNAL("layoutChanged()"))
 
     def add_data(self, new_data):
-        QgsMessageLog.instance().logMessage("new_data=" + str(new_data), "DGX")
         if new_data:
             with self.data_lock:
                 self.emit(SIGNAL("layoutAboutToBeChanged()"))

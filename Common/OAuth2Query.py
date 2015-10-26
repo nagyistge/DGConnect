@@ -3,6 +3,7 @@ from base64 import b64encode
 import cookielib
 from datetime import timedelta, datetime
 import json
+from multiprocessing import Lock
 from qgis.core import QgsMessageLog
 from string import Template
 import urllib
@@ -51,46 +52,42 @@ class OAuth2Query(object):
         }
         self.opener = None
         self.is_login_successful = False
+        self.token_lock = Lock()
 
     def log_in(self):
         """
         Log in to OAuth2 using the credentials provided to the constructor
         :return: None
         """
-        # prep data
-        data = {
-            'username': self.username,
-            'password': self.password,
-            'grant_type': self.grant_type
-        }
-        encoded_data = urllib.urlencode(data)
-
-        # build up request with cookie jar and basic auth handler
-        cookie_jar = cookielib.LWPCookieJar()
-        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar))
-        
-        headers = self.headers
-        headers[HEADER_AUTHORIZATION] = 'Basic ' + b64encode(self.client_id + ':' + self.client_secret)
-
-        try:
-            request = urllib2.Request(url=LOGIN_URL, data=encoded_data, headers=headers)
-            response = self.opener.open(request)
-            response_data = response.read()
-            json_data = json.loads(response_data, strict=False)
-            self.access_token = json_data[KEY_ACCESS_TOKEN].encode(JSON_ENCODING)
-            self.token_type = json_data[KEY_TOKEN_TYPE].encode(JSON_ENCODING)
-            self.update_headers_with_access_info()
-        except Exception, e:
-            QgsMessageLog.instance().logMessage("Exception detected during log in: " + str(e), TAG_NAME,
-                                                level=QgsMessageLog.CRITICAL)
-            self.is_login_successful = False
-
-    def update_headers_with_access_info(self):
-        """
-        Helper method for updating the authorization header after log-in
-        :return:
-        """
-        self.headers[HEADER_AUTHORIZATION] = "%s %s" % (self.token_type, self.access_token)
+        if not self.is_login_successful:
+            with self.token_lock:
+                if not self.is_login_successful:
+                    # prep data
+                    data = {
+                        'username': self.username,
+                        'password': self.password,
+                        'grant_type': self.grant_type
+                    }
+                    encoded_data = urllib.urlencode(data)
+            
+                    # build up request with cookie jar and basic auth handler
+                    cookie_jar = cookielib.LWPCookieJar()
+                    self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar))
+                    
+                    headers = self.headers
+                    headers[HEADER_AUTHORIZATION] = 'Basic ' + b64encode(self.client_id + ':' + self.client_secret)
+            
+                    try:
+                        request = urllib2.Request(url=LOGIN_URL, data=encoded_data, headers=headers)
+                        response = self.opener.open(request)
+                        response_data = response.read()
+                        json_data = json.loads(response_data, strict=False)
+                        self.access_token = json_data[KEY_ACCESS_TOKEN].encode(JSON_ENCODING)
+                        self.token_type = json_data[KEY_TOKEN_TYPE].encode(JSON_ENCODING)
+                        self.headers[HEADER_AUTHORIZATION] = "%s %s" % (self.token_type, self.access_token)
+                    except Exception, e:
+                        QgsMessageLog.instance().logMessage("Exception detected during log in: " + str(e), TAG_NAME, level=QgsMessageLog.CRITICAL)
+                        self.is_login_successful = False
 
     def hit_test_endpoint(self):
         """
@@ -98,18 +95,21 @@ class OAuth2Query(object):
         Must be done after logging in first
         :return: None
         """
-        try:
-            request = urllib2.Request(TEST_LOGIN_URL, headers=self.headers)
-            response = self.opener.open(request)
-            if len(response.read()) > 0:
-                self.is_login_successful = True
-        except Exception, e:
-            QgsMessageLog.instance().logMessage("Exception detected during endpoint test: " + str(e),
-                                                TAG_NAME, level=QgsMessageLog.CRITICAL)
-            self.is_login_successful = False
-    
+        if not self.is_login_successful:
+            with self.token_lock:
+                if not self.is_login_successful:
+                    try:
+                        request = urllib2.Request(TEST_LOGIN_URL, headers=self.headers)
+                        response = self.opener.open(request)
+                        if len(response.read()) > 0:
+                            self.is_login_successful = True
+                    except Exception, e:
+                        QgsMessageLog.instance().logMessage("Exception detected during endpoint test: " + str(e), TAG_NAME, level=QgsMessageLog.CRITICAL)
+                        self.is_login_successful = False
+
     def get_opener(self):
         return self.opener
-    
+
     def get_headers(self):
         return self.headers
+
