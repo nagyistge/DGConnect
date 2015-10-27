@@ -22,7 +22,7 @@ POLYGON_TEMPLATE = Template("POLYGON (($left $bottom, $left $top, $right $top, $
 
 # gbd urls
 TOP_LEVEL_URL = 'https://iipbeta.digitalglobe.com/'
-ACQUISITION_SEARCH_URL = TOP_LEVEL_URL + "raster-catalog/api/gbd/catalog/v1/search"
+ACQUISITION_SEARCH_URL = TOP_LEVEL_URL + "raster-catalog/api/gbd/catalog/v1/search?includeRelationships=false"
 
 # data format for parsing
 ISO_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
@@ -62,13 +62,14 @@ class GBDOrderParams:
     Class for managing GBD params
     """
 
-    def __init__(self, top, bottom, left, right, time_begin=None, time_end=None):
+    def __init__(self, top, bottom, left, right, time_begin=None, time_end=None, filters=None):
         self.top = top
         self.bottom = bottom
         self.left = left
         self.right = right
         self.time_begin = time_begin
         self.time_end = time_end
+        self.filters = filters
         self.polygon = self.build_polygon()
 
     def build_polygon(self):
@@ -99,7 +100,7 @@ class GBDQuery(OAuth2Query):
         # build request body json
         request_body = {
             KEY_DATA_SEARCH_AREA_WKT: order_params.polygon,
-            KEY_DATA_FILTERS: [], # TODO text query goes here
+            KEY_DATA_FILTERS: order_params.filters,
             KEY_DATA_TAG_RESULTS: VALUE_DATA_TAG_RESULTS,
             KEY_DATA_TYPES: VALUE_DATA_TYPES
         }

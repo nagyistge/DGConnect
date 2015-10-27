@@ -6,8 +6,11 @@ from qgis._core import QgsCoordinateReferenceSystem, QgsField
 from qgis._gui import QgsMessageBar
 from qgis.core import QgsVectorLayer, QgsMapLayerRegistry, QgsMessageLog
 import re
+from uuid import uuid4
 
+from CatalogAcquisition import CatalogAcquisition
 from CatalogGBDQuery import GBDQuery, GBDOrderParams
+from CatalogFilters import CatalogFilters
 from PyQt4.QtCore import Qt, QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal, QVariant, QAbstractTableModel, SIGNAL
 from PyQt4.QtGui import QStandardItem, QStandardItemModel, QProgressBar, QFileDialog, QSortFilterProxyModel, QFileDialog
 
@@ -19,6 +22,12 @@ INCREMENTAL_INTERVAL = 1.0
 
 DEFAULT_SUFFIX = "csv"
 SELECT_FILTER = "CSV Files(*.csv)"
+
+RESULTS_TAB_INDEX = 1
+FILTER_COLUMN_INDEX_WHERE = 0
+FILTER_COLUMN_INDEX_LABEL = 1
+FILTER_COLUMN_INDEX_VALUE = 2
+FILTER_COLUMN_INDEX_ADD = 3
 
 
 class CatalogDialogTool(QObject):
@@ -49,8 +58,12 @@ class CatalogDialogTool(QObject):
         self.previous_credentials = None
         self.export_file = None
 
+        self.filters = CatalogFilters(self.dialog_ui)
+        self.filters.add_filter()
+
         self.dialog_ui.search_button.clicked.connect(self.search_button_clicked)
         self.dialog_ui.export_button.clicked.connect(self.export_button_clicked)
+
 
     def init_progress_bar(self, progress_max):
         """
@@ -136,7 +149,7 @@ class CatalogDialogTool(QObject):
     def search(self):
         self.search_thread_pool.waitForDone(0)
 
-        # validate credentials if credentials changed
+        # validate credentials if they changed
         settings_errors = []
         username, password, max_items_to_return = SettingsOps.get_settings()
         credentials = [username, password]
@@ -145,6 +158,8 @@ class CatalogDialogTool(QObject):
         self.previous_credentials = credentials
 
         if len(settings_errors) == 0:
+            self.dialog_ui.tab_widget.setCurrentIndex(RESULTS_TAB_INDEX)
+            
             next_x_list = self.drange_list(float(self.bbox_tool.left) + INCREMENTAL_INTERVAL, float(self.bbox_tool.right), INCREMENTAL_INTERVAL)
             next_y_list = self.drange_list(float(self.bbox_tool.bottom) + INCREMENTAL_INTERVAL, float(self.bbox_tool.top), INCREMENTAL_INTERVAL)
             self.init_progress_bar(len(next_x_list) * len(next_y_list))
@@ -152,6 +167,7 @@ class CatalogDialogTool(QObject):
             # TODO reset model on subsequent searches
             self.model = CatalogTableModel(self.dialog_ui.table_view)
             self.dialog_ui.table_view.setModel(self.model)
+            filters = self.filters.get_request_filters()
             if not self.query:
                 self.query = GBDQuery(username=username, password=password, client_id=username, client_secret=password)
 
@@ -159,7 +175,7 @@ class CatalogDialogTool(QObject):
             current_y = float(self.bbox_tool.bottom)
             for next_x in next_x_list:
                 for next_y in next_y_list:
-                    search_runnable = CatalogSearchRunnable(self.query, self.model, self, top=next_y, left=current_x, right=next_x, bottom=current_y)
+                    search_runnable = CatalogSearchRunnable(self.query, self.model, self, top=next_y, left=current_x, right=next_x, bottom=current_y, filters=filters)
                     search_runnable.task_object.task_complete.connect(self.on_search_complete)
                     self.search_thread_pool.start(search_runnable)
                     current_y = next_y
@@ -226,7 +242,7 @@ class CatalogTaskObject(QObject):
 
 class CatalogSearchRunnable(QRunnable):
 
-    def __init__(self, query, model, dialog_tool, top, left, right, bottom):
+    def __init__(self, query, model, dialog_tool, top, left, right, bottom, filters):
         QRunnable.__init__(self)
         self.query = query
         self.model = model
@@ -235,17 +251,18 @@ class CatalogSearchRunnable(QRunnable):
         self.left = left
         self.right = right
         self.bottom = bottom
+        self.filters = filters
         self.task_object = CatalogTaskObject()
 
     def run(self):
-        params = GBDOrderParams(top=self.top, right=self.right, bottom=self.bottom, left=self.left, time_begin=None, time_end=None)
+        params = GBDOrderParams(top=self.top, right=self.right, bottom=self.bottom, left=self.left, time_begin=None, time_end=None, filters=self.filters)
         result_data = self.query.acquisition_search(params)
 
         if result_data:
             acquisitions = []
             results = result_data[u"results"]
             for acquisition_result in results:
-                acquisitions.append(Acquisition(acquisition_result))
+                acquisitions.append(CatalogAcquisition(acquisition_result))
             self.model.add_data(acquisitions)
         self.task_object.task_complete.emit()
 
@@ -261,7 +278,7 @@ class CatalogExportRunnable(QRunnable):
     def run(self):
         export_file = open(self.export_filename, 'w')
 
-        header = Acquisition.get_csv_header()
+        header = CatalogAcquisition.get_csv_header()
         export_file.write(header)
         export_file.write("\n")
 
@@ -293,11 +310,11 @@ class CatalogTableModel(QAbstractTableModel):
         return len(self.data)
 
     def columnCount(self, parent=None):
-        return len(Acquisition.COLUMNS)
+        return len(CatalogAcquisition.COLUMNS)
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            return Acquisition.COLUMNS[section]
+            return CatalogAcquisition.COLUMNS[section]
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
     def sort(self, column, order=Qt.AscendingOrder):
@@ -312,68 +329,4 @@ class CatalogTableModel(QAbstractTableModel):
                 self.emit(SIGNAL("layoutAboutToBeChanged()"))
                 self.data.extend(new_data)
                 self.emit(SIGNAL("layoutChanged()"))
-
-
-class Acquisition:
-    """
-    Entry in the GUI model of acquisitions
-    """
-
-    COLUMNS = ["Catalog ID", "Status", "Date", "Satellite", "Vendor", "Image Band", 
-               "Cloud %", "Sun Azm.", "Sun Elev.", "Multi Res.", "Pan Res.", "Off Nadir"]
-    
-    def __init__(self, result):
-        """
-        Constructor
-        :param result: acquisition result json 
-        :return: Acquisition
-        """
-
-        self.identifier = str(result[u"identifier"])
-
-        properties = result.get(u"properties")
-
-        # determine status
-        available = properties.get(u"available")
-        ordered = properties.get(u"ordered")
-        self.status = "Available" if to_bool(available) else "Ordered" if to_bool(ordered) else "Unordered"
-
-        # get timestamp and remove time because it's always 00:00:00
-        self.timestamp = properties.get(u"timestamp")
-        if self.timestamp:
-            self.timestamp = self.timestamp[:10] 
-
-        self.sensor_platform_name = properties.get(u"sensorPlatformName")
-        self.vendor_name = properties.get(u"vendorName")
-        self.image_bands = properties.get(u"imageBands")
-
-        self.cloud_cover = properties.get(u"cloudCover")
-        self.sun_azimuth = properties.get(u"sunAzimuth")
-        self.sun_elevation = properties.get(u"sunElevation")
-        self.multi_resolution = properties.get(u"multiResolution")
-        self.pan_resolution = properties.get(u"panResolution")
-        self.off_nadir_angle = properties.get(u"offNadirAngle")
-        
-        self.target_azimuth = properties.get(u"targetAzimuth")
-        self.browse_url = properties.get(u"browseURL")
-        self.footprint_wkt = properties.get(u"footprintWkt")
-
-        self.column_values = [self.identifier, self.status, self.timestamp, self.sensor_platform_name, self.vendor_name, self.image_bands,
-                              self.cloud_cover, self.sun_azimuth, self.sun_elevation, self.multi_resolution, self.pan_resolution, self.off_nadir_angle]
-
-    def __str__(self):
-        return '"' + '","'.join(self.column_values) + '"'
-
-    def get_column_value(self, property_index):
-        return self.column_values[property_index]
-
-    @classmethod
-    def get_csv_header(cls):
-        return ",".join(Acquisition.COLUMNS)
-
-
-def to_bool(text):
-    if not text:
-        return False
-    return text.lower() == "true"
 

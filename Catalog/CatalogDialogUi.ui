@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>496</width>
-    <height>541</height>
+    <height>320</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -26,62 +26,92 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
-   <layout class="QGridLayout" name="gridLayout">
-    <item row="1" column="0">
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <property name="sizeConstraint">
-       <enum>QLayout::SetNoConstraint</enum>
+   <layout class="QGridLayout" name="widget_layout">
+    <item row="0" column="0">
+     <widget class="QTabWidget" name="tab_widget">
+      <property name="currentIndex">
+       <number>0</number>
       </property>
-      <item>
-       <layout class="QHBoxLayout" name="button_layout">
-        <item>
-         <widget class="QPushButton" name="search_button">
-          <property name="text">
-           <string>Search</string>
-          </property>
-          <property name="default">
-           <bool>true</bool>
-          </property>
-         </widget>
+      <widget class="QWidget" name="filters_tab">
+       <attribute name="title">
+        <string>Filters</string>
+       </attribute>
+       <layout class="QGridLayout" name="filters_tab_layout">
+        <item row="0" column="1">
+         <layout class="QGridLayout" name="filters_layout"/>
         </item>
-        <item>
-         <widget class="QPushButton" name="export_button">
-          <property name="text">
-           <string>Export</string>
-          </property>
-          <property name="default">
+       </layout>
+      </widget>
+      <widget class="QWidget" name="results_tab">
+       <attribute name="title">
+        <string>Results</string>
+       </attribute>
+       <layout class="QGridLayout" name="results_tab_layout">
+        <item row="0" column="0">
+         <widget class="QTableView" name="table_view">
+          <property name="enabled">
            <bool>true</bool>
           </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
+          <attribute name="horizontalHeaderCascadingSectionResizes">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="horizontalHeaderStretchLastSection">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="verticalHeaderCascadingSectionResizes">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="verticalHeaderDefaultSectionSize">
+           <number>25</number>
+          </attribute>
+          <attribute name="verticalHeaderMinimumSectionSize">
+           <number>25</number>
+          </attribute>
+          <attribute name="verticalHeaderShowSortIndicator" stdset="0">
+           <bool>false</bool>
+          </attribute>
          </widget>
         </item>
        </layout>
+      </widget>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <layout class="QHBoxLayout" name="button_layout">
+      <item>
+       <widget class="QPushButton" name="search_button">
+        <property name="text">
+         <string>Search</string>
+        </property>
+        <property name="default">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="reset_button">
+        <property name="text">
+         <string>Reset</string>
+        </property>
+        <property name="default">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="export_button">
+        <property name="text">
+         <string>Export</string>
+        </property>
+        <property name="default">
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
      </layout>
-    </item>
-    <item row="0" column="0">
-     <widget class="QTableView" name="table_view">
-      <property name="sortingEnabled">
-       <bool>true</bool>
-      </property>
-      <attribute name="horizontalHeaderCascadingSectionResizes">
-       <bool>false</bool>
-      </attribute>
-      <attribute name="horizontalHeaderStretchLastSection">
-       <bool>false</bool>
-      </attribute>
-      <attribute name="verticalHeaderCascadingSectionResizes">
-       <bool>false</bool>
-      </attribute>
-      <attribute name="verticalHeaderDefaultSectionSize">
-       <number>25</number>
-      </attribute>
-      <attribute name="verticalHeaderMinimumSectionSize">
-       <number>25</number>
-      </attribute>
-      <attribute name="verticalHeaderShowSortIndicator" stdset="0">
-       <bool>false</bool>
-      </attribute>
-     </widget>
     </item>
    </layout>
   </widget>
