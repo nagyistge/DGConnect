@@ -59,7 +59,6 @@ class CatalogDialogTool(QObject):
         self.export_file = None
 
         self.filters = CatalogFilters(self.dialog_ui)
-        self.filters.add_filter()
 
         self.dialog_ui.search_button.clicked.connect(self.search_button_clicked)
         self.dialog_ui.export_button.clicked.connect(self.export_button_clicked)
