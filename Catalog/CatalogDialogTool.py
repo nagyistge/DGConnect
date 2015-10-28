@@ -167,15 +167,28 @@ class CatalogDialogTool(QObject):
             # TODO reset model on subsequent searches
             self.model = CatalogTableModel(self.dialog_ui.table_view)
             self.dialog_ui.table_view.setModel(self.model)
-            filters = self.filters.get_request_filters()
+
             if not self.query:
                 self.query = GBDQuery(username=username, password=password, client_id=username, client_secret=password)
+
+            filters = self.filters.get_request_filters()
+            time_begin = None
+            time_end = None
+            # TODO improve
+            for i in reversed(range(len(filters))):
+                if filters[i].startswith("timestamp >"):
+                    time_begin = filters[i][-25:-1]
+                    del filters[i]
+                elif filters[i].startswith("timestamp <"):
+                    time_end = filters[i][-25:-1]
+                    del filters[i]
 
             current_x = float(self.bbox_tool.left)
             current_y = float(self.bbox_tool.bottom)
             for next_x in next_x_list:
                 for next_y in next_y_list:
-                    search_runnable = CatalogSearchRunnable(self.query, self.model, self, top=next_y, left=current_x, right=next_x, bottom=current_y, filters=filters)
+                    search_runnable = CatalogSearchRunnable(self.query, self.model, self, top=next_y, left=current_x, right=next_x, bottom=current_y, 
+                                                            time_begin=time_begin, time_end=time_end, filters=filters)
                     search_runnable.task_object.task_complete.connect(self.on_search_complete)
                     self.search_thread_pool.start(search_runnable)
                     current_y = next_y
@@ -242,7 +255,7 @@ class CatalogTaskObject(QObject):
 
 class CatalogSearchRunnable(QRunnable):
 
-    def __init__(self, query, model, dialog_tool, top, left, right, bottom, filters):
+    def __init__(self, query, model, dialog_tool, top, left, right, bottom, time_begin, time_end, filters):
         QRunnable.__init__(self)
         self.query = query
         self.model = model
@@ -251,11 +264,14 @@ class CatalogSearchRunnable(QRunnable):
         self.left = left
         self.right = right
         self.bottom = bottom
+        self.time_begin = time_begin
+        self.time_end = time_end
         self.filters = filters
         self.task_object = CatalogTaskObject()
 
     def run(self):
-        params = GBDOrderParams(top=self.top, right=self.right, bottom=self.bottom, left=self.left, time_begin=None, time_end=None, filters=self.filters)
+        params = GBDOrderParams(top=self.top, right=self.right, bottom=self.bottom, left=self.left, 
+                                time_begin=self.time_begin, time_end=self.time_end, filters=self.filters)
         result_data = self.query.acquisition_search(params)
 
         if result_data:

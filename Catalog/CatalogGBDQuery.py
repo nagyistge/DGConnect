@@ -105,9 +105,9 @@ class GBDQuery(OAuth2Query):
             KEY_DATA_TYPES: VALUE_DATA_TYPES
         }
         if order_params.time_begin:
-            request_body[KEY_DATA_START_DATE] = order_params.time_begin.isoformat() + 'Z'
+            request_body[KEY_DATA_START_DATE] = order_params.time_begin
         if order_params.time_end:
-            request_body[KEY_DATA_END_DATE] = order_params.time_end.isoformat() + 'Z'
+            request_body[KEY_DATA_END_DATE] = order_params.time_end
         request_body_json = json.dumps(request_body)
 
         # build header
