@@ -86,7 +86,7 @@ class CatalogDialogTool(QObject):
         """
         self.progress_bar = None
         self.progress_message_bar = None
-        self.iface.messageBar().clearWidgets()
+        self.iface.messageBar().clearWidgets() # TODO pop specific widgets
 
     def is_searching(self):
         """
@@ -172,16 +172,8 @@ class CatalogDialogTool(QObject):
                 self.query = GBDQuery(username=username, password=password, client_id=username, client_secret=password)
 
             filters = self.filters.get_request_filters()
-            time_begin = None
-            time_end = None
-            # TODO improve
-            for i in reversed(range(len(filters))):
-                if filters[i].startswith("timestamp >"):
-                    time_begin = filters[i][-25:-1]
-                    del filters[i]
-                elif filters[i].startswith("timestamp <"):
-                    time_end = filters[i][-25:-1]
-                    del filters[i]
+            time_begin = self.filters.get_datetime_begin()
+            time_end = self.filters.get_datetime_end()
 
             current_x = float(self.bbox_tool.left)
             current_y = float(self.bbox_tool.bottom)

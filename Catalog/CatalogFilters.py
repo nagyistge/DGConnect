@@ -9,14 +9,37 @@ from PyQt4.QtCore import Qt, QObject, pyqtSlot, pyqtSignal, QVariant, QAbstractT
 from PyQt4.QtGui import QComboBox, QLabel, QLineEdit, QPushButton, QGridLayout, QCheckBox, QLayout, QDateEdit
 
 
-FILTER_COLUMN_INDEX_WHERE = 0
-FILTER_COLUMN_INDEX_LABEL = 1
-FILTER_COLUMN_INDEX_VALUE = 2
-FILTER_COLUMN_INDEX_ADD = 3
-
 FILTER_ID_KEY = "filter_id"
 SATELLITE_VALUE_KEY = "satellite_value"
 DATETIME_FORMAT = "yyyy-MM-ddT00:00:00.000Z"
+
+GRID_COLUMN_WHERE = 0
+GRID_COLUMN_LABEL = 1
+GRID_COLUMN_VALUE = 2
+GRID_COLUMN_ADD = 3
+
+TEXT_COLUMN_WHERE = "Where..."
+TEXT_COLUMN_AND = "And..."
+TEXT_LABEL_BETWEEN = " between "
+TEXT_LABEL_IS = " is "
+TEXT_STATUS_AVAILABLE = "Available"
+TEXT_STATUS_ORDERED = "Ordered"
+TEXT_STATUS_UNORDERED = "Unordered"
+TEXT_SATELLITE_WV1 = "WorldView-1"
+TEXT_SATELLITE_WV2 = "WorldView-2"
+TEXT_SATELLITE_WV3 = "WorldView-3"
+TEXT_SATELLITE_GEO = "GeoEye-1"
+TEXT_SATELLITE_QB2 = "QuickBird"
+TEXT_BAND_PAN = "Pan"
+TEXT_BAND_MS1 = "Pan_MS1"
+TEXT_BAND_MS2 = "Pan_MS1_MS2"
+TEXT_REMOVE_BUTTON = " - "
+
+VALUE_SATELLITE_WV1 = "WORLDVIEW01"
+VALUE_SATELLITE_WV2 = "WORLDVIEW02"
+VALUE_SATELLITE_WV3 = "WORLDVIEW03"
+VALUE_SATELLITE_GEO = "GEOEYE01"
+VALUE_SATELLITE_QB2 = "QUICKBIRD02"
 
 
 class CatalogFilters(object):
@@ -32,15 +55,15 @@ class CatalogFilters(object):
 
         column_combo = QComboBox()
         if row_index == 0:
-            column_combo.addItem("Where...")
+            column_combo.addItem(TEXT_COLUMN_WHERE)
         else:
-            column_combo.addItem("And...")
+            column_combo.addItem(TEXT_COLUMN_AND)
         for column in CatalogAcquisition.COLUMNS:
             column_combo.addItem(column)
         column_combo.currentIndexChanged.connect(self.filter_where_changed)
         self.model.set_column_combo(filter_id, column_combo)
 
-        self.layout.addWidget(column_combo, row_index, FILTER_COLUMN_INDEX_WHERE)
+        self.layout.addWidget(column_combo, row_index, GRID_COLUMN_WHERE)
 
     def remove_filter(self):
         filter_id = self.get_sender_filter_id()
@@ -53,61 +76,61 @@ class CatalogFilters(object):
         filter = self.model.get_filter(filter_id)
 
         if column_index >= 0:
-            label_text = None
-            value_widget = None
             row_index = self.model.get_row_index(filter_id)
             column = CatalogAcquisition.get_column(column_index)
 
-            # TODO constants
-            if column == CatalogAcquisition.CATALOG_ID:
-                label_text = " is "
-                value_widget = QLineEdit()
+            # set label
+            label_text = None
+            if column in [CatalogAcquisition.DATE]:
+                label_text = TEXT_LABEL_BETWEEN
+            else:
+                label_text = TEXT_LABEL_IS
+            label = QLabel(label_text)
+            self.model.set_label(filter_id, label)
+            self.layout.addWidget(label, row_index, GRID_COLUMN_LABEL)
+
+            # determine value item
+            value_item = None
+            if column in [CatalogAcquisition.CATALOG_ID, CatalogAcquisition.VENDOR]:
+                value_item = QLineEdit()
             elif column == CatalogAcquisition.STATUS:
-                label_text = " is "
-                value_widget = QGridLayout()
-                value_widget.addWidget(QCheckBox("Available"), 0, 0)
-                value_widget.addWidget(QCheckBox("Ordered"), 0, 1)
-                value_widget.addWidget(QCheckBox("Unordered"), 0, 2)
+                value_item = QGridLayout()
+                value_item.addWidget(QCheckBox(TEXT_STATUS_AVAILABLE), 0, 0)
+                value_item.addWidget(QCheckBox(TEXT_STATUS_ORDERED), 0, 1)
+                value_item.addWidget(QCheckBox(TEXT_STATUS_UNORDERED), 0, 2)
             elif column == CatalogAcquisition.DATE:
-                label_text = " between "
-                value_widget = QGridLayout()
-                value_widget.addWidget(QDateEdit(QDate.currentDate()), 0, 0)
-                value_widget.addWidget(QDateEdit(QDate.currentDate()), 0, 1)
+                value_item = QGridLayout()
+                value_item.addWidget(QDateEdit(QDate.currentDate()), 0, 0)
+                value_item.addWidget(QDateEdit(QDate.currentDate()), 0, 1)
             elif column == CatalogAcquisition.SATELLITE:
-                label_text = " is "
-                value_widget = QGridLayout()
-                value_widget.addWidget(self.create_satellite_checkbox("WorldView-1", "WORLDVIEW01"), 0, 0)
-                value_widget.addWidget(self.create_satellite_checkbox("WorldView-2", "WORLDVIEW02"), 0, 1)
-                value_widget.addWidget(self.create_satellite_checkbox("WorldView-3", "WORLDVIEW03"), 0, 2)
-                value_widget.addWidget(self.create_satellite_checkbox("GeoEye-1", "GEOEYE01"), 0, 3)
-                value_widget.addWidget(self.create_satellite_checkbox("QuickBird", "QUICKBIRD02"), 0, 4)
-            elif column == CatalogAcquisition.VENDOR:
-                label_text = " is "
-                value_widget = QLineEdit()
+                value_item = QGridLayout()
+                value_item.addWidget(self.create_satellite_checkbox(TEXT_SATELLITE_WV1, VALUE_SATELLITE_WV1), 0, 0)
+                value_item.addWidget(self.create_satellite_checkbox(TEXT_SATELLITE_WV2, VALUE_SATELLITE_WV2), 0, 1)
+                value_item.addWidget(self.create_satellite_checkbox(TEXT_SATELLITE_WV3, VALUE_SATELLITE_WV3), 0, 2)
+                value_item.addWidget(self.create_satellite_checkbox(TEXT_SATELLITE_GEO, VALUE_SATELLITE_GEO), 0, 3)
+                value_item.addWidget(self.create_satellite_checkbox(TEXT_SATELLITE_QB2, VALUE_SATELLITE_QB2), 0, 4)
             elif column == CatalogAcquisition.IMAGE_BAND:
-                label_text = " is "
-                value_widget = QComboBox()
-                value_widget.addItem("Pan")
-                value_widget.addItem("Pan_MS1")
-                value_widget.addItem("Pan_MS1_MS2")
+                value_item = QComboBox()
+                value_item.addItem(TEXT_BAND_PAN)
+                value_item.addItem(TEXT_BAND_MS1)
+                value_item.addItem(TEXT_BAND_MS2)
 
-            if label_text:
-                label = QLabel(label_text)
-                self.model.set_label(filter_id, label)
-                self.layout.addWidget(label, row_index, FILTER_COLUMN_INDEX_LABEL)
-            if value_widget:
-                if issubclass(type(value_widget), QLayout):
-                    self.layout.addLayout(value_widget, row_index, FILTER_COLUMN_INDEX_VALUE)
+            # set value item
+            if value_item:
+                if issubclass(type(value_item), QLayout):
+                    self.layout.addLayout(value_item, row_index, GRID_COLUMN_VALUE)
                 else:
-                    self.layout.addWidget(value_widget, row_index, FILTER_COLUMN_INDEX_VALUE)
-                self.model.set_value_widget(filter_id, value_widget)
+                    self.layout.addWidget(value_item, row_index, GRID_COLUMN_VALUE)
+                self.model.set_value_item(filter_id, value_item)
 
+            # set remove button
             if not filter.remove_button:
-                remove_button = QPushButton("-")
+                remove_button = QPushButton(TEXT_REMOVE_BUTTON)
                 remove_button.clicked.connect(self.remove_filter)
                 self.model.set_remove_button(filter_id, remove_button)
-                self.layout.addWidget(remove_button, row_index, FILTER_COLUMN_INDEX_ADD)
+                self.layout.addWidget(remove_button, row_index, GRID_COLUMN_ADD)
 
+            # add option to set another filter
             if self.model.is_last_column_set():
                 self.add_filter()
 
@@ -119,6 +142,12 @@ class CatalogFilters(object):
 
     def get_request_filters(self):
         return self.model.get_request_filters()
+
+    def get_datetime_begin(self):
+        return self.model.get_datetime_begin()
+
+    def get_datetime_end(self):
+        return self.model.get_datetime_end()
 
     def create_satellite_checkbox(self, display_text, value_text):
         checkbox = QCheckBox(display_text)
@@ -150,6 +179,22 @@ class CatalogFilterModel(object):
                 request_filters.extend(filter.get_request_filters())
         return request_filters
 
+    def get_datetime_begin(self):
+        for filter in self.filters:
+            if filter:
+                datetime_begin = filter.get_datetime_begin()
+                if datetime_begin:
+                    return datetime_begin
+        return None       
+
+    def get_datetime_end(self):
+        for filter in self.filters:
+            if filter:
+                datetime_end = filter.get_datetime_end()
+                if datetime_end:
+                    return datetime_end
+        return None       
+
     def add(self):
         filter = CatalogFilter()
         self.filters.append(filter)
@@ -171,19 +216,19 @@ class CatalogFilterModel(object):
             filter.label.setParent(None)
         filter.label = label
 
-    def set_value_widget(self, filter_id, value_widget):
+    def set_value_item(self, filter_id, value_item):
         filter = self.get_filter(filter_id)
-        if value_widget:
-            value_widget.setProperty(FILTER_ID_KEY, filter_id)
-        if filter.value_widget:
+        if value_item:
+            value_item.setProperty(FILTER_ID_KEY, filter_id)
+        if filter.value_item:
             # TODO recursive
-            if issubclass(type(filter.value_widget), QLayout):
-                for i in reversed(range(filter.value_widget.count())):
-                    filter.value_widget.itemAt(i).widget().setParent(None)
-                filter.value_widget.layout().setParent(None)
+            if issubclass(type(filter.value_item), QLayout):
+                for i in reversed(range(filter.value_item.count())):
+                    filter.value_item.itemAt(i).widget().setParent(None)
+                filter.value_item.layout().setParent(None)
             else:
-                filter.value_widget.setParent(None)
-        filter.value_widget = value_widget
+                filter.value_item.setParent(None)
+        filter.value_item = value_item
 
     def set_remove_button(self, filter_id, remove_button):
         filter = self.get_filter(filter_id)
@@ -196,7 +241,7 @@ class CatalogFilterModel(object):
     def reset(self, filter_id):
         self.set_column_combo(filter_id, None)
         self.set_label(filter_id, None)
-        self.set_value_widget(filter_id, None)
+        self.set_value_item(filter_id, None)
         self.set_remove_button(filter_id, None)
 
     def remove(self, filter_id):
@@ -212,13 +257,13 @@ class CatalogFilterModel(object):
             return True
 
 
-class CatalogFilter(object):
+class CatalogFilter(object): # TODO properties?
 
     def __init__(self):
         self.id = str(uuid4())
         self.column_combo = None
         self.label = None
-        self.value_widget = None #TODO rename away from widget
+        self.value_item = None
         self.remove_button = None
 
     def get_request_filters(self):
@@ -228,55 +273,51 @@ class CatalogFilter(object):
             column = CatalogAcquisition.get_column(column_index)
 
             if column == CatalogAcquisition.CATALOG_ID:
-                catalog_id = self.escape_value_text(self.value_widget.text())
+                catalog_id = self.escape_value_text(self.value_item.text())
                 request_filters.append("catalogID = '%s'" % catalog_id)
 
             elif column == CatalogAcquisition.STATUS:
-                # TODO improve, especiall if all selected
-                status_request = ""
-                available = self.value_widget.itemAt(0).widget()
-                if available.isChecked():
-                    if status_request:
-                        status_request += " OR "
-                    status_request += "available = 'true'"
-                ordered = self.value_widget.itemAt(1).widget()
-                if ordered.isChecked():
-                    if status_request:
-                        status_request += " OR "
-                    status_request += "(ordered = 'true' AND available <> 'true')"
-                unordered = self.value_widget.itemAt(2).widget()
-                if unordered.isChecked():
-                    if status_request:
-                        status_request += " OR "
-                    status_request += "(ordered <> 'true' AND available <> 'true')"
-                if status_request:
-                    request_filters.append(status_request)
+                available = self.value_item.itemAt(0).widget().isChecked()
+                ordered = self.value_item.itemAt(1).widget().isChecked()
+                unordered = self.value_item.itemAt(2).widget().isChecked()
 
-            elif column == CatalogAcquisition.DATE:
-                from_datetime = self.value_widget.itemAt(0).widget().dateTime().toString(DATETIME_FORMAT)
-                to_datetime = self.value_widget.itemAt(1).widget().dateTime().toString(DATETIME_FORMAT)
-                request_filters.append("timestamp >= '%s'" % from_datetime)
-                request_filters.append("timestamp <= '%s'" % to_datetime)
+                request_filter = ""
+                if available and ordered and unordered:
+                    # don't add any filter because everything selected
+                    request_filter = None
+                else:
+                    # TODO ordered and available don't always exist
+                    if available:
+                        request_filter += (" OR " if request_filter else "") + "available = 'true'"
+                    if ordered:
+                        request_filter += (" OR " if request_filter else "") + "(ordered = 'true' AND available <> 'true')"
+                    if unordered:
+                        request_filter += (" OR " if request_filter else "") + "(ordered <> 'true' AND available <> 'true')"
+                if request_filter:
+                    request_filters.append("(%s)" % request_filter)
 
             elif column == CatalogAcquisition.SATELLITE:
-                for i in range(self.value_widget.count()):
-                    checkbox = self.value_widget.itemAt(i).widget()
-                    if not checkbox.isChecked():
+                request_filter = ""
+                for i in range(self.value_item.count()):
+                    checkbox = self.value_item.itemAt(i).widget()
+                    if checkbox.isChecked():
                         satellite_value = checkbox.property(SATELLITE_VALUE_KEY)
-                        request_filters.append("sensorPlatformName <> '%s'" % satellite_value)
+                        request_filter += (" OR " if request_filter else "") + ("sensorPlatformName = '%s'" % satellite_value)
+                if request_filter:
+                    request_filters.append("(%s)" % request_filter)
 
             elif column == CatalogAcquisition.VENDOR:
-                vendor = self.escape_value_text(self.value_widget.text())
+                vendor = self.escape_value_text(self.value_item.text())
                 request_filters.append("vendorName = '%s'" % vendor)
 
             elif column == CatalogAcquisition.IMAGE_BAND:
-                band_index = self.value_widget.currentIndex()
+                band_index = self.value_item.currentIndex()
                 if band_index == 0:
-                    request_filters.append("imageBands = 'Pan' OR imageBands = 'Pan_MS1' OR imageBands = 'Pan_MS1_MS2'")
+                    request_filters.append("(imageBands = 'Pan' OR imageBands = 'Pan_MS1' OR imageBands = 'Pan_MS1_MS2')")
                 elif band_index == 1:
-                    request_filters.append("imageBands = 'Pan_MS1' OR imageBands = 'Pan_MS1_MS2'")
+                    request_filters.append("(imageBands = 'Pan_MS1' OR imageBands = 'Pan_MS1_MS2')")
                 elif band_index == 2:
-                    request_filters.append("imageBands = 'Pan_MS1_MS2'")
+                    request_filters.append("(imageBands = 'Pan_MS1_MS2')")
 
         return request_filters
 
@@ -285,6 +326,20 @@ class CatalogFilter(object):
             current_index = self.column_combo.currentIndex()
             if current_index > 0:
                 return current_index - 1
+        return None
+
+    def get_datetime_begin(self):
+        return self.get_datetime(0)
+
+    def get_datetime_end(self):
+        return self.get_datetime(1)
+
+    def get_datetime(self, datetime_index):
+        column_index = self.get_column_index()
+        if column_index >= 0:
+            column = CatalogAcquisition.get_column(column_index)
+            if column == CatalogAcquisition.DATE:
+                return self.value_item.itemAt(datetime_index).widget().dateTime().toString(DATETIME_FORMAT)
         return None
 
     def escape_value_text(self, text):
