@@ -50,8 +50,8 @@ class CatalogFilters(object):
         self.layout = dialog_ui.filters_layout
 
     def add_filter(self):
-        filter_id = self.model.add()
-        row_index = self.model.get_row_index(filter_id)
+        filter = self.model.add()
+        row_index = self.model.get_row_index(filter.id)
 
         column_combo = QComboBox()
         if row_index == 0:
@@ -61,7 +61,7 @@ class CatalogFilters(object):
         for column in CatalogAcquisition.COLUMNS:
             column_combo.addItem(column)
         column_combo.currentIndexChanged.connect(self.filter_where_changed)
-        self.model.set_column_combo(filter_id, column_combo)
+        filter.column_combo = column_combo
 
         self.layout.addWidget(column_combo, row_index, GRID_COLUMN_WHERE)
 
@@ -81,12 +81,12 @@ class CatalogFilters(object):
 
             # set label
             label_text = None
-            if column in [CatalogAcquisition.DATE]:
+            if column in [CatalogAcquisition.DATE, CatalogAcquisition.CLOUD_COVER]:
                 label_text = TEXT_LABEL_BETWEEN
             else:
                 label_text = TEXT_LABEL_IS
             label = QLabel(label_text)
-            self.model.set_label(filter_id, label)
+            filter.label = label
             self.layout.addWidget(label, row_index, GRID_COLUMN_LABEL)
 
             # determine value item
@@ -114,6 +114,10 @@ class CatalogFilters(object):
                 value_item.addItem(TEXT_BAND_PAN)
                 value_item.addItem(TEXT_BAND_MS1)
                 value_item.addItem(TEXT_BAND_MS2)
+            elif column == CatalogAcquisition.CLOUD_COVER:
+                value_item = QGridLayout()
+                value_item.addWidget(QLineEdit(), 0, 0)
+                value_item.addWidget(QLineEdit(), 0, 1)
 
             # set value item
             if value_item:
@@ -121,13 +125,13 @@ class CatalogFilters(object):
                     self.layout.addLayout(value_item, row_index, GRID_COLUMN_VALUE)
                 else:
                     self.layout.addWidget(value_item, row_index, GRID_COLUMN_VALUE)
-                self.model.set_value_item(filter_id, value_item)
+                filter.value_item = value_item
 
             # set remove button
             if not filter.remove_button:
                 remove_button = QPushButton(TEXT_REMOVE_BUTTON)
                 remove_button.clicked.connect(self.remove_filter)
-                self.model.set_remove_button(filter_id, remove_button)
+                filter.remove_button = remove_button
                 self.layout.addWidget(remove_button, row_index, GRID_COLUMN_ADD)
 
             # add option to set another filter
@@ -198,61 +202,18 @@ class CatalogFilterModel(object):
     def add(self):
         filter = CatalogFilter()
         self.filters.append(filter)
-        return filter.id
-
-    def set_column_combo(self, filter_id, column_combo):
-        filter = self.get_filter(filter_id)
-        if column_combo:
-            column_combo.setProperty(FILTER_ID_KEY, filter_id)
-        if filter.column_combo:
-            filter.column_combo.setParent(None)
-        filter.column_combo = column_combo
-
-    def set_label(self, filter_id, label):
-        filter = self.get_filter(filter_id)
-        if label:
-            label.setProperty(FILTER_ID_KEY, filter_id)
-        if filter.label:
-            filter.label.setParent(None)
-        filter.label = label
-
-    def set_value_item(self, filter_id, value_item):
-        filter = self.get_filter(filter_id)
-        if value_item:
-            value_item.setProperty(FILTER_ID_KEY, filter_id)
-        if filter.value_item:
-            # TODO recursive
-            if issubclass(type(filter.value_item), QLayout):
-                for i in reversed(range(filter.value_item.count())):
-                    filter.value_item.itemAt(i).widget().setParent(None)
-                filter.value_item.layout().setParent(None)
-            else:
-                filter.value_item.setParent(None)
-        filter.value_item = value_item
-
-    def set_remove_button(self, filter_id, remove_button):
-        filter = self.get_filter(filter_id)
-        if remove_button:
-            remove_button.setProperty(FILTER_ID_KEY, filter_id)
-        if filter.remove_button:
-            filter.remove_button.setParent(None)
-        filter.remove_button = remove_button
-
-    def reset(self, filter_id):
-        self.set_column_combo(filter_id, None)
-        self.set_label(filter_id, None)
-        self.set_value_item(filter_id, None)
-        self.set_remove_button(filter_id, None)
+        return filter
 
     def remove(self, filter_id):
-        self.reset(filter_id)
         row_index = self.get_row_index(filter_id)
+        filter = self.filters[row_index]
+        filter.reset()
         self.filters[row_index] = None
 
     def is_last_column_set(self):
         for i in reversed(range(len(self.filters))): 
             if self.filters[i]:
-                return self.filters[i].get_column_index() >= 0
+                return self.filters[i].column_index >= 0
         else:
             return True
 
@@ -260,15 +221,80 @@ class CatalogFilterModel(object):
 class CatalogFilter(object): # TODO properties?
 
     def __init__(self):
-        self.id = str(uuid4())
-        self.column_combo = None
-        self.label = None
-        self.value_item = None
-        self.remove_button = None
+        self._id = str(uuid4())
+        self._column_combo = None # TODO column_item
+        self._label = None
+        self._value_item = None
+        self._remove_button = None
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def column_combo(self):
+        return self._column_combo
+
+    @column_combo.setter
+    def column_combo(self, new_column_combo):
+        if new_column_combo:
+            new_column_combo.setProperty(FILTER_ID_KEY, self._id)
+        if self._column_combo:
+            self._column_combo.setParent(None)
+        self._column_combo = new_column_combo
+
+    @property
+    def label(self):
+        return self._label
+
+    @label.setter
+    def label(self, new_label):
+        if new_label:
+            new_label.setProperty(FILTER_ID_KEY, self._id)
+        if self._label:
+            self._label.setParent(None)
+        self._label = new_label
+
+    @property
+    def value_item(self):
+        return self._value_item
+
+    @value_item.setter
+    def value_item(self, new_value_item):
+        if new_value_item:
+            new_value_item.setProperty(FILTER_ID_KEY, self._id)
+        if self._value_item:
+            if issubclass(type(self._value_item), QLayout):
+                for i in reversed(range(self._value_item.count())):
+                    self._value_item.itemAt(i).widget().setParent(None)
+                self._value_item.layout().setParent(None)
+            else:
+                self._value_item.setParent(None)
+        self._value_item = new_value_item
+
+    @property
+    def remove_button(self):
+        return self._remove_button
+
+    @remove_button.setter
+    def remove_button(self, new_remove_button):
+        if new_remove_button:
+            new_remove_button.setProperty(FILTER_ID_KEY, self._id)
+        if self._remove_button:
+            self._remove_button.setParent(None)
+        self._remove_button = new_remove_button
+
+    @property
+    def column_index(self):
+        if self.column_combo:
+            current_index = self.column_combo.currentIndex()
+            if current_index > 0:
+                return current_index - 1
+        return None
 
     def get_request_filters(self):
         request_filters = []
-        column_index = self.get_column_index()
+        column_index = self.column_index
         if column_index >= 0:
             column = CatalogAcquisition.get_column(column_index)
 
@@ -319,14 +345,13 @@ class CatalogFilter(object): # TODO properties?
                 elif band_index == 2:
                     request_filters.append("(imageBands = 'Pan_MS1_MS2')")
 
-        return request_filters
+            elif column == CatalogAcquisition.CLOUD_COVER:
+                cloud_cover_from = self.value_item.itemAt(0).widget().text()
+                cloud_cover_to = self.value_item.itemAt(1).widget().text()
+                request_filters.append("cloudCover >= '%s'" % cloud_cover_from)
+                request_filters.append("cloudCover <= '%s'" % cloud_cover_to)
 
-    def get_column_index(self):
-        if self.column_combo:
-            current_index = self.column_combo.currentIndex()
-            if current_index > 0:
-                return current_index - 1
-        return None
+        return request_filters
 
     def get_datetime_begin(self):
         return self.get_datetime(0)
@@ -335,15 +360,45 @@ class CatalogFilter(object): # TODO properties?
         return self.get_datetime(1)
 
     def get_datetime(self, datetime_index):
-        column_index = self.get_column_index()
+        column_index = self.column_index
         if column_index >= 0:
             column = CatalogAcquisition.get_column(column_index)
             if column == CatalogAcquisition.DATE:
                 return self.value_item.itemAt(datetime_index).widget().dateTime().toString(DATETIME_FORMAT)
         return None
 
+    def reset(self):
+        self.column_combo = None
+        self.label = None
+        self.value_item = None
+        self.remove_button = None
+
     def escape_value_text(self, text):
         if text:
             text = text.replace("'", "").replace('"', "")
         return text
+
+    def __hash__(self):
+        return hash(self._id)
+
+    def __eq__(self, other):
+        return self._id == other.id
+
+    def __ne__(self, other):
+        return self._id != other.id
+
+    def __le__(self, other):
+        return self._id <= other.id
+
+    def __lt__(self, other):
+        return self._id < other.id
+
+    def __ge__(self, other):
+        return self._id >= other.id
+
+    def __gt__(self, other):
+        return self._id > other.id
+
+    def __cmp__(self, other):
+        return cmp(self._id, other.id)
 
