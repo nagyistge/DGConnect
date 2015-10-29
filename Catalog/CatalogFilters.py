@@ -61,7 +61,7 @@ class CatalogFilters(object):
             column_combo.addItem(TEXT_COLUMN_AND)
         for column in CatalogAcquisition.COLUMNS:
             column_combo.addItem(column)
-        column_combo.currentIndexChanged.connect(self.filter_where_changed)
+        column_combo.currentIndexChanged.connect(self.column_changed)
         filter.column_combo = column_combo
 
         self.layout.addWidget(column_combo, row_index, GRID_COLUMN_WHERE)
@@ -71,7 +71,7 @@ class CatalogFilters(object):
         filter = self.model.get_filter(filter_id)
         self.model.remove(filter_id)
 
-    def filter_where_changed(self, index):
+    def column_changed(self, index):
         column_index = index - 1
         filter_id = self.get_sender_filter_id()
         filter = self.model.get_filter(filter_id)
@@ -133,8 +133,11 @@ class CatalogFilters(object):
     def get_sender_filter_id(self):
         return self.dialog_ui.dockWidgetContents.sender().property(FILTER_ID_KEY)
 
-    def get_request_filters(self):
-        return self.model.get_request_filters()
+    def validate(self, errors):
+        self.model.validate(errors)
+
+    def get_query_filters(self):
+        return self.model.get_query_filters()
 
     def get_datetime_begin(self):
         return self.model.get_datetime_begin()
@@ -160,12 +163,17 @@ class CatalogFilterModel(object):
                 return i
         return None
 
-    def get_request_filters(self):
-        request_filters = []
+    def validate(self, errors):
         for filter in self.filters:
             if filter:
-                request_filters.extend(filter.get_request_filters())
-        return request_filters
+                filter.validate(errors)
+
+    def get_query_filters(self):
+        query_filters = []
+        for filter in self.filters:
+            if filter:
+                query_filters.extend(filter.get_query_filters())
+        return query_filters
 
     def get_datetime_begin(self):
         for filter in self.filters:
@@ -212,6 +220,28 @@ class CatalogFilter(object):
         self._label = None
         self._value_item = None
         self._remove_button = None
+
+    def get_query_filters(self):
+        return []
+
+    def validate(self, errors):
+        return
+
+    def merge(self, other_filter):
+        self._id = other_filter.id
+        return self
+
+    def reset(self, reset_column=True):
+        if reset_column:
+            self.column_combo = None
+        self.label = None
+        self.value_item = None
+        self.remove_button = None
+
+    def escape_value_text(self, text):
+        if text:
+            text = text.replace("'", "").replace('"', "")
+        return text
 
     @property
     def id(self):
@@ -282,24 +312,12 @@ class CatalogFilter(object):
                 return current_index - 1
         return None
 
-    def get_request_filters(self):
-        return []
-
-    def merge(self, other_filter):
-        self._id = other_filter.id
-        return self
-
-    def reset(self, reset_column=True):
-        if reset_column:
-            self.column_combo = None
-        self.label = None
-        self.value_item = None
-        self.remove_button = None
-
-    def escape_value_text(self, text):
-        if text:
-            text = text.replace("'", "").replace('"', "")
-        return text
+    @property
+    def column_name(self):
+        column_index = self.column_index
+        if column_index >= 0:
+            return CatalogAcquisition.get_column(column_index)
+        return None
 
     def __str__(self):
         return self._id
@@ -331,15 +349,21 @@ class CatalogFilter(object):
 
 class CatalogFilterText(CatalogFilter):
 
-    def __init__(self, id, request_key):
+    def __init__(self, id, query_field):
         super(self.__class__, self).__init__(id)
-        self.request_key = request_key
+        self.query_field = query_field
         self.label = QLabel(TEXT_LABEL_IS)
         self.value_item = QLineEdit()
 
-    def get_request_filters(self):
-        value_text = self.escape_value_text(self.value_item.text())
-        return ["%s = '%s'" % (self.request_key, value_text)]
+    def get_query_filters(self):
+        return ["%s = '%s'" % (self.query_field, self.get_value())]
+
+    def validate(self, errors):
+        if not self.get_value():
+            errors.append("Value is required for %s filter." % self.column_name)
+    
+    def get_value(self):
+        return self.escape_value_text(self.value_item.text())
 
 
 class CatalogFilterStatus(CatalogFilter):
@@ -357,28 +381,35 @@ class CatalogFilterStatus(CatalogFilter):
         value_item.addWidget(self.unordered_checkbox, 0, 2)
         self.value_item = value_item
 
-    def get_request_filters(self):
+    def get_query_filters(self):
         available = self.available_checkbox.isChecked()
         ordered = self.ordered_checkbox.isChecked()
         unordered = self.unordered_checkbox.isChecked()
 
-        request_filter = ""
+        query_filter = ""
         if available and ordered and unordered:
             # don't add any filter because everything selected
-            request_filter = None
+            query_filter = None
         else:
             # TODO ordered and available don't always exist
             if available:
-                request_filter += (" OR " if request_filter else "") + "available = 'true'"
+                query_filter += (" OR " if query_filter else "") + "available = 'true'"
             if ordered:
-                request_filter += (" OR " if request_filter else "") + "(ordered = 'true' AND available <> 'true')"
+                query_filter += (" OR " if query_filter else "") + "(ordered = 'true' AND available <> 'true')"
             if unordered:
-                request_filter += (" OR " if request_filter else "") + "(ordered <> 'true' AND available <> 'true')"
-        if request_filter:
-            request_filters.append("(%s)" % request_filter)
-            return [request_filter]
+                query_filter += (" OR " if query_filter else "") + "(ordered <> 'true' AND available <> 'true')"
+        if query_filter:
+            query_filters.append("(%s)" % query_filter)
+            return [query_filter]
         else:
             return []
+
+    def validate(self, errors):
+        available = self.available_checkbox.isChecked()
+        ordered = self.ordered_checkbox.isChecked()
+        unordered = self.unordered_checkbox.isChecked()
+        if not available and not ordered and not unordered:
+            errors.append("At least one value must be selected for %s filter." % self.column_name)
 
 
 class CatalogFilterDate(CatalogFilter):
@@ -394,8 +425,15 @@ class CatalogFilterDate(CatalogFilter):
         value_item.addWidget(self.datetime_end_edit, 0, 1)
         self.value_item = value_item
 
-    def get_request_filters(self):
+    def get_query_filters(self):
+        # date request filter values are returned by get_datetime_begin/end
         return []
+
+    def validate(self, errors):
+        datetime_begin = self.datetime_begin_edit.dateTime()
+        datetime_end = self.datetime_end_edit.dateTime()
+        if datetime_begin.daysTo(datetime_end) < 0:
+            errors.append("First value must be less than or equal to second for %s filter." % self.column_name)
 
     def get_datetime_begin(self):
         return self.datetime_begin_edit.dateTime().toString(DATETIME_FORMAT)
@@ -419,17 +457,26 @@ class CatalogFilterSatellite(CatalogFilter):
         value_item.addWidget(self.create_satellite_checkbox(TEXT_SATELLITE_QB2, VALUE_SATELLITE_QB2), 0, 4)
         self.value_item = value_item
 
-    def get_request_filters(self):
-        request_filter = ""
+    def get_query_filters(self):
+        query_filter = ""
         for checkbox in self.checkboxes:
             if checkbox.isChecked():
                 satellite_value = checkbox.property(SATELLITE_VALUE_KEY)
-                request_filter += (" OR " if request_filter else "") + ("sensorPlatformName = '%s'" % satellite_value)
-        if request_filter:
-            request_filter = "(%s)" % request_filter
-            return [request_filter]
+                query_filter += (" OR " if query_filter else "") + ("sensorPlatformName = '%s'" % satellite_value)
+        if query_filter:
+            query_filter = "(%s)" % query_filter
+            return [query_filter]
         else:
             return []
+
+    def validate(self, errors):
+        at_least_one_checkbox_checked = False
+        for checkbox in self.checkboxes:
+            if checkbox.isChecked():
+                at_least_one_checkbox_checked = True
+                break
+        if not at_least_one_checkbox_checked:
+            errors.append("At least one value must be selected for %s filter." % self.column_name)
 
     def create_satellite_checkbox(self, display_text, value_text):
         checkbox = QCheckBox(display_text)
@@ -451,7 +498,7 @@ class CatalogFilterBand(CatalogFilter):
         value_item.addItem(TEXT_BAND_MS2)
         self.value_item = value_item
 
-    def get_request_filters(self):
+    def get_query_filters(self):
         band_index = self.value_item.currentIndex()
         if band_index == 0:
             return ["(imageBands = 'Pan' OR imageBands = 'Pan_MS1' OR imageBands = 'Pan_MS1_MS2')"]
@@ -461,12 +508,16 @@ class CatalogFilterBand(CatalogFilter):
             return ["(imageBands = 'Pan_MS1_MS2')"]
         return []
 
+    def validate(self, errors):
+        # there's no way to select an invalid option for band combo
+        return
+
 
 class CatalogFilterTextBetween(CatalogFilter):
 
-    def __init__(self, id, request_key):
+    def __init__(self, id, query_field):
         super(self.__class__, self).__init__(id)
-        self.request_key = request_key
+        self.query_field = query_field
         self.label = QLabel(TEXT_LABEL_BETWEEN)
         self.from_edit = QLineEdit()
         self.to_edit = QLineEdit()
@@ -476,11 +527,44 @@ class CatalogFilterTextBetween(CatalogFilter):
         value_item.addWidget(self.to_edit, 0, 1)
         self.value_item = value_item
 
-    def get_request_filters(self):
-        request_filters = []
-        from_value = self.from_edit.text()
-        to_value = self.to_edit.text()
-        request_filters.append("%s >= '%s'" % (self.request_key, from_value))
-        request_filters.append("%s <= '%s'" % (self.request_key, to_value))
-        return request_filters
+    def get_query_filters(self):
+        query_filters = []
+        from_value = self.get_from_value()
+        to_value = self.get_to_value()
+        if from_value:
+            query_filters.append("%s >= '%s'" % (self.query_field, from_value))
+        if to_value:
+            query_filters.append("%s <= '%s'" % (self.query_field, to_value))
+        return query_filters
+
+    def validate(self, errors):
+        from_value = self.get_from_value()
+        if from_value:
+                try:
+                    from_value = float(from_value)
+                except ValueError:
+                    errors.append("First value is invalid for %s filter." % self.column_name)
+                    from_value = None
+        else:
+            from_value = None
+        to_value = self.get_to_value()
+        if to_value:
+                try:
+                    to_value = float(to_value)
+                except ValueError:
+                    errors.append("Second value is invalid for %s filter." % self.column_name)
+                    from_value = None
+        else:
+            to_value = None
+
+        if from_value is None and to_value is None: # TODO 0's are valid
+            errors.append("At least one value is required for %s filter." % self.column_name)
+        elif from_value is not None and to_value is not None and from_value > to_value:
+            errors.append("First value must be less than or equal to second for %s filter." % self.column_name)
+
+    def get_from_value(self):
+        return self.from_edit.text()
+
+    def get_to_value(self):
+        return self.to_edit.text()
 

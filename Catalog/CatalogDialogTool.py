@@ -149,14 +149,20 @@ class CatalogDialogTool(QObject):
         self.search_thread_pool.waitForDone(0)
 
         # validate credentials if they changed
-        settings_errors = []
+        errors = []
         username, password, max_items_to_return = SettingsOps.get_settings()
         credentials = [username, password]
         if not self.previous_credentials or self.previous_credentials != credentials:
-            SettingsOps.validate_stored_info(username, password, max_items_to_return, settings_errors)
+            SettingsOps.validate_stored_info(username, password, max_items_to_return, errors)
         self.previous_credentials = credentials
 
-        if len(settings_errors) == 0:
+        # validate filters
+        if not errors:
+            self.filters.validate(errors)
+
+        if errors:
+            self.iface.messageBar().pushMessage("Error", "The following errors occurred: " + "<br />".join(errors), level=QgsMessageBar.CRITICAL)
+        else:
             self.dialog_ui.tab_widget.setCurrentIndex(RESULTS_TAB_INDEX)
             
             next_x_list = self.drange_list(float(self.bbox_tool.left) + INCREMENTAL_INTERVAL, float(self.bbox_tool.right), INCREMENTAL_INTERVAL)
@@ -170,7 +176,7 @@ class CatalogDialogTool(QObject):
             if not self.query:
                 self.query = GBDQuery(username=username, password=password, client_id=username, client_secret=password)
 
-            filters = self.filters.get_request_filters()
+            filters = self.filters.get_query_filters()
             time_begin = self.filters.get_datetime_begin()
             time_end = self.filters.get_datetime_end()
 
