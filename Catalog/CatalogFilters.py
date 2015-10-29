@@ -54,32 +54,37 @@ class CatalogFilters(object):
         filter = self.model.add()
         row_index = self.model.get_row_index(filter.id)
 
-        column_combo = QComboBox()
-        if row_index == 0:
-            column_combo.addItem(TEXT_COLUMN_WHERE)
+        column_item = QComboBox()
+        if self.model.get_num_filters() == 1:
+            column_item.addItem(TEXT_COLUMN_WHERE)
         else:
-            column_combo.addItem(TEXT_COLUMN_AND)
+            column_item.addItem(TEXT_COLUMN_AND)
         for column in CatalogAcquisition.COLUMNS:
-            column_combo.addItem(column)
-        column_combo.currentIndexChanged.connect(self.column_changed)
-        filter.column_combo = column_combo
+            column_item.addItem(column)
+        column_item.currentIndexChanged.connect(self.column_changed)
+        filter.column_item = column_item
 
-        self.layout.addWidget(column_combo, row_index, GRID_COLUMN_WHERE)
+        self.layout.addWidget(column_item, row_index, GRID_COLUMN_WHERE)
 
-    def remove_filter(self):
+    def remove(self):
         filter_id = self.get_sender_filter_id()
-        filter = self.model.get_filter(filter_id)
         self.model.remove(filter_id)
+        # if only blank filter remains then start from scratch
+        if self.model.get_num_filters() <= 1:
+            self.remove_all()
+
+    def remove_all(self):
+        self.model.remove_all()
+        self.add_blank_filter()
 
     def column_changed(self, index):
-        column_index = index - 1
         filter_id = self.get_sender_filter_id()
         filter = self.model.get_filter(filter_id)
+        column = filter.column_name
 
-        if column_index >= 0:
+        if column >= 0:
             filter.reset(reset_column=False)
             row_index = self.model.get_row_index(filter_id)
-            column = CatalogAcquisition.get_column(column_index)
 
             specific_filter = None
             if column == CatalogAcquisition.CATALOG_ID:
@@ -120,7 +125,7 @@ class CatalogFilters(object):
                 # add remove button
                 if not filter.remove_button:
                     remove_button = QPushButton(TEXT_REMOVE_BUTTON)
-                    remove_button.clicked.connect(self.remove_filter)
+                    remove_button.clicked.connect(self.remove)
                     filter.remove_button = remove_button
                     self.layout.addWidget(remove_button, row_index, GRID_COLUMN_ADD)
 
@@ -156,6 +161,13 @@ class CatalogFilterModel(object):
             if filter and filter.id == filter_id:
                 return filter
         return None
+
+    def get_num_filters(self):
+        num_filters = 0
+        for filter in self.filters:
+            if filter:
+                num_filters += 1
+        return num_filters
 
     def get_row_index(self, filter_id):
         for i in range(0, len(self.filters)):
@@ -195,7 +207,7 @@ class CatalogFilterModel(object):
     def set(self, filter_id, new_filter):
         row_index = self.get_row_index(filter_id)
         new_filter.id = filter_id
-        new_filter.column_combo = self.filters[row_index].column_combo
+        new_filter.column_item = self.filters[row_index].column_item
         self.filters[row_index] = new_filter
 
     def remove(self, filter_id):
@@ -203,6 +215,11 @@ class CatalogFilterModel(object):
         filter = self.filters[row_index]
         filter.reset()
         self.filters[row_index] = None
+
+    def remove_all(self):
+        for filter in self.filters:
+            if filter:
+                self.remove(filter.id)
 
     def is_last_column_set(self):
         for i in reversed(range(len(self.filters))): 
@@ -216,7 +233,7 @@ class CatalogFilter(object):
 
     def __init__(self, id): # TODO should id be empty CatalogFilter
         self._id = id
-        self._column_combo = None # TODO column_item
+        self._column_item = None # TODO column_item
         self._label = None
         self._value_item = None
         self._remove_button = None
@@ -233,7 +250,7 @@ class CatalogFilter(object):
 
     def reset(self, reset_column=True):
         if reset_column:
-            self.column_combo = None
+            self.column_item = None
         self.label = None
         self.value_item = None
         self.remove_button = None
@@ -252,16 +269,16 @@ class CatalogFilter(object):
         self._id = new_id
 
     @property
-    def column_combo(self):
-        return self._column_combo
+    def column_item(self):
+        return self._column_item
 
-    @column_combo.setter
-    def column_combo(self, new_column_combo):
-        if new_column_combo:
-            new_column_combo.setProperty(FILTER_ID_KEY, self._id)
-        if self._column_combo:
-            self._column_combo.setParent(None)
-        self._column_combo = new_column_combo
+    @column_item.setter
+    def column_item(self, new_column_item):
+        if new_column_item:
+            new_column_item.setProperty(FILTER_ID_KEY, self._id)
+        if self._column_item:
+            self._column_item.setParent(None)
+        self._column_item = new_column_item
 
     @property
     def label(self):
@@ -306,18 +323,18 @@ class CatalogFilter(object):
 
     @property
     def column_index(self):
-        if self._column_combo:
-            current_index = self._column_combo.currentIndex()
-            if current_index > 0:
-                return current_index - 1
+        column_name = self.column_name
+        for i in range(len(CatalogAcquisition.COLUMNS)):
+            if column_name == CatalogAcquisition.COLUMNS[i]:
+                return i
         return None
 
     @property
     def column_name(self):
-        column_index = self.column_index
-        if column_index >= 0:
-            return CatalogAcquisition.get_column(column_index)
-        return None
+        if self._column_item.currentIndex() > 0: # exclude initial non-column item
+            return self._column_item.currentText()
+        else:
+            return None
 
     def __str__(self):
         return self._id

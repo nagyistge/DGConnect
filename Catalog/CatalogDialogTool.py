@@ -61,6 +61,7 @@ class CatalogDialogTool(QObject):
         self.filters = CatalogFilters(self.dialog_ui)
 
         self.dialog_ui.search_button.clicked.connect(self.search_button_clicked)
+        self.dialog_ui.reset_button.clicked.connect(self.reset_button_clicked)
         self.dialog_ui.export_button.clicked.connect(self.export_button_clicked)
 
 
@@ -131,6 +132,13 @@ class CatalogDialogTool(QObject):
         else:
             self.search()
 
+    def reset_button_clicked(self):
+        """
+        Resets filters.
+        :return: None
+        """
+        self.reset()
+
     def export_button_clicked(self):
         """
         Validates and runs the export if validation successful
@@ -191,6 +199,9 @@ class CatalogDialogTool(QObject):
                     current_y = next_y
                 current_y = self.bbox_tool.bottom
                 current_x = next_x
+
+    def reset(self):
+        self.filters.remove_all()
 
     def export(self):
         self.export_thread_pool.waitForDone(0)

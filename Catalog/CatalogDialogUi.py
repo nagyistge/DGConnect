@@ -74,6 +74,10 @@ class CatalogDialogUi(object):
         self.search_button.setDefault(True)
         self.search_button.setObjectName(_fromUtf8("search_button"))
         self.button_layout.addWidget(self.search_button)
+        self.reset_button = QtGui.QPushButton(self.dockWidgetContents)
+        self.reset_button.setDefault(True)
+        self.reset_button.setObjectName(_fromUtf8("reset_button"))
+        self.button_layout.addWidget(self.reset_button)
         self.export_button = QtGui.QPushButton(self.dockWidgetContents)
         self.export_button.setDefault(True)
         self.export_button.setObjectName(_fromUtf8("export_button"))
@@ -90,5 +94,6 @@ class CatalogDialogUi(object):
         self.tab_widget.setTabText(self.tab_widget.indexOf(self.filters_tab), _translate("DockWidget", "Filters", None))
         self.tab_widget.setTabText(self.tab_widget.indexOf(self.results_tab), _translate("DockWidget", "Results", None))
         self.search_button.setText(_translate("DockWidget", "Search", None))
+        self.reset_button.setText(_translate("DockWidget", "Reset", None))
         self.export_button.setText(_translate("DockWidget", "Export", None))
 
