@@ -2,13 +2,13 @@
 import json
 from multiprocessing import Lock
 import os
-from qgis._core import QgsCoordinateReferenceSystem, QgsField, QgsGeometry, QgsFeature
+from qgis._core import QgsCoordinateReferenceSystem, QgsField, QgsGeometry
 from qgis._gui import QgsMessageBar
 from qgis.core import QgsVectorLayer, QgsMapLayerRegistry, QgsMessageLog
 import re
 from uuid import uuid4
 
-from CatalogAcquisition import CatalogAcquisition
+from CatalogAcquisition import CatalogAcquisition, CatalogAcquisitionFeature
 from CatalogGBDQuery import GBDQuery, GBDOrderParams
 from CatalogFilters import CatalogFilters
 from PyQt4.QtCore import Qt, QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal, QVariant, QAbstractTableModel, SIGNAL
@@ -90,12 +90,10 @@ class CatalogDialogTool(QObject):
         if self.footprint_layer:
             QgsMapLayerRegistry.instance().removeMapLayer(self.footprint_layer.id())
 
-        self.footprint_layer = QgsVectorLayer("Polygon", "Catalog Footprints", "memory")
-        self.footprint_layer.setCrs(QgsCoordinateReferenceSystem(4326), False)
+        self.footprint_layer = QgsVectorLayer("Polygon", "DGX Catalog Footprints", "memory")
+        self.footprint_layer.setCrs(QgsCoordinateReferenceSystem(4326), True)
+        self.footprint_layer.dataProvider().addAttributes(CatalogAcquisitionFeature.get_fields())
         QgsMapLayerRegistry.instance().addMapLayer(self.footprint_layer)
-
-        attribute_fields = [QgsField(u'test', QVariant.String)]
-        self.footprint_layer.dataProvider().addAttributes(attribute_fields)
 
     def clear_widgets(self):
         """
@@ -262,27 +260,31 @@ class CatalogDialogTool(QObject):
             self.iface.messageBar().pushMessage("Info", 'File export has completed to "%s".' % self.export_file)
 
     def selection_changed(self, selected, deselected):
+        self.footprint_layer.startEditing()
+
         # draw footprints for selected rows
-        selected_rows = set([])
+        selected_rows = set()
         for index in selected.indexes():
             selected_rows.add(index.row())
         for row in selected_rows:
-            footprint_wkt = self.model.get_footprint(row)
-            geometry = QgsGeometry.fromWkt(footprint_wkt)
-            feature = QgsFeature(row)
-            feature.setGeometry(geometry)
-            self.model.set_feature_id(row, feature.id())
+            acquisition = self.model.get(row)
+            feature_id = self.model.generate_feature_id()
+            self.model.set_feature_id(acquisition, feature_id)
+            feature = CatalogAcquisitionFeature(feature_id, acquisition)
             self.footprint_layer.dataProvider().addFeatures([feature])
 
         # remove footprints for deselected rows
-        deselected_rows = set([])
+        deselected_rows = set()
         for index in deselected.indexes():
             deselected_rows.add(index.row())
-        QgsMessageLog.instance().logMessage("deselected_rows=%s" % str(deselected_rows), "DGX")
+        feature_ids_to_remove = []
         for row in deselected_rows:
-            feature_id = self.model.get_feature_id(row)
-            self.footprint_layer.dataProvider().deleteFeatures([feature_id])
-            self.model.set_feature_id(row, None)
+            acquisition = self.model.get(row)
+            feature_id = self.model.get_feature_id(acquisition)
+            feature_ids_to_remove.append(feature_id)
+            self.model.remove_feature_id(acquisition)
+        QgsMessageLog.instance().logMessage("feature_ids_to_remove=%s" % str(feature_ids_to_remove), "DGX")
+        delete_success = self.footprint_layer.dataProvider().deleteFeatures(feature_ids_to_remove)
 
         self.footprint_layer.commitChanges()
         self.footprint_layer.updateExtents()
@@ -370,6 +372,8 @@ class CatalogTableModel(QAbstractTableModel):
         QAbstractTableModel.__init__(self, parent)
         self.data = []
         self.data_lock = Lock()
+        self.feature_ids = {}
+        self.feature_id_seq = 0
 
     def data(self, index, role=Qt.DisplayRole): 
         if not index.isValid():
@@ -402,12 +406,19 @@ class CatalogTableModel(QAbstractTableModel):
                 self.data.extend(new_data)
                 self.emit(SIGNAL("layoutChanged()"))
 
-    def get_footprint(self, index):
-        return self.data[index].footprint_wkt
+    def get(self, index):
+        return self.data[index]
 
-    def get_feature_id(self, index):
-        return self.data[index].feature_id
+    def get_feature_id(self, acquisition):
+        return self.feature_ids[acquisition.identifier]
 
-    def set_feature_id(self, index, feature_id):
-        self.data[index].feature_id = feature_id
+    def set_feature_id(self, acquisition, feature_id):
+        self.feature_ids[acquisition.identifier] = feature_id
+
+    def remove_feature_id(self, acquisition):
+        del self.feature_ids[acquisition.identifier]
+
+    def generate_feature_id(self):
+        feature_id_seq += 1
+        return feature_id_seq
 
