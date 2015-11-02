@@ -82,7 +82,6 @@ class DGX:
         # Declare instance attributes
         self.actions = []
         self.menu = self.tr(u'&DGX')
-        # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar(u'DGX')
         self.toolbar.setObjectName(u'DGX')
 

@@ -107,7 +107,7 @@ class CatalogAcquisitionFeature(QgsFeature):
     def get_fields(cls):
         fields = QgsFields()
         for column in CatalogAcquisition.COLUMNS:
-            fields.append(QgsField(column, QVariant.String)) # TODO not everything is a string
+            fields.append(QgsField(column, QVariant.String))
         return fields
 
 def to_bool(text):

@@ -197,7 +197,6 @@ class CatalogDialogTool(QObject):
             next_y_list = self.drange_list(float(bottom) + INCREMENTAL_INTERVAL, float(top), INCREMENTAL_INTERVAL)
             self.init_progress_bar(len(next_x_list) * len(next_y_list))
 
-            # TODO reset model on subsequent searches
             self.model = CatalogTableModel(self.dialog_ui.table_view)
             self.dialog_ui.table_view.setModel(self.model)
             self.dialog_ui.table_view.selectionModel().selectionChanged.connect(self.selection_changed)

@@ -232,9 +232,9 @@ class CatalogFilterModel(object):
 
 class CatalogFilter(object):
 
-    def __init__(self, id): # TODO should id be empty CatalogFilter
+    def __init__(self, id):
         self._id = id
-        self._column_item = None # TODO column_item
+        self._column_item = None
         self._label = None
         self._value_item = None
         self._remove_button = None
@@ -409,7 +409,6 @@ class CatalogFilterStatus(CatalogFilter):
             # don't add any filter because everything selected
             query_filter = None
         else:
-            # TODO ordered and available don't always exist
             if available:
                 query_filter += (" OR " if query_filter else "") + "available = 'true'"
             if ordered:
@@ -577,7 +576,7 @@ class CatalogFilterTextBetween(CatalogFilter):
         else:
             to_value = None
 
-        if from_value is None and to_value is None: # TODO 0's are valid
+        if from_value is None and to_value is None:
             errors.append("At least one value is required for %s filter." % self.column_name)
         elif from_value is not None and to_value is not None and from_value > to_value:
             errors.append("First value must be less than or equal to second for %s filter." % self.column_name)
