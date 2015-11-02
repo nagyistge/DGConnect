@@ -361,8 +361,9 @@ class VectorsDialogTool(QObject):
         self.point_vector_layer = None
         self.line_vector_layer = None
         self.polygon_vector_layer = None
-        self.dialog_base.search_button.clicked.connect(self.search_button_clicked)
+        self.dialog_base.aoi_button.clicked.connect(self.aoi_button_clicked)
         self.dialog_base.export_button.clicked.connect(self.export)
+        self.bbox_tool.released.connect(self.search)
         # self.query_initial_sources()
         self.file_dict = {}
         self.directory = None
@@ -437,7 +438,7 @@ class VectorsDialogTool(QObject):
         line_data_provider.addAttributes(attribute_fields)
         polygon_data_provider.addAttributes(attribute_fields)
 
-    def search_button_clicked(self):
+    def aoi_button_clicked(self):
         """
         Validates and runs the search if validation successful
         :return: None
@@ -451,7 +452,17 @@ class VectorsDialogTool(QObject):
             self.iface.messageBar().pushMessage("Error", "Cannot run a new search while a search is running.",
                                                 level=QgsMessageBar.CRITICAL)
         else:
-            VectorsProcessForm.search_clicked(self.bbox_tool, self)
+            self.iface.mapCanvas().setMapTool(self.bbox_tool)
+
+    def search(self, top, bottom, left, right):
+        """
+        Action performed when the ok button is clicked
+        :param bbox_tool: The bounding box tool
+        :param dialog_tool: The dialog tool
+        :return: None
+        """
+        params = InsightCloudSourcesParams(top=top, right=right, bottom=bottom, left=left, query=None)
+        self.query_sources(params)
 
     def query_initial_sources(self):
         """

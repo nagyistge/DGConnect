@@ -59,7 +59,6 @@ class VectorsTool:
 
     def run(self):
         """Run method that performs all the real work"""
-        self.iface.mapCanvas().setMapTool(self.bbox_tool)
         # show the dialog
         self.dlg.show()
 
