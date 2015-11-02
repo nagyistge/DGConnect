@@ -215,12 +215,14 @@ class CatalogDialogTool(QObject):
             # open file ui
             select_file_ui = QFileDialog()
             starting_file = self.export_file or os.path.expanduser("~")
-            self.export_file = select_file_ui.getSaveFileName(None, "Choose output file", starting_file, SELECT_FILTER)
+            export_file = select_file_ui.getSaveFileName(None, "Choose output file", starting_file, SELECT_FILTER)
 
-            self.init_progress_bar(0)
-            export_runnable = CatalogExportRunnable(acquisitions, self.export_file)
-            export_runnable.task_object.task_complete.connect(self.on_export_complete)
-            self.export_thread_pool.start(export_runnable)
+            if export_file:
+                self.export_file = export_file
+                self.init_progress_bar(0)
+                export_runnable = CatalogExportRunnable(acquisitions, self.export_file)
+                export_runnable.task_object.task_complete.connect(self.on_export_complete)
+                self.export_thread_pool.start(export_runnable)
 
     @pyqtSlot()
     def on_search_complete(self):
