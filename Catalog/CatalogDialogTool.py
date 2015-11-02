@@ -58,9 +58,7 @@ class CatalogDialogTool(QObject):
         self.query = None
         self.previous_credentials = None
         self.export_file = None
-
         self.footprint_layer = None
-        self.init_layers()
 
         self.filters = CatalogFilters(self.dialog_ui)
 
@@ -90,7 +88,7 @@ class CatalogDialogTool(QObject):
         if self.footprint_layer:
             QgsMapLayerRegistry.instance().removeMapLayer(self.footprint_layer.id())
 
-        self.footprint_layer = QgsVectorLayer("Polygon", "DGX Catalog Footprints", "memory")
+        self.footprint_layer = QgsVectorLayer("Polygon?crs=EPSG:4326", "DGX Catalog Footprints", "memory")
         self.footprint_layer.setCrs(QgsCoordinateReferenceSystem(4326), True)
         self.footprint_layer.dataProvider().addAttributes(CatalogAcquisitionFeature.get_fields())
         QgsMapLayerRegistry.instance().addMapLayer(self.footprint_layer)
@@ -187,6 +185,8 @@ class CatalogDialogTool(QObject):
         if errors:
             self.iface.messageBar().pushMessage("Error", "The following errors occurred: " + "<br />".join(errors), level=QgsMessageBar.CRITICAL)
         else:
+            self.init_layers()
+
             self.dialog_ui.tab_widget.setCurrentIndex(RESULTS_TAB_INDEX)
             
             next_x_list = self.drange_list(float(self.bbox_tool.left) + INCREMENTAL_INTERVAL, float(self.bbox_tool.right), INCREMENTAL_INTERVAL)
@@ -283,8 +283,8 @@ class CatalogDialogTool(QObject):
             feature_id = self.model.get_feature_id(acquisition)
             feature_ids_to_remove.append(feature_id)
             self.model.remove_feature_id(acquisition)
-        QgsMessageLog.instance().logMessage("feature_ids_to_remove=%s" % str(feature_ids_to_remove), "DGX")
-        delete_success = self.footprint_layer.dataProvider().deleteFeatures(feature_ids_to_remove)
+        if feature_ids_to_remove:
+            self.footprint_layer.dataProvider().deleteFeatures(feature_ids_to_remove)
 
         self.footprint_layer.commitChanges()
         self.footprint_layer.updateExtents()
@@ -419,6 +419,6 @@ class CatalogTableModel(QAbstractTableModel):
         del self.feature_ids[acquisition.identifier]
 
     def generate_feature_id(self):
-        feature_id_seq += 1
-        return feature_id_seq
+        self.feature_id_seq += 1
+        return self.feature_id_seq
 
