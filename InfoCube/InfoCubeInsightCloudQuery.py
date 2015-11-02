@@ -35,7 +35,7 @@ TIMEOUT_IN_SECONDS = 30
 
 NUM_TIMES_TO_TRY = 10
 
-TAG_NAME = 'InfoCube (UVI)'
+TAG_NAME = 'InfoCube (Vector)'
 
 class InsightCloudParams:
     """

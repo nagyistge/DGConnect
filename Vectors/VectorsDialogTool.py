@@ -57,7 +57,7 @@ class VectorsDialogTool(QObject):
 
     def clear_widgets(self):
         """
-        Clears the progress bar for the UVI searches
+        Clears the progress bar
         :return: None
         """
         self.progress_message_bar = None
@@ -1023,7 +1023,7 @@ class SourceItem(QStandardItem):
         Constructor
         :param title: Name of the source (OSM, etc.)
         :param source_params: The parameters used for running the search
-        :param count: The count in the UVI for the given source
+        :param count: The count for the given source
         :param __args: Additional args
         :return: SourceItem
         """

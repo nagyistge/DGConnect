@@ -47,7 +47,6 @@ def validate_stored_settings(iface, username, password, client_id, client_secret
     """
     errors = []
     if SettingsOps.validate_stored_info(username, password, max_items_to_return, errors):
-        iface.messageBar().pushMessage("Info", "Successfully checked settings. Launching queries...")
         return True
     else:
         iface.messageBar().pushMessage("Error", "Unable to validate settings due to:<br />" + "<br />".join(errors))

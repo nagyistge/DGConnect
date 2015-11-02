@@ -97,7 +97,7 @@ class CatalogDialogTool(QObject):
 
     def clear_widgets(self):
         """
-        Clears the progress bar for the UVI searches
+        Clears the progress bar
         :return: None
         """
         self.progress_bar = None
