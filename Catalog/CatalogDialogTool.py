@@ -51,6 +51,7 @@ class CatalogDialogTool(QObject):
 
         self.progress_bar = None
         self.progress_message_bar = None
+        self.progress_message_bar_widget = None
         self.search_thread_pool = QThreadPool()
         self.search_lock = Lock()
         self.export_thread_pool = QThreadPool()
@@ -79,7 +80,7 @@ class CatalogDialogTool(QObject):
             self.progress_bar.setMaximum(progress_max)
             self.progress_bar.setAlignment(Qt.AlignLeft | Qt.AlignCenter)
             self.progress_message_bar.layout().addWidget(self.progress_bar)
-            self.iface.messageBar().pushWidget(self.progress_message_bar, self.iface.messageBar().INFO)
+            self.progress_message_bar_widget = self.iface.messageBar().pushWidget(self.progress_message_bar, self.iface.messageBar().INFO)
 
     def init_layers(self):
         """
@@ -101,7 +102,9 @@ class CatalogDialogTool(QObject):
         """
         self.progress_bar = None
         self.progress_message_bar = None
-        self.iface.messageBar().clearWidgets() # TODO pop specific widgets
+        if self.progress_message_bar_widget:
+            self.iface.messageBar().popWidget(self.progress_message_bar_widget)
+        self.progress_message_bar_widget = None
 
     def is_searching(self):
         """
