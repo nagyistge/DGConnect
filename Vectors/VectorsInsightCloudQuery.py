@@ -266,7 +266,7 @@ class InsightCloudQuery(OAuth2Query):
                                                         + str(NUM_TIMES_TO_TRY - i - 1) + " times", TAG_NAME,
                                                         level=QgsMessageLog.CRITICAL)
                     if (NUM_TIMES_TO_TRY - i - 1) <= 0:
-                        return None
+                        raise e
                 if response and self.is_login_successful:
                     paging_id = response.info().getheader(KEY_HEADER_PAGING_ID)
                     new_data = self.process_paging_json_data(response.read(), json_export)
