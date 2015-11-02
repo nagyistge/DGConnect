@@ -58,6 +58,8 @@ class CatalogAcquisition(object):
         self.column_values = [self.identifier, self.status, self.timestamp, self.sensor_platform_name, self.vendor_name, self.image_bands,
                               self.cloud_cover, self.sun_azimuth, self.sun_elevation, self.multi_resolution, self.pan_resolution, self.off_nadir_angle]
 
+        self.feature_id = None
+
     def __str__(self):
         return '"' + '","'.join(self.column_values) + '"'
 

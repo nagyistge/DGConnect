@@ -2,7 +2,7 @@
 import json
 from multiprocessing import Lock
 import os
-from qgis._core import QgsCoordinateReferenceSystem, QgsField
+from qgis._core import QgsCoordinateReferenceSystem, QgsField, QgsGeometry, QgsFeature
 from qgis._gui import QgsMessageBar
 from qgis.core import QgsVectorLayer, QgsMapLayerRegistry, QgsMessageLog
 import re
@@ -12,10 +12,11 @@ from CatalogAcquisition import CatalogAcquisition
 from CatalogGBDQuery import GBDQuery, GBDOrderParams
 from CatalogFilters import CatalogFilters
 from PyQt4.QtCore import Qt, QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal, QVariant, QAbstractTableModel, SIGNAL
-from PyQt4.QtGui import QStandardItem, QStandardItemModel, QProgressBar, QFileDialog, QSortFilterProxyModel, QFileDialog
+from PyQt4.QtGui import QStandardItem, QStandardItemModel, QItemSelectionModel, QProgressBar, QFileDialog, QSortFilterProxyModel, QFileDialog
 
 from ..BBox import BBoxTool
 from ..Settings import SettingsOps
+from _sqlite3 import Row
 
 
 INCREMENTAL_INTERVAL = 1.0
@@ -58,12 +59,14 @@ class CatalogDialogTool(QObject):
         self.previous_credentials = None
         self.export_file = None
 
+        self.footprint_layer = None
+        self.init_layers()
+
         self.filters = CatalogFilters(self.dialog_ui)
 
         self.dialog_ui.search_button.clicked.connect(self.search_button_clicked)
         self.dialog_ui.reset_button.clicked.connect(self.reset_button_clicked)
         self.dialog_ui.export_button.clicked.connect(self.export_button_clicked)
-
 
     def init_progress_bar(self, progress_max):
         """
@@ -78,6 +81,21 @@ class CatalogDialogTool(QObject):
             self.progress_bar.setAlignment(Qt.AlignLeft | Qt.AlignCenter)
             self.progress_message_bar.layout().addWidget(self.progress_bar)
             self.iface.messageBar().pushWidget(self.progress_message_bar, self.iface.messageBar().INFO)
+
+    def init_layers(self):
+        """
+        Sets up the layers for rendering the items
+        :return: None
+        """
+        if self.footprint_layer:
+            QgsMapLayerRegistry.instance().removeMapLayer(self.footprint_layer.id())
+
+        self.footprint_layer = QgsVectorLayer("Polygon", "Catalog Footprints", "memory")
+        self.footprint_layer.setCrs(QgsCoordinateReferenceSystem(4326), False)
+        QgsMapLayerRegistry.instance().addMapLayer(self.footprint_layer)
+
+        attribute_fields = [QgsField(u'test', QVariant.String)]
+        self.footprint_layer.dataProvider().addAttributes(attribute_fields)
 
     def clear_widgets(self):
         """
@@ -180,6 +198,7 @@ class CatalogDialogTool(QObject):
             # TODO reset model on subsequent searches
             self.model = CatalogTableModel(self.dialog_ui.table_view)
             self.dialog_ui.table_view.setModel(self.model)
+            self.dialog_ui.table_view.selectionModel().selectionChanged.connect(self.selection_changed)
 
             if not self.query:
                 self.query = GBDQuery(username=username, password=password, client_id=username, client_secret=password)
@@ -241,6 +260,33 @@ class CatalogDialogTool(QObject):
         if thread_count == 0:
             self.clear_widgets()
             self.iface.messageBar().pushMessage("Info", 'File export has completed to "%s".' % self.export_file)
+
+    def selection_changed(self, selected, deselected):
+        # draw footprints for selected rows
+        selected_rows = set([])
+        for index in selected.indexes():
+            selected_rows.add(index.row())
+        for row in selected_rows:
+            footprint_wkt = self.model.get_footprint(row)
+            geometry = QgsGeometry.fromWkt(footprint_wkt)
+            feature = QgsFeature(row)
+            feature.setGeometry(geometry)
+            self.model.set_feature_id(row, feature.id())
+            self.footprint_layer.dataProvider().addFeatures([feature])
+
+        # remove footprints for deselected rows
+        deselected_rows = set([])
+        for index in deselected.indexes():
+            deselected_rows.add(index.row())
+        QgsMessageLog.instance().logMessage("deselected_rows=%s" % str(deselected_rows), "DGX")
+        for row in deselected_rows:
+            feature_id = self.model.get_feature_id(row)
+            self.footprint_layer.dataProvider().deleteFeatures([feature_id])
+            self.model.set_feature_id(row, None)
+
+        self.footprint_layer.commitChanges()
+        self.footprint_layer.updateExtents()
+        self.footprint_layer.triggerRepaint()
 
     def drange_list(self, start, stop, step):
         drange_list = []
@@ -355,4 +401,13 @@ class CatalogTableModel(QAbstractTableModel):
                 self.emit(SIGNAL("layoutAboutToBeChanged()"))
                 self.data.extend(new_data)
                 self.emit(SIGNAL("layoutChanged()"))
+
+    def get_footprint(self, index):
+        return self.data[index].footprint_wkt
+
+    def get_feature_id(self, index):
+        return self.data[index].feature_id
+
+    def set_feature_id(self, index, feature_id):
+        self.data[index].feature_id = feature_id
 

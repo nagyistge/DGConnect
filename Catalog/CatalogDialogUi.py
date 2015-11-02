@@ -57,6 +57,8 @@ class CatalogDialogUi(object):
         self.results_tab_layout.setObjectName(_fromUtf8("results_tab_layout"))
         self.table_view = QtGui.QTableView(self.results_tab)
         self.table_view.setEnabled(True)
+        self.table_view.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
+        self.table_view.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         self.table_view.setSortingEnabled(True)
         self.table_view.setObjectName(_fromUtf8("table_view"))
         self.table_view.horizontalHeader().setCascadingSectionResizes(False)
