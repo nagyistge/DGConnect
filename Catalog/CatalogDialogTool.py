@@ -62,9 +62,10 @@ class CatalogDialogTool(QObject):
 
         self.filters = CatalogFilters(self.dialog_ui)
 
-        self.dialog_ui.search_button.clicked.connect(self.search_button_clicked)
+        self.dialog_ui.aoi_button.clicked.connect(self.aoi_button_clicked)
         self.dialog_ui.reset_button.clicked.connect(self.reset_button_clicked)
         self.dialog_ui.export_button.clicked.connect(self.export_button_clicked)
+        self.bbox_tool.released.connect(self.search)
 
     def init_progress_bar(self, progress_max):
         """
@@ -132,7 +133,7 @@ class CatalogDialogTool(QObject):
         with self.export_lock:
             return self.export_thread_pool.activeThreadCount()
 
-    def search_button_clicked(self):
+    def aoi_button_clicked(self):
         """
         Validates and runs the search if validation successful
         :return: None
@@ -144,7 +145,7 @@ class CatalogDialogTool(QObject):
         elif self.is_searching():
             self.iface.messageBar().pushMessage("Error", "Cannot run a new search while a search is running.", level=QgsMessageBar.CRITICAL)
         else:
-            self.search()
+            self.iface.mapCanvas().setMapTool(self.bbox_tool)
 
     def reset_button_clicked(self):
         """
@@ -167,7 +168,7 @@ class CatalogDialogTool(QObject):
         else:
             self.export()
 
-    def search(self):
+    def search(self, top, bottom, left, right):
         self.search_thread_pool.waitForDone(0)
 
         # validate credentials if they changed
@@ -189,8 +190,8 @@ class CatalogDialogTool(QObject):
 
             self.dialog_ui.tab_widget.setCurrentIndex(RESULTS_TAB_INDEX)
             
-            next_x_list = self.drange_list(float(self.bbox_tool.left) + INCREMENTAL_INTERVAL, float(self.bbox_tool.right), INCREMENTAL_INTERVAL)
-            next_y_list = self.drange_list(float(self.bbox_tool.bottom) + INCREMENTAL_INTERVAL, float(self.bbox_tool.top), INCREMENTAL_INTERVAL)
+            next_x_list = self.drange_list(float(left) + INCREMENTAL_INTERVAL, float(right), INCREMENTAL_INTERVAL)
+            next_y_list = self.drange_list(float(bottom) + INCREMENTAL_INTERVAL, float(top), INCREMENTAL_INTERVAL)
             self.init_progress_bar(len(next_x_list) * len(next_y_list))
 
             # TODO reset model on subsequent searches
@@ -205,8 +206,8 @@ class CatalogDialogTool(QObject):
             time_begin = self.filters.get_datetime_begin()
             time_end = self.filters.get_datetime_end()
 
-            current_x = float(self.bbox_tool.left)
-            current_y = float(self.bbox_tool.bottom)
+            current_x = float(left)
+            current_y = float(bottom)
             for next_x in next_x_list:
                 for next_y in next_y_list:
                     search_runnable = CatalogSearchRunnable(self.query, self.model, self, top=next_y, left=current_x, right=next_x, bottom=current_y, 
@@ -214,7 +215,7 @@ class CatalogDialogTool(QObject):
                     search_runnable.task_object.task_complete.connect(self.on_search_complete)
                     self.search_thread_pool.start(search_runnable)
                     current_y = next_y
-                current_y = self.bbox_tool.bottom
+                current_y = bottom
                 current_x = next_x
 
     def reset(self):
