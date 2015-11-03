@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- UVIToolDialog
+ VectorsDialog
                                  A QGIS plugin
- Tool for querying the UVI
+ Tool for querying vectors
                              -------------------
         begin                : 2015-08-17
         git sha              : $Format:%H$

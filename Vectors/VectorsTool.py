@@ -3,7 +3,7 @@
 /***************************************************************************
 VectorsTool
                                  A QGIS plugin
- Tool for querying the UVI
+ Tool for querying vectors
                               -------------------
         begin                : 2015-08-17
         git sha              : $Format:%H$
@@ -59,7 +59,6 @@ class VectorsTool:
 
     def run(self):
         """Run method that performs all the real work"""
-        self.iface.mapCanvas().setMapTool(self.bbox_tool)
         # show the dialog
         self.dlg.show()
 

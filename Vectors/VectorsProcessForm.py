@@ -23,26 +23,6 @@ SELECT_FILTER = "CSV Files(*.csv)"
 ENDS_WITH_SUFFIX_REGEX = re.compile(".+\." + DEFAULT_SUFFIX + "$")
 
 
-def search_clicked(bbox_tool, dialog_tool):
-    """
-    Action performed when the ok button is clicked
-    :param bbox_tool: The bounding box tool
-    :param dialog_tool: The dialog tool
-    :return: None
-    """
-    errors = []
-    if not bbox_tool.validate_bbox(errors):
-        dialog_tool.iface.messageBar().pushMessage("Error", "The following errors occurred:<br />" +
-                                                   "<br />".join(errors),
-                                                   level=QgsMessageBar.CRITICAL)
-        return
-    top = bbox_tool.top
-    bottom = bbox_tool.bottom
-    left = bbox_tool.left
-    right = bbox_tool.right
-    params = InsightCloudSourcesParams(top=top, right=right, bottom=bottom, left=left, query=None)
-    dialog_tool.query_sources(params)
-
 def select_file_clicked(ui):
     """
     Action performed when the Select button is clicked; Opens a File dialog
@@ -67,7 +47,6 @@ def validate_stored_settings(iface, username, password, client_id, client_secret
     """
     errors = []
     if SettingsOps.validate_stored_info(username, password, max_items_to_return, errors):
-        iface.messageBar().pushMessage("Info", "Successfully checked settings. Launching queries...")
         return True
     else:
         iface.messageBar().pushMessage("Error", "Unable to validate settings due to:<br />" + "<br />".join(errors))

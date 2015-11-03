@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from qgis._core import QgsFeature, QgsField, QgsFields, QgsGeometry
+from PyQt4.QtCore import QVariant
+
 
 class CatalogAcquisition(object):
     """
@@ -72,6 +75,40 @@ class CatalogAcquisition(object):
     def get_csv_header(cls):
         return ",".join(CatalogAcquisition.COLUMNS)
 
+
+class CatalogAcquisitionFeature(QgsFeature):
+
+    def __init__(self, row, acquisition):
+        """
+        Constructor
+        :param acquisition: 
+        :return: CatalogAcquisitionFeature
+        """
+        super(self.__class__, self).__init__(id=row)
+        self.acquisition = acquisition
+        self.init_fields()
+        self.init_attributes()
+        self.init_geometry()
+
+    def init_fields(self):
+        self.setFields(CatalogAcquisitionFeature.get_fields())
+
+    def init_attributes(self):
+        attributes = []
+        for column_index in range(len(CatalogAcquisition.COLUMNS)):
+            attributes.append(self.acquisition.get_column_value(column_index))
+        self.setAttributes(attributes)
+
+    def init_geometry(self):
+        geometry = QgsGeometry.fromWkt(self.acquisition.footprint_wkt)
+        self.setGeometry(geometry)
+
+    @classmethod
+    def get_fields(cls):
+        fields = QgsFields()
+        for column in CatalogAcquisition.COLUMNS:
+            fields.append(QgsField(column, QVariant.String))
+        return fields
 
 def to_bool(text):
     if not text:

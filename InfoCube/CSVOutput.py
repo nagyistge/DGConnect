@@ -47,7 +47,7 @@ class CSVOutput:
         self.num_gbd_7_day = 0
         self.num_gbd_30_day = 0
         self.num_gbd_60_day = 0
-        # uvi stats
+        # vector stats
         self.vector_dict = {}
         self.vector_header_dict = vector_header_dict
         # increment counter
