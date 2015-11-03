@@ -352,11 +352,11 @@ class InsightCloudQuery(OAuth2Query):
     def build_qgis_feature(self, vector_item):
         """
         Constructs a QGIS feature for rendering
-        :param vector_item: The item returned from the UVI
-        :return a UVIFeature that can be rendered by QGIS
+        :param vector_item: The item returned
+        :return a VectorFeature that can be rendered by QGIS
         """
 
-        feature = UVIFeature()
+        feature = VectorFeature()
         geometry = vector_item[KEY_JSON_GEOMETRY]
         coordinates = geometry[KEY_JSON_GEOMETRY_COORDINATES]
         geometry_type = geometry[KEY_JSON_GEOMETRY_TYPE]
@@ -452,7 +452,7 @@ class InsightCloudQuery(OAuth2Query):
         """
         Converts to properties from the GeoJSON to match the esri format
         Brings up attributes one level and prefixes the attributes and properties appropriately
-        :param properties: The properties map from the UVI
+        :param properties: The properties map
         :return: A map containing the modified properties
         """
         attributes = {}
@@ -479,7 +479,7 @@ class InsightCloudQuery(OAuth2Query):
                 new_properties[key] = value
         return new_properties
 
-class UVIFeature(QgsFeature):
+class VectorFeature(QgsFeature):
     """
     QgsFeature with special geometry_type used for filtering
     """

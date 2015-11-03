@@ -24,6 +24,7 @@ class BBoxTool(QgsMapToolEmitPoint):
     new_bottom = pyqtSignal(str)
     new_left = pyqtSignal(str)
     new_right = pyqtSignal(str)
+    released = pyqtSignal(str, str, str, str)
 
     def __init__(self, iface):
         """
@@ -91,8 +92,8 @@ class BBoxTool(QgsMapToolEmitPoint):
         :param mouse_event: The mouse event holding the cursor information
         :return: None
         """
-        self.is_emitting = False
-        # self.reset()
+        self.released.emit(self.top, self.bottom, self.left, self.right)
+        self.iface.mapCanvas().unsetMapTool(self)
 
     def canvasMoveEvent(self, mouse_event):
         """

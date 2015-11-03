@@ -1,7 +1,7 @@
 """
 /***************************************************************************
 Name			 	 : InfoCube plugin
-Description          : Queries the GBD catalog and the UVI index
+Description          : Queries the GBD catalog and the Vector index
 Date                 : 30/Jul/15 
 copyright            : (C) 2015 by Michael Trotter/DigitalGlobe
 email                : michael.trotter@digitalglobe.com 

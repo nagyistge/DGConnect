@@ -2,20 +2,21 @@
 import json
 from multiprocessing import Lock
 import os
-from qgis._core import QgsCoordinateReferenceSystem, QgsField
+from qgis._core import QgsCoordinateReferenceSystem, QgsField, QgsGeometry
 from qgis._gui import QgsMessageBar
 from qgis.core import QgsVectorLayer, QgsMapLayerRegistry, QgsMessageLog
 import re
 from uuid import uuid4
 
-from CatalogAcquisition import CatalogAcquisition
+from CatalogAcquisition import CatalogAcquisition, CatalogAcquisitionFeature
 from CatalogGBDQuery import GBDQuery, GBDOrderParams
 from CatalogFilters import CatalogFilters
 from PyQt4.QtCore import Qt, QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal, QVariant, QAbstractTableModel, SIGNAL
-from PyQt4.QtGui import QStandardItem, QStandardItemModel, QProgressBar, QFileDialog, QSortFilterProxyModel, QFileDialog
+from PyQt4.QtGui import QStandardItem, QStandardItemModel, QItemSelectionModel, QProgressBar, QFileDialog, QSortFilterProxyModel, QFileDialog
 
 from ..BBox import BBoxTool
 from ..Settings import SettingsOps
+from _sqlite3 import Row
 
 
 INCREMENTAL_INTERVAL = 1.0
@@ -50,6 +51,7 @@ class CatalogDialogTool(QObject):
 
         self.progress_bar = None
         self.progress_message_bar = None
+        self.progress_message_bar_widget = None
         self.search_thread_pool = QThreadPool()
         self.search_lock = Lock()
         self.export_thread_pool = QThreadPool()
@@ -57,13 +59,14 @@ class CatalogDialogTool(QObject):
         self.query = None
         self.previous_credentials = None
         self.export_file = None
+        self.footprint_layer = None
 
         self.filters = CatalogFilters(self.dialog_ui)
 
-        self.dialog_ui.search_button.clicked.connect(self.search_button_clicked)
+        self.dialog_ui.aoi_button.clicked.connect(self.aoi_button_clicked)
         self.dialog_ui.reset_button.clicked.connect(self.reset_button_clicked)
         self.dialog_ui.export_button.clicked.connect(self.export_button_clicked)
-
+        self.bbox_tool.released.connect(self.search)
 
     def init_progress_bar(self, progress_max):
         """
@@ -77,16 +80,31 @@ class CatalogDialogTool(QObject):
             self.progress_bar.setMaximum(progress_max)
             self.progress_bar.setAlignment(Qt.AlignLeft | Qt.AlignCenter)
             self.progress_message_bar.layout().addWidget(self.progress_bar)
-            self.iface.messageBar().pushWidget(self.progress_message_bar, self.iface.messageBar().INFO)
+            self.progress_message_bar_widget = self.iface.messageBar().pushWidget(self.progress_message_bar, self.iface.messageBar().INFO)
+
+    def init_layers(self):
+        """
+        Sets up the layers for rendering the items
+        :return: None
+        """
+        if self.footprint_layer:
+            QgsMapLayerRegistry.instance().removeMapLayer(self.footprint_layer.id())
+
+        self.footprint_layer = QgsVectorLayer("Polygon?crs=EPSG:4326", "DGX Catalog Footprints", "memory")
+        self.footprint_layer.setCrs(QgsCoordinateReferenceSystem(4326), True)
+        self.footprint_layer.dataProvider().addAttributes(CatalogAcquisitionFeature.get_fields())
+        QgsMapLayerRegistry.instance().addMapLayer(self.footprint_layer)
 
     def clear_widgets(self):
         """
-        Clears the progress bar for the UVI searches
+        Clears the progress bar
         :return: None
         """
         self.progress_bar = None
         self.progress_message_bar = None
-        self.iface.messageBar().clearWidgets() # TODO pop specific widgets
+        if self.progress_message_bar_widget:
+            self.iface.messageBar().popWidget(self.progress_message_bar_widget)
+        self.progress_message_bar_widget = None
 
     def is_searching(self):
         """
@@ -118,7 +136,7 @@ class CatalogDialogTool(QObject):
         with self.export_lock:
             return self.export_thread_pool.activeThreadCount()
 
-    def search_button_clicked(self):
+    def aoi_button_clicked(self):
         """
         Validates and runs the search if validation successful
         :return: None
@@ -130,7 +148,8 @@ class CatalogDialogTool(QObject):
         elif self.is_searching():
             self.iface.messageBar().pushMessage("Error", "Cannot run a new search while a search is running.", level=QgsMessageBar.CRITICAL)
         else:
-            self.search()
+            self.bbox_tool.reset()
+            self.iface.mapCanvas().setMapTool(self.bbox_tool)
 
     def reset_button_clicked(self):
         """
@@ -153,7 +172,7 @@ class CatalogDialogTool(QObject):
         else:
             self.export()
 
-    def search(self):
+    def search(self, top, bottom, left, right):
         self.search_thread_pool.waitForDone(0)
 
         # validate credentials if they changed
@@ -171,15 +190,17 @@ class CatalogDialogTool(QObject):
         if errors:
             self.iface.messageBar().pushMessage("Error", "The following errors occurred: " + "<br />".join(errors), level=QgsMessageBar.CRITICAL)
         else:
+            self.init_layers()
+
             self.dialog_ui.tab_widget.setCurrentIndex(RESULTS_TAB_INDEX)
             
-            next_x_list = self.drange_list(float(self.bbox_tool.left) + INCREMENTAL_INTERVAL, float(self.bbox_tool.right), INCREMENTAL_INTERVAL)
-            next_y_list = self.drange_list(float(self.bbox_tool.bottom) + INCREMENTAL_INTERVAL, float(self.bbox_tool.top), INCREMENTAL_INTERVAL)
+            next_x_list = self.drange_list(float(left) + INCREMENTAL_INTERVAL, float(right), INCREMENTAL_INTERVAL)
+            next_y_list = self.drange_list(float(bottom) + INCREMENTAL_INTERVAL, float(top), INCREMENTAL_INTERVAL)
             self.init_progress_bar(len(next_x_list) * len(next_y_list))
 
-            # TODO reset model on subsequent searches
             self.model = CatalogTableModel(self.dialog_ui.table_view)
             self.dialog_ui.table_view.setModel(self.model)
+            self.dialog_ui.table_view.selectionModel().selectionChanged.connect(self.selection_changed)
 
             if not self.query:
                 self.query = GBDQuery(username=username, password=password, client_id=username, client_secret=password)
@@ -188,8 +209,8 @@ class CatalogDialogTool(QObject):
             time_begin = self.filters.get_datetime_begin()
             time_end = self.filters.get_datetime_end()
 
-            current_x = float(self.bbox_tool.left)
-            current_y = float(self.bbox_tool.bottom)
+            current_x = float(left)
+            current_y = float(bottom)
             for next_x in next_x_list:
                 for next_y in next_y_list:
                     search_runnable = CatalogSearchRunnable(self.query, self.model, self, top=next_y, left=current_x, right=next_x, bottom=current_y, 
@@ -197,7 +218,7 @@ class CatalogDialogTool(QObject):
                     search_runnable.task_object.task_complete.connect(self.on_search_complete)
                     self.search_thread_pool.start(search_runnable)
                     current_y = next_y
-                current_y = self.bbox_tool.bottom
+                current_y = bottom
                 current_x = next_x
 
     def reset(self):
@@ -241,6 +262,37 @@ class CatalogDialogTool(QObject):
         if thread_count == 0:
             self.clear_widgets()
             self.iface.messageBar().pushMessage("Info", 'File export has completed to "%s".' % self.export_file)
+
+    def selection_changed(self, selected, deselected):
+        self.footprint_layer.startEditing()
+
+        # draw footprints for selected rows
+        selected_rows = set()
+        for index in selected.indexes():
+            selected_rows.add(index.row())
+        for row in selected_rows:
+            acquisition = self.model.get(row)
+            feature_id = self.model.generate_feature_id()
+            self.model.set_feature_id(acquisition, feature_id)
+            feature = CatalogAcquisitionFeature(feature_id, acquisition)
+            self.footprint_layer.dataProvider().addFeatures([feature])
+
+        # remove footprints for deselected rows
+        deselected_rows = set()
+        for index in deselected.indexes():
+            deselected_rows.add(index.row())
+        feature_ids_to_remove = []
+        for row in deselected_rows:
+            acquisition = self.model.get(row)
+            feature_id = self.model.get_feature_id(acquisition)
+            feature_ids_to_remove.append(feature_id)
+            self.model.remove_feature_id(acquisition)
+        if feature_ids_to_remove:
+            self.footprint_layer.dataProvider().deleteFeatures(feature_ids_to_remove)
+
+        self.footprint_layer.commitChanges()
+        self.footprint_layer.updateExtents()
+        self.footprint_layer.triggerRepaint()
 
     def drange_list(self, start, stop, step):
         drange_list = []
@@ -324,6 +376,8 @@ class CatalogTableModel(QAbstractTableModel):
         QAbstractTableModel.__init__(self, parent)
         self.data = []
         self.data_lock = Lock()
+        self.feature_ids = {}
+        self.feature_id_seq = 0
 
     def data(self, index, role=Qt.DisplayRole): 
         if not index.isValid():
@@ -355,4 +409,20 @@ class CatalogTableModel(QAbstractTableModel):
                 self.emit(SIGNAL("layoutAboutToBeChanged()"))
                 self.data.extend(new_data)
                 self.emit(SIGNAL("layoutChanged()"))
+
+    def get(self, index):
+        return self.data[index]
+
+    def get_feature_id(self, acquisition):
+        return self.feature_ids[acquisition.identifier]
+
+    def set_feature_id(self, acquisition, feature_id):
+        self.feature_ids[acquisition.identifier] = feature_id
+
+    def remove_feature_id(self, acquisition):
+        del self.feature_ids[acquisition.identifier]
+
+    def generate_feature_id(self):
+        self.feature_id_seq += 1
+        return self.feature_id_seq
 
