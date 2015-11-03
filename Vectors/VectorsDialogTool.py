@@ -11,7 +11,7 @@ from VectorsInsightCloudQuery import InsightCloudSourcesParams, InsightCloudGeom
 
 from PyQt4.QtGui import QStandardItem, QStandardItemModel, QProgressBar, QFileDialog, QSortFilterProxyModel
 from PyQt4.QtCore import Qt, QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal, QVariant
-from qgis.core import QgsVectorLayer, QgsMapLayerRegistry
+from qgis.core import QgsMessageLog, QgsVectorLayer, QgsMapLayerRegistry
 from ..Settings import SettingsOps
 
 import os
@@ -311,40 +311,31 @@ class VectorsDialogTool(QObject):
         Resets the UI when it is actually done
         :return: None
         """
-        if not self.json_failed:
-            if self.get_json_active_thread_count() > 0:
-                self.json_progress.setValue(self.json_progress.value() + 1)
+        if self.get_json_active_thread_count() > 0:
+            self.json_progress.setValue(self.json_progress.value() + 1)
+        else:
+            # update tool
+            self.file_dict = {}
+            self.written_first_line = False
+            self.written_first_point = False
+            self.written_first_polygon = False
+
+            # remove progress bar
+            self.json_progress_message_bar = None
+            self.json_progress = None
+            self.iface.messageBar().clearWidgets()
+
+            if self.json_failed:
+                self.iface.messageBar().pushMessage("Error", "Error encountered during export.", level=QgsMessageBar.CRITICAL)
             else:
-                # close files
                 self.close_file(FILE_POLYGON)
                 self.close_file(FILE_LINE)
                 self.close_file(FILE_POINTS)
-    
-                # update tool
-                self.file_dict = {}
-                self.written_first_line = False
-                self.written_first_point = False
-                self.written_first_polygon = False
-    
-                # remove progress bar
-                self.json_progress_message_bar = None
-                self.json_progress = None
-                self.iface.messageBar().clearWidgets()
-    
-                # update info
                 self.iface.messageBar().pushMessage("Info", "File export has completed to directory %s." % self.directory)
 
     @pyqtSlot(object)
     def cancel_json_threads(self, exception):
         self.json_failed = True
-        
-        # remove progress bar
-        self.json_progress_message_bar = None
-        self.json_progress = None
-        self.iface.messageBar().clearWidgets()
-        
-        # update info
-        self.iface.messageBar().pushMessage("Error", "Error encountered during export.", level=QgsMessageBar.CRITICAL)
 
     def __init__(self, iface, dialog_base, bbox_tool):
         """

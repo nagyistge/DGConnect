@@ -172,7 +172,7 @@ class BBoxTool(QgsMapToolEmitPoint):
         :return: A converted point in WGS84 form
         """
         point = QgsPoint(x, y)
-        src_crs = self.canvas.mapRenderer().destinationCrs()
+        src_crs = self.canvas.mapSettings().destinationCrs()
         # only transform points if necessary
         if src_crs.toWkt() != self.wgs_84.toWkt():
             x_form = QgsCoordinateTransform(src_crs, self.wgs_84)
@@ -187,7 +187,7 @@ class BBoxTool(QgsMapToolEmitPoint):
         :return: A converted point in WGS84 form
         """
         point = QgsPoint(x, y)
-        dest_crs = self.canvas.mapRenderer().destinationCrs()
+        dest_crs = self.canvas.mapSettings().destinationCrs()
         # only transform points if necessary
         if dest_crs.toWkt() != self.wgs_84.toWkt():
             x_form = QgsCoordinateTransform(self.wgs_84, dest_crs)

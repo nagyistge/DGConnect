@@ -22,6 +22,7 @@ TEXT_COLUMN_WHERE = "Where..."
 TEXT_COLUMN_AND = "And..."
 TEXT_LABEL_BETWEEN = " between "
 TEXT_LABEL_IS = " is "
+TEXT_LABEL_AND = " and "
 TEXT_STATUS_AVAILABLE = "Available"
 TEXT_STATUS_ORDERED = "Ordered"
 TEXT_STATUS_UNORDERED = "Unordered"
@@ -439,7 +440,8 @@ class CatalogFilterDate(CatalogFilter):
 
         value_item = QGridLayout()
         value_item.addWidget(self.datetime_begin_edit, 0, 0)
-        value_item.addWidget(self.datetime_end_edit, 0, 1)
+        value_item.addWidget(QLabel(TEXT_LABEL_AND), 0, 1)
+        value_item.addWidget(self.datetime_end_edit, 0, 2)
         self.value_item = value_item
 
     def get_query_filters(self):
@@ -541,7 +543,8 @@ class CatalogFilterTextBetween(CatalogFilter):
 
         value_item = QGridLayout()
         value_item.addWidget(self.from_edit, 0, 0)
-        value_item.addWidget(self.to_edit, 0, 1)
+        value_item.addWidget(QLabel(TEXT_LABEL_AND), 0, 1)
+        value_item.addWidget(self.to_edit, 0, 2)
         self.value_item = value_item
 
     def get_query_filters(self):
