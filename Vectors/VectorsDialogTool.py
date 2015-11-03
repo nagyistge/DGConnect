@@ -452,6 +452,7 @@ class VectorsDialogTool(QObject):
             self.iface.messageBar().pushMessage("Error", "Cannot run a new search while a search is running.",
                                                 level=QgsMessageBar.CRITICAL)
         else:
+            self.bbox_tool.reset()
             self.iface.mapCanvas().setMapTool(self.bbox_tool)
 
     def search(self, top, bottom, left, right):

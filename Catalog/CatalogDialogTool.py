@@ -148,6 +148,7 @@ class CatalogDialogTool(QObject):
         elif self.is_searching():
             self.iface.messageBar().pushMessage("Error", "Cannot run a new search while a search is running.", level=QgsMessageBar.CRITICAL)
         else:
+            self.bbox_tool.reset()
             self.iface.mapCanvas().setMapTool(self.bbox_tool)
 
     def reset_button_clicked(self):

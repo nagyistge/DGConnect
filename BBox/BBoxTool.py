@@ -93,7 +93,6 @@ class BBoxTool(QgsMapToolEmitPoint):
         :return: None
         """
         self.released.emit(self.top, self.bottom, self.left, self.right)
-        self.reset()
         self.iface.mapCanvas().unsetMapTool(self)
 
     def canvasMoveEvent(self, mouse_event):

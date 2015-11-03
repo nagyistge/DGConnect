@@ -98,7 +98,6 @@ class DGX:
         self.infocube = None
         self.vectors = None
         self.settings = None
-        self.bbox = None
 
 
     # noinspection PyMethodMayBeStatic
@@ -272,10 +271,8 @@ class DGX:
 
         if not self.catalog_is_active:
             self.catalog_is_active = True
-            if not self.bbox:
-                self.bbox = BBoxTool(self.iface)
             if self.catalog is None:
-                self.catalog = CatalogTool(self.iface, self.bbox)
+                self.catalog = CatalogTool(self.iface, BBoxTool(self.iface))
 
         self.catalog.run()
 
@@ -309,10 +306,8 @@ class DGX:
 
         if not self.vectors_is_active:
             self.vectors_is_active = True
-            if not self.bbox:
-                self.bbox = BBoxTool(self.iface)
             if self.vectors is None:
-                self.vectors = VectorsTool(self.iface, self.bbox)
+                self.vectors = VectorsTool(self.iface, BBoxTool(self.iface))
 
         self.vectors.run()
 
