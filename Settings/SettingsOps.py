@@ -119,7 +119,6 @@ def validate_info(ui, errors):
     if is_info_good:
         query = InsightCloudQuery(username=ui.username.text(), password=ui.password.text())
         query.log_in()
-        query.hit_test_endpoint()
         if not query.is_login_successful:
             errors.append("Unable to verify InsightCloud credentials. See logs for more details.")
     # validate max items to return
@@ -211,7 +210,6 @@ def validate_stored_info(username, password, max_items_to_return, errors):
     if is_field_good:
         query = InsightCloudQuery(username=username, password=password)
         query.log_in()
-        query.hit_test_endpoint()
         if not query.is_login_successful:
             errors.append("Unable to verify InsightCloud credentials. See logs for details.")
             is_field_good = False
