@@ -209,7 +209,6 @@ def validate_gbd_info(ui, errors):
         query = GBDQuery(username=ui.username.text(), password=ui.password.text(), 
                          client_id=ui.client_id.text(), client_secret=ui.client_secret.text())
         query.log_in()
-        query.hit_test_endpoint()
         if not query.is_login_successful:
             errors.append("Unable to verify GBD credentials. See logs for more detail.")
 
@@ -247,7 +246,6 @@ def validate_insightcloud_info(ui, errors):
         query = InsightCloudQuery(username=ui.username.text(), password=ui.password.text(),
                                   client_id=ui.client_id.text(), client_secret=ui.client_secret.text())
         query.log_in()
-        query.hit_test_endpoint()
         if not query.is_login_successful:
             errors.append("Unable to verify InsightCloud credentials. See logs for more details.")
 

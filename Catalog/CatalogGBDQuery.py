@@ -95,7 +95,6 @@ class GBDQuery(OAuth2Query):
         :return:
         """
         self.log_in()
-        self.hit_test_endpoint()
 
         # build request body json
         request_body = {

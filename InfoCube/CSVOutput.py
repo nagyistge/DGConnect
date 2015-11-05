@@ -161,7 +161,6 @@ class CSVGenerator:
         # get header dict
         insightcloud_query = InsightCloudQuery(username=self.username, password=self.password, client_id=self.client_id, client_secret=self.client_secret)
         insightcloud_query.log_in()
-        insightcloud_query.hit_test_endpoint()
         insightcloud_params = InsightCloudParams(top=self.top, bottom=self.bottom, left=self.left, right=self.right, time_begin=self.begin_date, time_end=self.end_date)
         header_result = insightcloud_query.get_vector_result(insightcloud_params)
         self.vector_header_dict = insightcloud_query.get_vector_data(header_result)
@@ -252,13 +251,11 @@ class CSVRunnable(QRunnable):
         gbd_query = GBDQuery(username=self.username, password=self.password, client_id=self.client_id, client_secret=self.client_secret)
         log.info("Starting GBD Query with params: " + str(gbd_params.__dict__))
         gbd_query.log_in()
-        gbd_query.hit_test_endpoint()
 
         # build insightcloud query
         insightcloud_query = InsightCloudQuery(username=self.username, password=self.password, client_id=self.client_id, client_secret=self.client_secret)
         log.info("Starting InsightCloud queries with params: " + str(insightcloud_params.__dict__))
         insightcloud_query.log_in()
-        insightcloud_query.hit_test_endpoint()
     
         gbd_query.do_aoi_search(gbd_params, csv_element)
         log.info("GBD Query complete for args: " + str(gbd_params.__dict__))

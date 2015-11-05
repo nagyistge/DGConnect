@@ -22,7 +22,6 @@ USER_AGENT_STRING = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, 
 # oauth2 urls
 TOP_LEVEL_URL = 'https://iipbeta.digitalglobe.com/'
 LOGIN_URL = TOP_LEVEL_URL + "cas/oauth/token"
-TEST_LOGIN_URL = TOP_LEVEL_URL + "insight-vector/api/version"
 
 # json keys
 JSON_ENCODING = 'utf8'
@@ -87,6 +86,7 @@ class OAuth2Query(object):
             self.access_token = json_data[KEY_ACCESS_TOKEN].encode(JSON_ENCODING)
             self.token_type = json_data[KEY_TOKEN_TYPE].encode(JSON_ENCODING)
             self.update_headers_with_access_info()
+            self.is_login_successful = True
         except Exception, e:
             QgsMessageLog.instance().logMessage("Exception detected during log in: " + str(e), TAG_NAME,
                                                 level=QgsMessageLog.CRITICAL)
@@ -99,22 +99,6 @@ class OAuth2Query(object):
         """
         self.headers[HEADER_AUTHORIZATION] = "%s %s" % (self.token_type, self.access_token)
 
-    def hit_test_endpoint(self):
-        """
-        Hits the test end point for checking if the credentials provided are valid;
-        Must be done after logging in first
-        :return: None
-        """
-        try:
-            request = urllib2.Request(TEST_LOGIN_URL, headers=self.headers)
-            response = self.opener.open(request)
-            if len(response.read()) > 0:
-                self.is_login_successful = True
-        except Exception, e:
-            QgsMessageLog.instance().logMessage("Exception detected during endpoint test: " + str(e),
-                                                TAG_NAME, level=QgsMessageLog.CRITICAL)
-            self.is_login_successful = False
-    
     def get_opener(self):
         return self.opener
     
