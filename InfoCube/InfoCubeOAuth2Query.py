@@ -22,7 +22,7 @@ USER_AGENT_STRING = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, 
 # oauth2 urls
 TOP_LEVEL_URL = 'https://iipbeta.digitalglobe.com/'
 LOGIN_URL = TOP_LEVEL_URL + "cas/oauth/token"
-TEST_LOGIN_URL = TOP_LEVEL_URL + "insight-vector/api/vectors/connection/test?source=foo&type=foo&left=0&right=0&upper=0&lower=0&count=0"
+TEST_LOGIN_URL = TOP_LEVEL_URL + "insight-vector/api/version"
 
 # json keys
 JSON_ENCODING = 'utf8'
