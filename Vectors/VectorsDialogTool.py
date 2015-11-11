@@ -314,12 +314,6 @@ class VectorsDialogTool(QObject):
         if self.get_json_active_thread_count() > 0:
             self.json_progress.setValue(self.json_progress.value() + 1)
         else:
-            # update tool
-            self.file_dict = {}
-            self.written_first_line = False
-            self.written_first_point = False
-            self.written_first_polygon = False
-
             # remove progress bar
             self.json_progress_message_bar = None
             self.json_progress = None
@@ -332,6 +326,12 @@ class VectorsDialogTool(QObject):
                 self.close_file(FILE_LINE)
                 self.close_file(FILE_POINTS)
                 self.iface.messageBar().pushMessage("Info", "File export has completed to directory %s." % self.directory)
+
+            # update tool
+            self.file_dict = {}
+            self.written_first_line = False
+            self.written_first_point = False
+            self.written_first_polygon = False
 
     @pyqtSlot(object)
     def cancel_json_threads(self, exception):
