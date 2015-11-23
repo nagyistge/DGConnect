@@ -29,7 +29,7 @@ DigitalGlobe Connect for QGIS is a Plugin application allowing users to tap into
 
 ### Account access ###
 
-Please contact <a href="analytics.support@digitalglobe.com">analytics.support@digitalglob.com</a> for a user account to access the full content and data holdings within GBDx
+Please contact <a href="analytics.support@digitalglobe.com">analytics.support@digitalglobe.com</a> for a user account to access the full content and data holdings within GBDx
 
 
 
