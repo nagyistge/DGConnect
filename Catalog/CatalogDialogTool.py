@@ -375,11 +375,12 @@ class CatalogTableModel(QAbstractTableModel):
     def __init__(self, parent=None):
         QAbstractTableModel.__init__(self, parent)
         self.data = []
+        self.cat_ids = {}
         self.data_lock = Lock()
         self.feature_ids = {}
         self.feature_id_seq = 0
 
-    def data(self, index, role=Qt.DisplayRole): 
+    def data(self, index, role=Qt.DisplayRole):
         if not index.isValid():
             return None
         elif role != Qt.DisplayRole:
@@ -407,7 +408,10 @@ class CatalogTableModel(QAbstractTableModel):
         if new_data:
             with self.data_lock:
                 self.emit(SIGNAL("layoutAboutToBeChanged()"))
-                self.data.extend(new_data)
+                for acquisition in new_data:
+                    if not self.cat_ids.get(acquisition.identifier, None):
+                        self.data.append(acquisition)
+                        self.cat_ids[acquisition.identifier] = True
                 self.emit(SIGNAL("layoutChanged()"))
 
     def get(self, index):

@@ -84,7 +84,7 @@ class CatalogAcquisitionFeature(QgsFeature):
         :param acquisition: 
         :return: CatalogAcquisitionFeature
         """
-        super(self.__class__, self).__init__(id=row)
+        super(CatalogAcquisitionFeature, self).__init__(id=row)
         self.acquisition = acquisition
         self.init_fields()
         self.init_attributes()

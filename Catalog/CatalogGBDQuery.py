@@ -86,7 +86,7 @@ class GBDQuery(OAuth2Query):
     """
 
     def __init__(self, username, password, client_id, client_secret, grant_type='password'):
-        super(self.__class__, self).__init__(username, password, client_id, client_secret, grant_type)
+        super(GBDQuery, self).__init__(username, password, client_id, client_secret, grant_type)
 
     def acquisition_search(self, order_params):
         """

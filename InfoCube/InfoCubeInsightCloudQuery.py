@@ -55,7 +55,7 @@ class InsightCloudQuery(OAuth2Query):
     Class for handling queries to InsightCloud vector data
     """
     def __init__(self, username, password, client_id, client_secret, grant_type='password'):
-        super(self.__class__, self).__init__(username, password, client_id, client_secret, grant_type)
+        super(InsightCloudQuery, self).__init__(username, password, client_id, client_secret, grant_type)
 
     def query_vector(self, order_params, csv_element):
         """

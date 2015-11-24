@@ -89,7 +89,7 @@ class CatalogFilters(object):
 
             specific_filter = None
             if column == CatalogAcquisition.CATALOG_ID:
-                specific_filter = CatalogFilterText(filter_id, "catalogID")
+                specific_filter = CatalogFilterId(filter_id)
             elif column == CatalogAcquisition.STATUS:
                 specific_filter = CatalogFilterStatus(filter_id)
             elif column == CatalogAcquisition.DATE:
@@ -368,7 +368,7 @@ class CatalogFilter(object):
 class CatalogFilterText(CatalogFilter):
 
     def __init__(self, id, query_field):
-        super(self.__class__, self).__init__(id)
+        super(CatalogFilterText, self).__init__(id)
         self.query_field = query_field
         self.label = QLabel(TEXT_LABEL_IS)
         self.value_item = QLineEdit()
@@ -384,10 +384,23 @@ class CatalogFilterText(CatalogFilter):
         return self.escape_value_text(self.value_item.text())
 
 
+class CatalogFilterId(CatalogFilterText):
+
+    def __init__(self, id):
+        super(CatalogFilterId, self).__init__(id, "catalogID")
+
+    def get_query_filters(self):
+        query_filter = ""
+        cat_ids = [val.strip() for val in self.get_value().split(",")]
+        for cat_id in cat_ids:
+            query_filter += " %s = '%s' OR " % (self.query_field, self.escape_value_text(cat_id))
+        return [query_filter.strip()[:-3]]
+
+
 class CatalogFilterStatus(CatalogFilter):
 
     def __init__(self, id):
-        super(self.__class__, self).__init__(id)
+        super(CatalogFilterStatus, self).__init__(id)
         self.label = QLabel(TEXT_LABEL_IS)
         self.available_checkbox = QCheckBox(TEXT_STATUS_AVAILABLE)
         self.ordered_checkbox = QCheckBox(TEXT_STATUS_ORDERED)
@@ -432,7 +445,7 @@ class CatalogFilterStatus(CatalogFilter):
 class CatalogFilterDate(CatalogFilter):
 
     def __init__(self, id):
-        super(self.__class__, self).__init__(id)
+        super(CatalogFilterDate, self).__init__(id)
         self.label = QLabel(TEXT_LABEL_BETWEEN)
         self.datetime_begin_edit = QDateEdit(QDate.currentDate())
         self.datetime_end_edit = QDateEdit(QDate.currentDate())
@@ -463,7 +476,7 @@ class CatalogFilterDate(CatalogFilter):
 class CatalogFilterSatellite(CatalogFilter):
 
     def __init__(self, id):
-        super(self.__class__, self).__init__(id)
+        super(CatalogFilterSatellite, self).__init__(id)
         self.checkboxes = []
         self.label = QLabel(TEXT_LABEL_IS)
 
@@ -506,7 +519,7 @@ class CatalogFilterSatellite(CatalogFilter):
 class CatalogFilterBand(CatalogFilter):
 
     def __init__(self, id):
-        super(self.__class__, self).__init__(id)
+        super(CatalogFilterBand, self).__init__(id)
         self.checkboxes = []
         self.label = QLabel(TEXT_LABEL_IS)
 
@@ -534,7 +547,7 @@ class CatalogFilterBand(CatalogFilter):
 class CatalogFilterTextBetween(CatalogFilter):
 
     def __init__(self, id, query_field):
-        super(self.__class__, self).__init__(id)
+        super(CatalogFilterTextBetween, self).__init__(id)
         self.query_field = query_field
         self.label = QLabel(TEXT_LABEL_BETWEEN)
         self.from_edit = QLineEdit()

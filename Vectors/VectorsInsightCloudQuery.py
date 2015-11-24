@@ -125,7 +125,7 @@ class InsightCloudQuery(OAuth2Query):
     """
 
     def __init__(self, username, password, grant_type='password'):
-        super(self.__class__, self).__init__(username, password, username, password, grant_type)
+        super(InsightCloudQuery, self).__init__(username, password, username, password, grant_type)
 
     def prep_param(self, param):
         """
