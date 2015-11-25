@@ -6,20 +6,22 @@ from uuid import uuid4
 
 from CatalogAcquisition import CatalogAcquisition
 from PyQt4.QtCore import Qt, QObject, pyqtSlot, pyqtSignal, QVariant, QAbstractTableModel, SIGNAL, QDate
-from PyQt4.QtGui import QComboBox, QLabel, QLineEdit, QPushButton, QGridLayout, QCheckBox, QLayout, QDateEdit
+from PyQt4.QtGui import QComboBox, QLabel, QLineEdit, QPushButton, QGridLayout, QCheckBox, QLayout, QDateEdit, QRadioButton
 
 
 FILTER_ID_KEY = "filter_id"
 SATELLITE_VALUE_KEY = "satellite_value"
 DATETIME_FORMAT = "yyyy-MM-ddT00:00:00.000Z"
 
-GRID_COLUMN_WHERE = 0
-GRID_COLUMN_LABEL = 1
-GRID_COLUMN_VALUE = 2
-GRID_COLUMN_ADD = 3
+GRID_COLUMN_OPERATOR = 0
+GRID_COLUMN_WHERE = 1
+GRID_COLUMN_LABEL = 2
+GRID_COLUMN_VALUE = 3
+GRID_COLUMN_ADD = 4
 
+TEXT_OPERATOR_AND = "And"
+TEXT_OPERATOR_OR = "Or"
 TEXT_COLUMN_WHERE = "Where..."
-TEXT_COLUMN_AND = "And..."
 TEXT_LABEL_BETWEEN = " between "
 TEXT_LABEL_IS = " is "
 TEXT_LABEL_AND = " and "
@@ -54,18 +56,22 @@ class CatalogFilters(object):
     def add_blank_filter(self):
         filter = self.model.add()
         row_index = self.model.get_row_index(filter.id)
-
+ 
         column_item = QComboBox()
-        if self.model.get_num_filters() == 1:
-            column_item.addItem(TEXT_COLUMN_WHERE)
-        else:
-            column_item.addItem(TEXT_COLUMN_AND)
+        column_item.addItem(TEXT_COLUMN_WHERE) 
         for column in CatalogAcquisition.COLUMNS:
             column_item.addItem(column)
         column_item.currentIndexChanged.connect(self.column_changed)
+        self.layout.addWidget(column_item, row_index, GRID_COLUMN_WHERE)
         filter.column_item = column_item
 
-        self.layout.addWidget(column_item, row_index, GRID_COLUMN_WHERE)
+        # add operator item
+        # if self.model.get_num_filters() > 1:
+        #     operator_item = QComboBox()
+        #     operator_item.addItem(TEXT_OPERATOR_AND)
+        #     operator_item.addItem(TEXT_OPERATOR_OR)
+        #     self.layout.addWidget(operator_item, row_index, GRID_COLUMN_OPERATOR)
+        #     filter.operator_item = operator_item
 
     def remove(self):
         filter_id = self.get_sender_filter_id()
@@ -83,7 +89,7 @@ class CatalogFilters(object):
         filter = self.model.get_filter(filter_id)
         column = filter.column_name
 
-        if column >= 0:
+        if column:
             filter.reset(reset_column=False)
             row_index = self.model.get_row_index(filter_id)
 
@@ -149,7 +155,7 @@ class CatalogFilters(object):
         return self.model.get_datetime_begin()
 
     def get_datetime_end(self):
-        return self.model.get_datetime_end()    
+        return self.model.get_datetime_end()
 
 
 class CatalogFilterModel(object):
@@ -182,11 +188,39 @@ class CatalogFilterModel(object):
                 filter.validate(errors)
 
     def get_query_filters(self):
-        query_filters = []
+        filter_groups = []
+        current_filter_group = None
         for filter in self.filters:
-            if filter:
-                query_filters.extend(filter.get_query_filters())
+            if filter and filter.column_name:
+                if current_filter_group:
+                    if filter.is_operator_and:
+                        filter_groups.append(current_filter_group)
+                        current_filter_group = [filter]
+                    else:
+                        current_filter_group.append(filter)
+                else:
+                    current_filter_group = [filter]
+        if current_filter_group:
+            filter_groups.append(current_filter_group)
+
+        query_filters = []
+        for filter_group in filter_groups:
+            if len(filter_group) == 1:
+                query_filters.extend(filter_group[0].get_query_filters())
+            elif len(filter_group) > 1:
+                query_filter = ""
+                for filter in filter_group:
+                    query_filter += " (%s) OR " % self.get_anded_query_filter(filter.get_query_filters())
+                query_filter = query_filter.strip()[:-3]
+                query_filters.append(query_filter)
         return query_filters
+
+    def get_anded_query_filter(self, query_filters):
+        combined_query_filter = ""
+        for query_filter in query_filters:
+            combined_query_filter += " %s AND " % query_filter
+        combined_query_filter = combined_query_filter.strip()[:-4]
+        return combined_query_filter
 
     def get_datetime_begin(self):
         for filter in self.filters:
@@ -209,6 +243,7 @@ class CatalogFilterModel(object):
         row_index = self.get_row_index(filter_id)
         new_filter.id = filter_id
         new_filter.column_item = self.filters[row_index].column_item
+        new_filter.operator_item = self.filters[row_index].operator_item
         self.filters[row_index] = new_filter
 
     def remove(self, filter_id):
@@ -234,6 +269,7 @@ class CatalogFilter(object):
 
     def __init__(self, id):
         self._id = id
+        self._operator_item = None
         self._column_item = None
         self._label = None
         self._value_item = None
@@ -245,12 +281,9 @@ class CatalogFilter(object):
     def validate(self, errors):
         return
 
-    def merge(self, other_filter):
-        self._id = other_filter.id
-        return self
-
     def reset(self, reset_column=True):
         if reset_column:
+            self.operator_item = None
             self.column_item = None
         self.label = None
         self.value_item = None
@@ -268,6 +301,18 @@ class CatalogFilter(object):
     @id.setter
     def id(self, new_id):
         self._id = new_id
+
+    @property
+    def operator_item(self):
+        return self._operator_item
+
+    @operator_item.setter
+    def operator_item(self, new_operator_item):
+        if new_operator_item:
+            new_operator_item.setProperty(FILTER_ID_KEY, self._id)
+        if self._operator_item:
+            self._operator_item.setParent(None)
+        self._operator_item = new_operator_item
 
     @property
     def column_item(self):
@@ -336,6 +381,10 @@ class CatalogFilter(object):
             return self._column_item.currentText()
         else:
             return None
+
+    @property
+    def is_operator_and(self):
+        return not self._operator_item or self._operator_item.currentText() == TEXT_OPERATOR_AND
 
     def __str__(self):
         return self._id
