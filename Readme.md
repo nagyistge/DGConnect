@@ -33,6 +33,10 @@ This tools purpose is to provide a window into the GBDx platform capabilites to 
 
 Please contact <a href="analytics.support@digitalglobe.com">analytics.support@digitalglobe.com</a> for a user account to access the full content and data holdings within GBDx
 
+## Contributors ##
+
+We welcome anyone and everyone to help maintain and enhance this tool to do new and exciting things.
+
 ## License ##
       Licensed under the Apache License, Version 2.0 (the "License");
       you may not use this file except in compliance with the License.
@@ -46,9 +50,7 @@ Please contact <a href="analytics.support@digitalglobe.com">analytics.support@di
       See the License for the specific language governing permissions and
       limitations under the License.
 
-## Contributors ##
 
-We welcome anyone and everyone to help maintain and enhance this tool to do new and exciting things.
 
 
 
