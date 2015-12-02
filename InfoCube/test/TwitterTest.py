@@ -3,7 +3,7 @@ __author__ = 'Michael Trotter <michael.trotter@digitalglobe.com>'
 
 import unittest
 from CSVOutput import CSVOutput
-from InfoCubeInsightCloudQuery import InsightCloudQuery
+from InfoCubeVectorQuery import VectorQuery
 
 class JSONTwitterTest(unittest.TestCase):
     def test_parse_twitter_json(self):
@@ -1087,6 +1087,6 @@ class JSONTwitterTest(unittest.TestCase):
    }
 }"""
         csv_element = CSVOutput(left=-112.509461, bottom=37.701051, right=37.815197, top=37.815197, polygon=None)
-        query = InsightCloudQuery(None, None)
+        query = VectorQuery(None, None)
         query.process_twitter_data(json_data, csv_element)
         self.assertEqual(csv_element.num_twitter, 1541190)

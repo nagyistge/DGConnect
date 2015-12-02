@@ -2,7 +2,7 @@
 __author__ = 'mtrotter'
 
 import unittest
-import InfoCubeInsightCloudQuery
+import InfoCubeVectorQuery
 import CSVOutput
 
 class JSONOSMTest(unittest.TestCase):
@@ -1917,6 +1917,6 @@ class JSONOSMTest(unittest.TestCase):
    "shards":1270
 }"""
         csv_element = CSVOutput.CSVOutput(left=32.3964, right=37.2633, bottom=34.7208, top=46.631, polygon=None)
-        osm_query = InfoCubeInsightCloudQuery.InsightCloudQuery(None, None)
+        osm_query = InfoCubeVectorQuery.VectorQuery(None, None)
         osm_query.process_vector_data(osm_str, csv_element)
         self.assertEqual(csv_element.num_osm, 657759)

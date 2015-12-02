@@ -2,7 +2,7 @@
 __author__ = 'Michael Trotter <michael.trotter@digitalglobe.com>'
 
 import unittest
-from InfoCubeInsightCloudQuery import InsightCloudQuery
+from InfoCubeVectorQuery import VectorQuery
 from CSVOutput import CSVOutput
 
 class JSONRSSTest(unittest.TestCase):
@@ -2087,6 +2087,6 @@ class JSONRSSTest(unittest.TestCase):
 
 }"""
         csv_element = CSVOutput(left=-112.509461, bottom=37.701051, right=37.815197, top=37.815197, polygon=None)
-        query = InsightCloudQuery(None, None)
+        query = VectorQuery(None, None)
         query.process_rss_data(json_data, csv_element)
         self.assertEqual(csv_element.num_rss, 623)

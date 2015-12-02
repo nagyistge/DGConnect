@@ -1,6 +1,6 @@
 from PyQt4.QtCore import QSettings
 from qgis._gui import QgsMessageBar
-from ..Vectors.VectorsInsightCloudQuery import InsightCloudQuery
+from ..Vectors.VectorsQuery import VectorQuery
 
 __author__ = 'mtrotter'
 
@@ -9,11 +9,11 @@ VALIDATION_MAX_EXPORT = 150000
 
 # constants for plugin settings
 PLUGIN_NAME = "DGConnect"
-INSIGHTCLOUD_USERNAME = "insightcloud.username"
-INSIGHTCLOUD_PASSWORD = "insightcloud.password"
-INSIGHTCLOUD_CLIENT_ID = "insightcloud.client_id"
-INSIGHTCLOUD_CLIENT_SECRET = "insightcloud.client_secret"
-MAX_ITEMS_TO_RETURN = "max.items.to.return"
+USERNAME = "dgx.username"
+PASSWORD = "dgx.password"
+CLIENT_ID = "dgx.client_id"
+CLIENT_SECRET = "dgx.client_secret"
+MAX_ITEMS_TO_RETURN = "dgx.max_items_to_return"
 
 
 def cancel_clicked(ui):
@@ -32,8 +32,8 @@ def load_settings(ui):
     :return: None
     """
 
-    ui.username.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME))
-    ui.password.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD))
+    ui.username.setText(read_setting(PLUGIN_NAME + "/" + USERNAME))
+    ui.password.setText(read_setting(PLUGIN_NAME + "/" + PASSWORD))
     ui.max_items_to_return.setText(read_setting(PLUGIN_NAME + "/" + MAX_ITEMS_TO_RETURN))
 
 
@@ -42,8 +42,8 @@ def get_settings():
     max_settings_to_return = None
     if validate_is_int(max_settings_to_return_str):
         max_settings_to_return = int(max_settings_to_return_str)
-    return read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME), \
-           read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD), \
+    return read_setting(PLUGIN_NAME + "/" + USERNAME), \
+           read_setting(PLUGIN_NAME + "/" + PASSWORD), \
            max_settings_to_return
 
 
@@ -54,10 +54,10 @@ def save_settings_clicked(ui, iface, dialog):
     :return: None
     """
     if validate_save_settings(ui, iface):
-        write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME, ui.username.text())
-        write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD, ui.password.text())
+        write_setting(PLUGIN_NAME + "/" + USERNAME, ui.username.text())
+        write_setting(PLUGIN_NAME + "/" + PASSWORD, ui.password.text())
         write_setting(PLUGIN_NAME + "/" + MAX_ITEMS_TO_RETURN, ui.max_items_to_return.text())
-        iface.messageBar().pushMessage("Info", "InsightCloud settings saved successfully!")
+        iface.messageBar().pushMessage("Info", "Settings saved successfully!")
         dialog.accept()
 
 
@@ -102,25 +102,25 @@ def validate_save_settings(ui, iface):
 
 def validate_info(ui, errors):
     """
-    Validates the InsightCloud fields for errors
+    Validates the settings fields for errors
     :param ui: The GUI containing the fields
     :param errors: The list of errors that have occurred so far
     :return: None
     """
-    # check insightcloud credentials
+    # check credentials
     is_info_good = True
     if is_field_empty(ui.username):
         is_info_good = False
-        errors.append("No InsightCloud username provided.")
+        errors.append("No username provided.")
     if is_field_empty(ui.password):
         is_info_good = False
-        errors.append("No InsightCloud password provided.")
+        errors.append("No password provided.")
     # validate credentials by hitting insight-vector
     if is_info_good:
-        query = InsightCloudQuery(username=ui.username.text(), password=ui.password.text())
+        query = VectorQuery(username=ui.username.text(), password=ui.password.text())
         query.log_in()
         if not query.is_login_successful:
-            errors.append("Unable to verify InsightCloud credentials. See logs for more details.")
+            errors.append("Unable to verify credentials. See logs for more details.")
     # validate max items to return
     max_items_to_return = ui.max_items_to_return
     if is_field_empty(max_items_to_return):
@@ -199,19 +199,19 @@ def validate_stored_info(username, password, max_items_to_return, errors):
     :param errors: List of errors
     :return: True if all validation passes; False if there are errors
     """
-    # check insightcloud credentials
+    # check credentials
     is_field_good = True
     if not username or len(username) == 0:
         is_field_good = False
-        errors.append("No InsightCloud username provided.")
+        errors.append("No username provided.")
     if not password or len(password) == 0:
         is_field_good = False
-        errors.append("No InsightCloud password provided.")
+        errors.append("No password provided.")
     if is_field_good:
-        query = InsightCloudQuery(username=username, password=password)
+        query = VectorQuery(username=username, password=password)
         query.log_in()
         if not query.is_login_successful:
-            errors.append("Unable to verify InsightCloud credentials. See logs for details.")
+            errors.append("Unable to verify credentials. See logs for details.")
             is_field_good = False
     if not max_items_to_return or max_items_to_return < VALIDATION_MIN_EXPORT or max_items_to_return \
             > VALIDATION_MAX_EXPORT:

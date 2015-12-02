@@ -50,12 +50,12 @@ class InsightCloudParams:
         self.time_begin = time_begin
         self.time_end = time_end
 
-class InsightCloudQuery(OAuth2Query):
+class VectorQuery(OAuth2Query):
     """
     Class for handling queries to InsightCloud vector data
     """
     def __init__(self, username, password, client_id, client_secret, grant_type='password'):
-        super(InsightCloudQuery, self).__init__(username, password, client_id, client_secret, grant_type)
+        super(VectorQuery, self).__init__(username, password, client_id, client_secret, grant_type)
 
     def query_vector(self, order_params, csv_element):
         """

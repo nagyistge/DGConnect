@@ -1,14 +1,14 @@
 __author__ = 'mtrotter'
 
 import unittest
-from VectorsInsightCloudQuery import InsightCloudQuery
+from VectorsQuery import VectorQuery
 
 class ProcessJSONTest(unittest.TestCase):
     def testGlobalSourcesJson(self):
         json_string = """\
         {"data":[{"name":"OSM","count":374842982},{"name":"GDELT","count":11839504},{"name":"Gazeteer","count":11332448},{"name":"HGIS","count":2837808},{"name":"Flickr - Gnip","count":411595},{"name":"Instagram - Gnip","count":333118},{"name":"Vector REST API","count":213521},{"name":"SETD","count":137353},{"name":"DG Car Counting","count":123918},{"name":"IIP-SA-Raster","count":89475},{"name":"Tomnod","count":69339},{"name":"ACLED","count":31802},{"name":"Anthrometer","count":19548},{"name":"VK - Gnip","count":15295},{"name":"GBD","count":6035},{"name":"MASS Service","count":15},{"name":"Tom Ruegger","count":3},{"name":"Test","count":2},{"name":"GoPro mounted on an eagle","count":1},{"name":"Mermaid","count":1}],"shards":1290}
                 """
-        query = InsightCloudQuery(None, None, None, None)
+        query = VectorQuery(None, None, None, None)
         data = query.process_json_data(json_string)
         self.assertTrue(len(data) == 20)
 
@@ -73,7 +73,7 @@ class ProcessJSONTest(unittest.TestCase):
         json = """\
         {"data":[{"name":"Polygon","count":181368511},{"name":"PolyLine","count":98384903},{"name":"Point","count":95391003}],"shards":1295}
                 """
-        query = InsightCloudQuery(None, None, None, None)
+        query = VectorQuery(None, None, None, None)
         data = query.process_json_data(json)
 
         self.assertTrue(len(data) == 3)
@@ -92,7 +92,7 @@ class ProcessJSONTest(unittest.TestCase):
         {"data":[{"name":"LV3B","count":6016},{"name":"UNKNOWN","count":19}],"shards":1295}
                 """
 
-        query = InsightCloudQuery(None, None, None, None)
+        query = VectorQuery(None, None, None, None)
         data = query.process_json_data(json)
 
         self.assertTrue(len(data) == 2)

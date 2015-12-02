@@ -5,13 +5,13 @@ __author__ = 'Michael Trotter <michael.trotter@digitalglobe.com>'
 from datetime import datetime, timedelta
 
 from InfoCubeGBDQuery import GBDOrderParams
-from InfoCubeInsightCloudQuery import InsightCloudParams
+from InfoCubeVectorQuery import InsightCloudParams
 
 from PyQt4.QtGui import QProgressDialog
 from PyQt4.QtCore import QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal
 
 from InfoCubeGBDQuery import GBDQuery
-from InfoCubeInsightCloudQuery import InsightCloudQuery
+from InfoCubeVectorQuery import VectorQuery
 
 import os
 
@@ -159,7 +159,7 @@ class CSVGenerator:
         serial_no = 1
         
         # get header dict
-        insightcloud_query = InsightCloudQuery(username=self.username, password=self.password, client_id=self.client_id, client_secret=self.client_secret)
+        insightcloud_query = VectorQuery(username=self.username, password=self.password, client_id=self.client_id, client_secret=self.client_secret)
         insightcloud_query.log_in()
         insightcloud_params = InsightCloudParams(top=self.top, bottom=self.bottom, left=self.left, right=self.right, time_begin=self.begin_date, time_end=self.end_date)
         header_result = insightcloud_query.get_vector_result(insightcloud_params)
@@ -253,7 +253,7 @@ class CSVRunnable(QRunnable):
         gbd_query.log_in()
 
         # build insightcloud query
-        insightcloud_query = InsightCloudQuery(username=self.username, password=self.password, client_id=self.client_id, client_secret=self.client_secret)
+        insightcloud_query = VectorQuery(username=self.username, password=self.password, client_id=self.client_id, client_secret=self.client_secret)
         log.info("Starting InsightCloud queries with params: " + str(insightcloud_params.__dict__))
         insightcloud_query.log_in()
     

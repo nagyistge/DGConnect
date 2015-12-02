@@ -8,7 +8,7 @@ from PyQt4.QtCore import QSettings, QThreadPool
 from os.path import expanduser
 
 from InfoCubeGBDQuery import GBDQuery
-from InfoCubeInsightCloudQuery import InsightCloudQuery
+from InfoCubeVectorQuery import VectorQuery
 import CSVOutput
 import re
 from CSVOutput import CSVGenerator
@@ -243,7 +243,7 @@ def validate_insightcloud_info(ui, errors):
         errors.append("No InsightCloud password provided.")
     # validate credentials by hitting monocle-3
     if is_insightcloud_info_good:
-        query = InsightCloudQuery(username=ui.username.text(), password=ui.password.text(),
+        query = VectorQuery(username=ui.username.text(), password=ui.password.text(),
                                   client_id=ui.client_id.text(), client_secret=ui.client_secret.text())
         query.log_in()
         if not query.is_login_successful:
