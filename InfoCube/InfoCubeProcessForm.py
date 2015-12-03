@@ -19,8 +19,8 @@ PLUGIN_NAME = "DGConnect"
 GBD_USERNAME = "gbd.username"
 GBD_PASSWORD = "gbd.password"
 GBD_API_KEY = "gbd.api.key"
-INSIGHTCLOUD_USERNAME = "insightcloud.username"
-INSIGHTCLOUD_PASSWORD = "insightcloud.password"
+USERNAME = "dgx.username"
+PASSWORD = "dgx.password"
 SELECT_FILE = "select.file"
 
 # file filter
@@ -104,8 +104,8 @@ def load_settings(ui):
     ui.client_id.setText(read_setting(PLUGIN_NAME + "/" + GBD_USERNAME))
     ui.client_secret.setText(read_setting(PLUGIN_NAME + "/" + GBD_PASSWORD))
 
-    ui.username.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME))
-    ui.password.setText(read_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD))
+    ui.username.setText(read_setting(PLUGIN_NAME + "/" + USERNAME))
+    ui.password.setText(read_setting(PLUGIN_NAME + "/" + PASSWORD))
 
     ui.select_file.setText(read_setting(PLUGIN_NAME + "/" + SELECT_FILE))
 
@@ -120,8 +120,8 @@ def save_settings_clicked(ui):
         write_setting(PLUGIN_NAME + "/" + GBD_USERNAME, ui.client_id.text())
         write_setting(PLUGIN_NAME + "/" + GBD_PASSWORD, ui.client_secret.text())
 
-        write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_USERNAME, ui.username.text())
-        write_setting(PLUGIN_NAME + "/" + INSIGHTCLOUD_PASSWORD, ui.password.text())
+        write_setting(PLUGIN_NAME + "/" + USERNAME, ui.username.text())
+        write_setting(PLUGIN_NAME + "/" + PASSWORD, ui.password.text())
 
         write_setting(PLUGIN_NAME + "/" + SELECT_FILE, ui.select_file.text())
 
@@ -180,7 +180,7 @@ def validate_ok(ui):
     """
     errors = []
     validate_output_path(ui, errors)
-    validate_insightcloud_info(ui, errors)
+    validate_info(ui, errors)
     validate_gbd_info(ui, errors)
     validate_bbox(ui, errors)
     if len(errors) > 0:
@@ -226,28 +226,28 @@ def validate_output_path(ui, errors):
     elif re.match(ENDS_WITH_SUFFIX_REGEX, ui.select_file.text()) is None:
         errors.append("Output file must be a csv file.")
 
-def validate_insightcloud_info(ui, errors):
+def validate_info(ui, errors):
     """
-    Validates the InsightCloud fields for errors
+    Validates the fields for errors
     :param ui: The GUI containing the fields
     :param errors: The list of errors that have occurred so far
     :return: None
     """
-    # check insightcloud credentials
-    is_insightcloud_info_good = True
+    # check credentials
+    is_info_good = True
     if is_field_empty(ui.username):
-        is_insightcloud_info_good = False
-        errors.append("No InsightCloud username provided.")
+        is_info_good = False
+        errors.append("No username provided.")
     if is_field_empty(ui.password):
-        is_insightcloud_info_good = False
-        errors.append("No InsightCloud password provided.")
+        is_info_good = False
+        errors.append("No password provided.")
     # validate credentials by hitting monocle-3
-    if is_insightcloud_info_good:
+    if is_info_good:
         query = VectorQuery(username=ui.username.text(), password=ui.password.text(),
                                   client_id=ui.client_id.text(), client_secret=ui.client_secret.text())
         query.log_in()
         if not query.is_login_successful:
-            errors.append("Unable to verify InsightCloud credentials. See logs for more details.")
+            errors.append("Unable to verify credentials. See logs for more details.")
 
 def validate_bbox(ui, errors):
     """
