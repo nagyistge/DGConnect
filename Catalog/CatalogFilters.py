@@ -4,6 +4,7 @@ from qgis.core import QgsMessageLog
 import re
 from uuid import uuid4
 
+from ..Common.ExampleLineEdit import ExampleLineEdit
 from CatalogAcquisition import CatalogAcquisition
 from PyQt4.QtCore import Qt, QObject, pyqtSlot, pyqtSignal, QVariant, QAbstractTableModel, SIGNAL, QDate
 from PyQt4.QtGui import QComboBox, QLabel, QLineEdit, QPushButton, QGridLayout, QCheckBox, QLayout, QDateEdit, QRadioButton
@@ -103,21 +104,21 @@ class CatalogFilters(object):
             elif column == CatalogAcquisition.SATELLITE:
                 specific_filter = CatalogFilterSatellite(filter_id)
             elif column == CatalogAcquisition.VENDOR:
-                specific_filter = CatalogFilterText(filter_id, "vendorName")
+                specific_filter = CatalogFilterText(filter_id, "vendorName", "DigitalGlobe")
             elif column == CatalogAcquisition.IMAGE_BAND:
                 specific_filter = CatalogFilterBand(filter_id)
             elif column == CatalogAcquisition.CLOUD_COVER:
-                specific_filter = CatalogFilterTextBetween(filter_id, "cloudCover")
+                specific_filter = CatalogFilterTextBetween(filter_id, "cloudCover", "0.0", "100.0")
             elif column == CatalogAcquisition.SUN_AZM:
-                specific_filter = CatalogFilterTextBetween(filter_id, "sunAzimuth")
+                specific_filter = CatalogFilterTextBetween(filter_id, "sunAzimuth", "0.0", "360.0")
             elif column == CatalogAcquisition.SUN_ELEV:
-                specific_filter = CatalogFilterTextBetween(filter_id, "sunElevation")
+                specific_filter = CatalogFilterTextBetween(filter_id, "sunElevation", "0.0", "90.0")
             elif column == CatalogAcquisition.MULTI_RES:
-                specific_filter = CatalogFilterTextBetween(filter_id, "multiResolution")
+                specific_filter = CatalogFilterTextBetween(filter_id, "multiResolution", "0.0", "10.0")
             elif column == CatalogAcquisition.PAN_RES:
-                specific_filter = CatalogFilterTextBetween(filter_id, "panResolution")
+                specific_filter = CatalogFilterTextBetween(filter_id, "panResolution", "0.0", "2.0")
             elif column == CatalogAcquisition.OFF_NADIR:
-                specific_filter = CatalogFilterTextBetween(filter_id, "offNadirAngle")
+                specific_filter = CatalogFilterTextBetween(filter_id, "offNadirAngle", "1.0", "90.0")
 
             if specific_filter:
                 filter = specific_filter
@@ -416,11 +417,11 @@ class CatalogFilter(object):
 
 class CatalogFilterText(CatalogFilter):
 
-    def __init__(self, id, query_field):
+    def __init__(self, id, query_field, example_text=""):
         super(CatalogFilterText, self).__init__(id)
         self.query_field = query_field
         self.label = QLabel(TEXT_LABEL_IS)
-        self.value_item = QLineEdit()
+        self.value_item = ExampleLineEdit(example_text)
 
     def get_query_filters(self):
         return ["%s = '%s'" % (self.query_field, self.get_value())]
@@ -436,7 +437,7 @@ class CatalogFilterText(CatalogFilter):
 class CatalogFilterId(CatalogFilterText):
 
     def __init__(self, id):
-        super(CatalogFilterId, self).__init__(id, "catalogID")
+        super(CatalogFilterId, self).__init__(id, "catalogID", "104001234567A890")
 
     def get_query_filters(self):
         query_filter = ""
@@ -595,12 +596,12 @@ class CatalogFilterBand(CatalogFilter):
 
 class CatalogFilterTextBetween(CatalogFilter):
 
-    def __init__(self, id, query_field):
+    def __init__(self, id, query_field, from_example_text="", to_example_text=""):
         super(CatalogFilterTextBetween, self).__init__(id)
         self.query_field = query_field
         self.label = QLabel(TEXT_LABEL_BETWEEN)
-        self.from_edit = QLineEdit()
-        self.to_edit = QLineEdit()
+        self.from_edit = ExampleLineEdit(from_example_text)
+        self.to_edit = ExampleLineEdit(to_example_text)
 
         value_item = QGridLayout()
         value_item.addWidget(self.from_edit, 0, 0)
