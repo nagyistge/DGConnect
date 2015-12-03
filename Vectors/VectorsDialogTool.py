@@ -636,38 +636,29 @@ class VectorsDialogTool(QObject):
         directory specified
         :return: None
         """
-        self.clear_widgets()
-        if not self.validate_export():
-            return
-        starting_directory = self.directory or os.path.expanduser("~")
-        directory = QFileDialog.getExistingDirectory(None, "Export to directory", starting_directory)
-        if not self.validate_directory(directory):
-            return
-        self.directory = directory
-
-        bar_max = len(self.sources.keys()) * len(self.types_dict.keys())
-
-        self.init_json_progress_bar(bar_max)
-
-        username, password,  max_items_to_return = SettingsOps.get_settings()
-
-        for source_key in self.sources.keys():
-            source_item = self.sources[source_key]
-            if source_item.is_checked:
-                for item_key in self.types_dict.keys():
-                    type_item = self.types_dict[item_key]
-                    if type_item.is_checked and type_item.total_count > 0:
-                        item_params = VectorsItemsParams(source_item.source_params, source_key, item_key)
-                        task = JSONItemRunnable(username, password, username, password, item_params)
-                        task.json_item_object.task_complete.connect(self.on_new_json_items)
-                        task.json_item_object.task_cancel.connect(self.cancel_json_threads)
-                        self.json_thread_pool.start(task)
-                    else:
-                        if self.json_progress:
-                            self.json_progress.setValue(self.json_progress.value() + 1)
-            else:
-                if self.json_progress:
-                    self.json_progress.setValue(self.json_progress.value() + len(self.types_dict.keys()))
+        vectors_items_params = self.get_vectors_items_params()
+        if len(vectors_items_params) > 0:
+            self.clear_widgets()
+            if not self.validate_export():
+                return
+            starting_directory = self.directory or os.path.expanduser("~")
+            directory = QFileDialog.getExistingDirectory(None, "Export to directory", starting_directory)
+            if not self.validate_directory(directory):
+                return
+            self.directory = directory
+    
+            bar_max = len(vectors_items_params)
+            self.init_json_progress_bar(bar_max)
+    
+            username, password,  max_items_to_return = SettingsOps.get_settings()
+    
+            for item_params in vectors_items_params:
+                task = JSONItemRunnable(username, password, username, password, item_params)
+                task.json_item_object.task_complete.connect(self.on_new_json_items)
+                task.json_item_object.task_cancel.connect(self.cancel_json_threads)
+                self.json_thread_pool.start(task)
+        else:
+            self.iface.messageBar().pushMessage("Info", "Nothing to export.")
 
     def is_exporting(self):
         """
@@ -767,6 +758,18 @@ class VectorsDialogTool(QObject):
             if file_obj:
                 file_obj.write(GEOJSON_ENDING)
                 file_obj.close()
+
+    def get_vectors_items_params(self):
+        vectors_items_params = []
+        for source_key in self.sources.keys():
+                source_item = self.sources[source_key]
+                if source_item.is_checked:
+                    for item_key in self.types_dict.keys():
+                        type_item = self.types_dict[item_key]
+                        if type_item.is_checked and type_item.total_count > 0:
+                            vectors_items_params.append(VectorsItemsParams(source_item.source_params, source_key, item_key))
+        return vectors_items_params
+
 
 class SourceObject(QObject):
     """
