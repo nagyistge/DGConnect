@@ -60,8 +60,15 @@ class VectorsDialogTool(QObject):
         Clears the progress bar
         :return: None
         """
+        self.json_progress = None
         self.progress_message_bar = None
-        self.iface.messageBar().clearWidgets()
+        self.json_progress_message_bar = None
+        if self.progress_message_bar_widget:
+            self.iface.messageBar().popWidget(self.progress_message_bar_widget)
+        self.progress_message_bar_widget = None
+        if self.json_progress_message_bar_widget:
+            self.iface.messageBar().popWidget(self.json_progress_message_bar_widget)
+        self.json_progress_message_bar_widget = None
 
     def on_sort_complete(self):
         """
@@ -315,9 +322,7 @@ class VectorsDialogTool(QObject):
             self.json_progress.setValue(self.json_progress.value() + 1)
         else:
             # remove progress bar
-            self.json_progress_message_bar = None
-            self.json_progress = None
-            self.iface.messageBar().clearWidgets()
+            self.clear_widgets()
 
             if self.json_failed:
                 self.iface.messageBar().pushMessage("Error", "Error encountered during export.", level=QgsMessageBar.CRITICAL)
@@ -355,7 +360,9 @@ class VectorsDialogTool(QObject):
         self.search_thread_pool = QThreadPool()
         self.json_thread_pool = QThreadPool()
         self.progress_message_bar = None
+        self.progress_message_bar_widget = None
         self.json_progress_message_bar = None
+        self.json_progress_message_bar_widget = None
         self.json_progress = None
         self.json_failed = False
         self.point_vector_layer = None
@@ -386,7 +393,7 @@ class VectorsDialogTool(QObject):
             progress.setMaximum(0)
             progress.setAlignment(Qt.AlignLeft | Qt.AlignCenter)
             self.progress_message_bar.layout().addWidget(progress)
-            self.iface.messageBar().pushWidget(self.progress_message_bar, self.iface.messageBar().INFO)
+            self.progress_message_bar_widget = self.iface.messageBar().pushWidget(self.progress_message_bar, self.iface.messageBar().INFO)
 
     def init_json_progress_bar(self, bar_max):
         """
@@ -400,7 +407,7 @@ class VectorsDialogTool(QObject):
         self.json_progress.setMaximum(bar_max)
         self.json_progress.setAlignment(Qt.AlignLeft | Qt.AlignCenter)
         self.json_progress_message_bar.layout().addWidget(self.json_progress)
-        self.iface.messageBar().pushWidget(self.json_progress_message_bar, self.iface.messageBar().INFO)
+        self.json_progress_message_bar_widget = self.iface.messageBar().pushWidget(self.json_progress_message_bar, self.iface.messageBar().INFO)
 
     def init_vector_layers(self):
         """
@@ -636,22 +643,23 @@ class VectorsDialogTool(QObject):
         directory specified
         :return: None
         """
+        if not self.validate_export():
+            return
+
         vectors_items_params = self.get_vectors_items_params()
         if len(vectors_items_params) > 0:
-            self.clear_widgets()
-            if not self.validate_export():
-                return
             starting_directory = self.directory or os.path.expanduser("~")
             directory = QFileDialog.getExistingDirectory(None, "Export to directory", starting_directory)
             if not self.validate_directory(directory):
                 return
             self.directory = directory
-    
+
+            self.clear_widgets()
             bar_max = len(vectors_items_params)
             self.init_json_progress_bar(bar_max)
-    
+
             username, password,  max_items_to_return = SettingsOps.get_settings()
-    
+
             for item_params in vectors_items_params:
                 task = JSONItemRunnable(username, password, username, password, item_params)
                 task.json_item_object.task_complete.connect(self.on_new_json_items)
