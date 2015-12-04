@@ -7,7 +7,7 @@ from uuid import uuid4
 from ..Common.ExampleLineEdit import ExampleLineEdit
 from CatalogAcquisition import CatalogAcquisition
 from PyQt4.QtCore import Qt, QObject, pyqtSlot, pyqtSignal, QVariant, QAbstractTableModel, SIGNAL, QDate
-from PyQt4.QtGui import QComboBox, QLabel, QLineEdit, QPushButton, QGridLayout, QCheckBox, QLayout, QDateEdit, QRadioButton
+from PyQt4.QtGui import QComboBox, QLabel, QLineEdit, QPushButton, QGridLayout, QCheckBox, QLayout, QDateEdit, QRadioButton, QSizePolicy
 
 
 FILTER_ID_KEY = "filter_id"
@@ -295,6 +295,13 @@ class CatalogFilter(object):
             text = text.replace("'", "").replace('"', "")
         return text
 
+    def expand_layout(self, layout):
+        last_widget = layout.itemAt(layout.count() - 1).widget()
+        self.expand_widget(last_widget)
+
+    def expand_widget(self, widget):
+        widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
     @property
     def id(self):
         return self._id
@@ -460,6 +467,7 @@ class CatalogFilterStatus(CatalogFilter):
         value_item.addWidget(self.available_checkbox, 0, 0)
         value_item.addWidget(self.ordered_checkbox, 0, 1)
         value_item.addWidget(self.unordered_checkbox, 0, 2)
+        self.expand_layout(value_item)
         self.value_item = value_item
 
     def get_query_filters(self):
@@ -497,8 +505,11 @@ class CatalogFilterDate(CatalogFilter):
     def __init__(self, id):
         super(CatalogFilterDate, self).__init__(id)
         self.label = QLabel(TEXT_LABEL_BETWEEN)
+
         self.datetime_begin_edit = QDateEdit(QDate.currentDate())
         self.datetime_end_edit = QDateEdit(QDate.currentDate())
+        self.expand_widget(self.datetime_begin_edit)
+        self.expand_widget(self.datetime_end_edit)
 
         value_item = QGridLayout()
         value_item.addWidget(self.datetime_begin_edit, 0, 0)
@@ -536,6 +547,7 @@ class CatalogFilterSatellite(CatalogFilter):
         value_item.addWidget(self.create_satellite_checkbox(TEXT_SATELLITE_WV3, VALUE_SATELLITE_WV3), 0, 2)
         value_item.addWidget(self.create_satellite_checkbox(TEXT_SATELLITE_GEO, VALUE_SATELLITE_GEO), 0, 3)
         value_item.addWidget(self.create_satellite_checkbox(TEXT_SATELLITE_QB2, VALUE_SATELLITE_QB2), 0, 4)
+        self.expand_layout(value_item)
         self.value_item = value_item
 
     def get_query_filters(self):
@@ -577,6 +589,7 @@ class CatalogFilterBand(CatalogFilter):
         value_item.addItem(TEXT_BAND_PAN)
         value_item.addItem(TEXT_BAND_MS1)
         value_item.addItem(TEXT_BAND_MS2)
+        self.expand_widget(value_item)
         self.value_item = value_item
 
     def get_query_filters(self):
