@@ -395,7 +395,7 @@ class CatalogTableModel(QAbstractTableModel):
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            return CatalogAcquisition.COLUMNS[section]
+            return str(CatalogAcquisition.COLUMNS[section])
         return QAbstractTableModel.headerData(self, section, orientation, role)
 
     def sort(self, column, order=Qt.AscendingOrder):
