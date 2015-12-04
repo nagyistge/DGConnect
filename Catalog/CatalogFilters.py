@@ -106,7 +106,7 @@ class CatalogFilters(object):
             elif column == CatalogAcquisition.VENDOR:
                 specific_filter = CatalogFilterText(filter_id, "vendorName", "DigitalGlobe")
             elif column == CatalogAcquisition.IMAGE_BAND:
-                specific_filter = CatalogFilterBand(filter_id)
+                specific_filter = CatalogFilterText(filter_id, "imageBands", "Pan_MS1_MS2")
             elif column == CatalogAcquisition.CLOUD_COVER:
                 specific_filter = CatalogFilterTextBetween(filter_id, "cloudCover", "0.0", "100.0")
             elif column == CatalogAcquisition.SUN_AZM:
@@ -576,35 +576,6 @@ class CatalogFilterSatellite(CatalogFilter):
         checkbox.setProperty(SATELLITE_VALUE_KEY, value_text)
         self.checkboxes.append(checkbox)
         return checkbox
-
-
-class CatalogFilterBand(CatalogFilter):
-
-    def __init__(self, id):
-        super(CatalogFilterBand, self).__init__(id)
-        self.checkboxes = []
-        self.label = QLabel(TEXT_LABEL_IS)
-
-        value_item = QComboBox()
-        value_item.addItem(TEXT_BAND_PAN)
-        value_item.addItem(TEXT_BAND_MS1)
-        value_item.addItem(TEXT_BAND_MS2)
-        self.expand_widget(value_item)
-        self.value_item = value_item
-
-    def get_query_filters(self):
-        band_index = self.value_item.currentIndex()
-        if band_index == 0:
-            return ["(imageBands = 'Pan' OR imageBands = 'Pan_MS1' OR imageBands = 'Pan_MS1_MS2')"]
-        elif band_index == 1:
-            return ["(imageBands = 'Pan_MS1' OR imageBands = 'Pan_MS1_MS2')"]
-        elif band_index == 2:
-            return ["(imageBands = 'Pan_MS1_MS2')"]
-        return []
-
-    def validate(self, errors):
-        # there's no way to select an invalid option for band combo
-        return
 
 
 class CatalogFilterTextBetween(CatalogFilter):
