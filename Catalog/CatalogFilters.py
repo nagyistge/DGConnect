@@ -61,7 +61,7 @@ class CatalogFilters(object):
         column_item = QComboBox()
         column_item.addItem(TEXT_COLUMN_WHERE) 
         for column in CatalogAcquisition.COLUMNS:
-            column_item.addItem(str(column))
+            column_item.addItem(column.name)
         column_item.currentIndexChanged.connect(self.column_changed)
         self.layout.addWidget(column_item, row_index, GRID_COLUMN_WHERE)
         filter.column_item = column_item
@@ -372,7 +372,7 @@ class CatalogFilter(object):
     def column_index(self):
         column_name = self.column_name
         for i in range(len(CatalogAcquisition.COLUMNS)):
-            if column_name == CatalogAcquisition.COLUMNS[i]:
+            if column_name == CatalogAcquisition.COLUMNS[i].name:
                 return i
         return None
 

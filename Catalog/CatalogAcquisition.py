@@ -109,7 +109,7 @@ class CatalogAcquisition(object):
 
     @classmethod
     def get_column(cls, column_index):
-        return str(CatalogAcquisition.COLUMNS[column_index])
+        return CatalogAcquisition.COLUMNS[column_index].name
 
     @classmethod
     def get_csv_header(cls):
@@ -152,7 +152,7 @@ class CatalogAcquisitionFeature(QgsFeature):
                 field_type = QVariant.Double
             else:
                 field_type = QVariant.String
-            fields.append(QgsField(str(column), field_type))
+            fields.append(QgsField(column.name, field_type))
         return fields
 
 def to_bool(text):
