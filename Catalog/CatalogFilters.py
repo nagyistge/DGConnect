@@ -508,6 +508,8 @@ class CatalogFilterDate(CatalogFilter):
 
         self.datetime_begin_edit = QDateEdit(QDate.currentDate())
         self.datetime_end_edit = QDateEdit(QDate.currentDate())
+        self.datetime_begin_edit.setCalendarPopup(True)
+        self.datetime_end_edit.setCalendarPopup(True)
         self.expand_widget(self.datetime_begin_edit)
         self.expand_widget(self.datetime_end_edit)
 
