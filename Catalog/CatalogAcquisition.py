@@ -94,7 +94,7 @@ class CatalogAcquisition(object):
         self.add_column_value(self.off_nadir_angle)
 
     def __str__(self):
-        return '"' + '","'.join(self.column_values) + '"'
+        return '"' + '","'.join([str(val) for val in self.column_values]) + '"'
 
     def get_column_value(self, column_index):
         return self.column_values[column_index]
@@ -113,7 +113,7 @@ class CatalogAcquisition(object):
 
     @classmethod
     def get_csv_header(cls):
-        return ",".join(CatalogAcquisition.COLUMNS)
+        return ",".join([column.name for column in CatalogAcquisition.COLUMNS])
 
 
 class CatalogAcquisitionFeature(QgsFeature):
