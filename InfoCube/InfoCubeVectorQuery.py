@@ -37,9 +37,9 @@ NUM_TIMES_TO_TRY = 10
 
 TAG_NAME = 'InfoCube (Vector)'
 
-class InsightCloudParams:
+class InfoCubeVectorParams:
     """
-    Class for holding query params for InsightCloud queries
+    Class for holding query params for queries
     """
 
     def __init__(self, top, right, bottom, left, time_begin=None, time_end=None):
@@ -50,17 +50,17 @@ class InsightCloudParams:
         self.time_begin = time_begin
         self.time_end = time_end
 
-class InsightCloudQuery(OAuth2Query):
+class VectorQuery(OAuth2Query):
     """
-    Class for handling queries to InsightCloud vector data
+    Class for handling queries to vector data
     """
     def __init__(self, username, password, client_id, client_secret, grant_type='password'):
-        super(self.__class__, self).__init__(username, password, client_id, client_secret, grant_type)
+        super(VectorQuery, self).__init__(username, password, client_id, client_secret, grant_type)
 
     def query_vector(self, order_params, csv_element):
         """
         Queries vector data for stats and updates the CSV element for output
-        :param order_params: InsightCloud params to query for
+        :param order_params: params to query for
         :param csv_element: The CSV row to update
         :return: None
         """
@@ -71,7 +71,7 @@ class InsightCloudQuery(OAuth2Query):
     def get_vector_result(self, order_params):
         """
         Queries vector data for stats and updates the CSV element for output
-        :param order_params: InsightCloud params to query for
+        :param order_params: params to query for
         :param csv_element: The CSV row to update
         :return: None
         """

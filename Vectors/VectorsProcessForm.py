@@ -6,7 +6,7 @@ from qgis.gui import QgsMessageBar
 from PyQt4 import QtGui
 from PyQt4.QtCore import QSettings
 from os.path import expanduser
-from VectorsInsightCloudQuery import InsightCloudQuery, InsightCloudSourcesParams
+from VectorsQuery import VectorQuery, VectorsSourcesParams
 from ..Settings import SettingsOps
 from ..BBox import BBoxTool
 

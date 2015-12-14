@@ -3,6 +3,16 @@ from qgis._core import QgsFeature, QgsField, QgsFields, QgsGeometry
 from PyQt4.QtCore import QVariant
 
 
+class CatalogAcquisitionColumn(object):
+    
+    def __init__(self, name, column_type=str):
+        self.name = name
+        self.column_type = column_type
+
+    def __str__(self):
+        return self.name
+
+
 class CatalogAcquisition(object):
     """
     Entry in the GUI model of acquisitions
@@ -21,7 +31,18 @@ class CatalogAcquisition(object):
     PAN_RES = "Pan Res."
     OFF_NADIR = "Off Nadir"
 
-    COLUMNS = [CATALOG_ID, STATUS, DATE, SATELLITE, VENDOR, IMAGE_BAND, CLOUD_COVER, SUN_AZM, SUN_ELEV, MULTI_RES, PAN_RES, OFF_NADIR]
+    COLUMNS = [CatalogAcquisitionColumn(CATALOG_ID),
+               CatalogAcquisitionColumn(STATUS),
+               CatalogAcquisitionColumn(DATE),
+               CatalogAcquisitionColumn(SATELLITE),
+               CatalogAcquisitionColumn(VENDOR),
+               CatalogAcquisitionColumn(IMAGE_BAND),
+               CatalogAcquisitionColumn(CLOUD_COVER, float),
+               CatalogAcquisitionColumn(SUN_AZM, float),
+               CatalogAcquisitionColumn(SUN_ELEV, float),
+               CatalogAcquisitionColumn(MULTI_RES, float),
+               CatalogAcquisitionColumn(PAN_RES, float),
+               CatalogAcquisitionColumn(OFF_NADIR, float)]
 
     def __init__(self, result):
         """
@@ -58,22 +79,41 @@ class CatalogAcquisition(object):
         self.browse_url = properties.get(u"browseURL")
         self.footprint_wkt = properties.get(u"footprintWkt")
 
-        self.column_values = [self.identifier, self.status, self.timestamp, self.sensor_platform_name, self.vendor_name, self.image_bands,
-                              self.cloud_cover, self.sun_azimuth, self.sun_elevation, self.multi_resolution, self.pan_resolution, self.off_nadir_angle]
+        self.column_values = []
+        self.add_column_value(self.identifier)
+        self.add_column_value(self.status)
+        self.add_column_value(self.timestamp)
+        self.add_column_value(self.sensor_platform_name)
+        self.add_column_value(self.vendor_name)
+        self.add_column_value(self.image_bands)
+        self.add_column_value(self.cloud_cover)
+        self.add_column_value(self.sun_azimuth)
+        self.add_column_value(self.sun_elevation)
+        self.add_column_value(self.multi_resolution)
+        self.add_column_value(self.pan_resolution)
+        self.add_column_value(self.off_nadir_angle)
 
     def __str__(self):
-        return '"' + '","'.join(self.column_values) + '"'
+        return '"' + '","'.join([str(val) for val in self.column_values]) + '"'
 
-    def get_column_value(self, property_index):
-        return self.column_values[property_index]
+    def get_column_value(self, column_index):
+        return self.column_values[column_index]
+
+    def add_column_value(self, column_value_text):
+        column_index = len(self.column_values)
+        column_type = CatalogAcquisition.COLUMNS[column_index].column_type
+        column_value = None
+        if column_value_text is not None:
+           column_value = column_type(column_value_text)
+        self.column_values.append(column_value)
 
     @classmethod
     def get_column(cls, column_index):
-        return CatalogAcquisition.COLUMNS[column_index]
+        return CatalogAcquisition.COLUMNS[column_index].name
 
     @classmethod
     def get_csv_header(cls):
-        return ",".join(CatalogAcquisition.COLUMNS)
+        return ",".join([column.name for column in CatalogAcquisition.COLUMNS])
 
 
 class CatalogAcquisitionFeature(QgsFeature):
@@ -84,7 +124,7 @@ class CatalogAcquisitionFeature(QgsFeature):
         :param acquisition: 
         :return: CatalogAcquisitionFeature
         """
-        super(self.__class__, self).__init__(id=row)
+        super(CatalogAcquisitionFeature, self).__init__(id=row)
         self.acquisition = acquisition
         self.init_fields()
         self.init_attributes()
@@ -95,8 +135,8 @@ class CatalogAcquisitionFeature(QgsFeature):
 
     def init_attributes(self):
         attributes = []
-        for column_index in range(len(CatalogAcquisition.COLUMNS)):
-            attributes.append(self.acquisition.get_column_value(column_index))
+        for column_value in self.acquisition.column_values:
+            attributes.append(column_value)
         self.setAttributes(attributes)
 
     def init_geometry(self):
@@ -107,7 +147,12 @@ class CatalogAcquisitionFeature(QgsFeature):
     def get_fields(cls):
         fields = QgsFields()
         for column in CatalogAcquisition.COLUMNS:
-            fields.append(QgsField(column, QVariant.String))
+            field_type = None
+            if column.column_type == float:
+                field_type = QVariant.Double
+            else:
+                field_type = QVariant.String
+            fields.append(QgsField(column.name, field_type))
         return fields
 
 def to_bool(text):

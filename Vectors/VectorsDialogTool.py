@@ -6,8 +6,8 @@ from qgis._gui import QgsMessageBar
 __author__ = 'mtrotter'
 
 import VectorsProcessForm
-from VectorsInsightCloudQuery import InsightCloudSourcesParams, InsightCloudGeometriesParams, InsightCloudTypesParams,\
-    InsightCloudQuery, InsightCloudItemsParams, KEY_JSON_PROPERTIES_LIST
+from VectorsQuery import VectorsSourcesParams, VectorsGeometriesParams, VectorsTypesParams,\
+    VectorQuery, VectorsItemsParams, KEY_JSON_PROPERTIES_LIST
 
 from PyQt4.QtGui import QStandardItem, QStandardItemModel, QProgressBar, QFileDialog, QSortFilterProxyModel
 from PyQt4.QtCore import Qt, QThreadPool, QRunnable, QObject, pyqtSlot, pyqtSignal, QVariant
@@ -23,7 +23,7 @@ DEFAULT_TOP = "90.0"
 DEFAULT_BOTTOM = "-90.0"
 
 
-DEFAULT_ORDER_PARAMS = InsightCloudSourcesParams(top=DEFAULT_TOP, bottom=DEFAULT_BOTTOM, left=DEFAULT_LEFT, right=DEFAULT_RIGHT)
+DEFAULT_ORDER_PARAMS = VectorsSourcesParams(top=DEFAULT_TOP, bottom=DEFAULT_BOTTOM, left=DEFAULT_LEFT, right=DEFAULT_RIGHT)
 
 WIDGET_TEXT_FMT = "%s (%d)"
 
@@ -60,8 +60,15 @@ class VectorsDialogTool(QObject):
         Clears the progress bar
         :return: None
         """
+        self.json_progress = None
         self.progress_message_bar = None
-        self.iface.messageBar().clearWidgets()
+        self.json_progress_message_bar = None
+        if self.progress_message_bar_widget:
+            self.iface.messageBar().popWidget(self.progress_message_bar_widget)
+        self.progress_message_bar_widget = None
+        if self.json_progress_message_bar_widget:
+            self.iface.messageBar().popWidget(self.json_progress_message_bar_widget)
+        self.json_progress_message_bar_widget = None
 
     def on_sort_complete(self):
         """
@@ -98,7 +105,7 @@ class VectorsDialogTool(QObject):
     def on_new_source(self, source_params, new_sources):
         """
         Callback for a new source; inserts it to the sources list view
-        :param source_params: InsightCloudSourcesParams holding the search params for the sources
+        :param source_params: VectorsSourcesParams holding the search params for the sources
         :param new_sources: The new source data in a dictionary
         :return: None
         """
@@ -117,7 +124,7 @@ class VectorsDialogTool(QObject):
                     new_item.setCheckState(Qt.Checked)
                     model.appendRow(new_item)
                     self.sources[key] = new_item
-                geometry_params = InsightCloudGeometriesParams(source_params, key)
+                geometry_params = VectorsGeometriesParams(source_params, key)
                 self.query_geometries(geometry_params)
             if new_model:
                 model.itemChanged.connect(self.on_source_checked)
@@ -128,7 +135,7 @@ class VectorsDialogTool(QObject):
     def on_new_geometries(self, geometry_params, new_geometries):
         """
         Callback function for new geometries; adds it to the UI
-        :param geometry_params: InsightCloudGeometryParams holding the search params for the geometries
+        :param geometry_params: VectorsGeometriesParams holding the search params for the geometries
         :param new_geometries: The new geometry data in a dictionary
         :return: None
         """
@@ -150,7 +157,7 @@ class VectorsDialogTool(QObject):
                     self.geometries[key] = geometry_item
                 if key not in self.sources[geometry_params.source].geometries:
                     self.sources[geometry_params.source].geometries[key] = self.geometries[key]
-                types_params = InsightCloudTypesParams(geometry_params, key)
+                types_params = VectorsTypesParams(geometry_params, key)
                 self.query_types(types_params)
             if new_model:
                 model.itemChanged.connect(self.on_geometry_check)
@@ -161,7 +168,7 @@ class VectorsDialogTool(QObject):
     def on_new_types(self, types_params, new_types):
         """
         Callback function for adding new types to the UI
-        :param types_params: The InsightCloudTypesParams used for running the search
+        :param types_params: The VectorsTypesParams used for running the search
         :param new_types: The new types data in a dictionary
         :return: None
         """
@@ -212,7 +219,7 @@ class VectorsDialogTool(QObject):
             self.items[source][type_key] = []
         if should_add:
             username, password, max_items_to_return = SettingsOps.get_settings()
-            item_params = InsightCloudItemsParams(type_params.sources_params,
+            item_params = VectorsItemsParams(type_params.sources_params,
                                                   source, type_key)
             item_runnable = ItemRunnable(username, password, username, password, item_params)
             item_runnable.item_object.task_complete.connect(self.on_new_items)
@@ -222,7 +229,7 @@ class VectorsDialogTool(QObject):
     def on_new_items(self, items_params, new_items):
         """
         Callback function for adding new items to the UI (not scalable)
-        :param items_params: The InsightCloudItemParams used for the item query
+        :param items_params: The VectorsItemsParams used for the item query
         :param new_items: The dictionary holding the list of ItemFeatures broken up by geometry
         :return: None
         """
@@ -315,9 +322,7 @@ class VectorsDialogTool(QObject):
             self.json_progress.setValue(self.json_progress.value() + 1)
         else:
             # remove progress bar
-            self.json_progress_message_bar = None
-            self.json_progress = None
-            self.iface.messageBar().clearWidgets()
+            self.clear_widgets()
 
             if self.json_failed:
                 self.iface.messageBar().pushMessage("Error", "Error encountered during export.", level=QgsMessageBar.CRITICAL)
@@ -355,7 +360,9 @@ class VectorsDialogTool(QObject):
         self.search_thread_pool = QThreadPool()
         self.json_thread_pool = QThreadPool()
         self.progress_message_bar = None
+        self.progress_message_bar_widget = None
         self.json_progress_message_bar = None
+        self.json_progress_message_bar_widget = None
         self.json_progress = None
         self.json_failed = False
         self.point_vector_layer = None
@@ -386,7 +393,7 @@ class VectorsDialogTool(QObject):
             progress.setMaximum(0)
             progress.setAlignment(Qt.AlignLeft | Qt.AlignCenter)
             self.progress_message_bar.layout().addWidget(progress)
-            self.iface.messageBar().pushWidget(self.progress_message_bar, self.iface.messageBar().INFO)
+            self.progress_message_bar_widget = self.iface.messageBar().pushWidget(self.progress_message_bar, self.iface.messageBar().INFO)
 
     def init_json_progress_bar(self, bar_max):
         """
@@ -400,7 +407,7 @@ class VectorsDialogTool(QObject):
         self.json_progress.setMaximum(bar_max)
         self.json_progress.setAlignment(Qt.AlignLeft | Qt.AlignCenter)
         self.json_progress_message_bar.layout().addWidget(self.json_progress)
-        self.iface.messageBar().pushWidget(self.json_progress_message_bar, self.iface.messageBar().INFO)
+        self.json_progress_message_bar_widget = self.iface.messageBar().pushWidget(self.json_progress_message_bar, self.iface.messageBar().INFO)
 
     def init_vector_layers(self):
         """
@@ -462,7 +469,7 @@ class VectorsDialogTool(QObject):
         :param dialog_tool: The dialog tool
         :return: None
         """
-        params = InsightCloudSourcesParams(top=top, right=right, bottom=bottom, left=left, query=None)
+        params = VectorsSourcesParams(top=top, right=right, bottom=bottom, left=left, query=None)
         self.query_sources(params)
 
     def query_initial_sources(self):
@@ -484,7 +491,7 @@ class VectorsDialogTool(QObject):
     def query_sources(self, search_params):
         """
         Queries the sources when the user clicks search; first search to run
-        :param search_params: The InsightCloudSourcesParams for the search (the AOI)
+        :param search_params: The VectorsSourcesParams for the search (the AOI)
         :return: None
         """
         self.search_thread_pool.waitForDone(0)
@@ -511,7 +518,7 @@ class VectorsDialogTool(QObject):
     def query_geometries(self, geometry_params):
         """
         Queries the geometries using the geometry_params
-        :param geometry_params: The InsightCloudGeometryParams for the search
+        :param geometry_params: The VectorsGeometriesParams for the search
         :return: None
         """
         username, password, max_items_to_return = SettingsOps.get_settings()
@@ -523,7 +530,7 @@ class VectorsDialogTool(QObject):
     def query_types(self, types_params):
         """
         Queries the types using the types_params
-        :param types_params: The InsightCloudTypesParams for the search
+        :param types_params: The VectorsTypesParams for the search
         :return: None
         """
         username, password, max_items_to_return = SettingsOps.get_settings()
@@ -535,7 +542,7 @@ class VectorsDialogTool(QObject):
     def query_items(self, items_params):
         """
         Queries the items using the items_params
-        :param items_params: The InsightCloudItemsParams for the search
+        :param items_params: The VectorsItemsParams for the search
         :return: None
         """
         username, password, max_items_to_return = SettingsOps.get_settings()
@@ -636,38 +643,30 @@ class VectorsDialogTool(QObject):
         directory specified
         :return: None
         """
-        self.clear_widgets()
         if not self.validate_export():
             return
-        starting_directory = self.directory or os.path.expanduser("~")
-        directory = QFileDialog.getExistingDirectory(None, "Export to directory", starting_directory)
-        if not self.validate_directory(directory):
-            return
-        self.directory = directory
 
-        bar_max = len(self.sources.keys()) * len(self.types_dict.keys())
+        vectors_items_params = self.get_vectors_items_params()
+        if len(vectors_items_params) > 0:
+            starting_directory = self.directory or os.path.expanduser("~")
+            directory = QFileDialog.getExistingDirectory(None, "Export to directory", starting_directory)
+            if not self.validate_directory(directory):
+                return
+            self.directory = directory
 
-        self.init_json_progress_bar(bar_max)
+            self.clear_widgets()
+            bar_max = len(vectors_items_params)
+            self.init_json_progress_bar(bar_max)
 
-        username, password,  max_items_to_return = SettingsOps.get_settings()
+            username, password,  max_items_to_return = SettingsOps.get_settings()
 
-        for source_key in self.sources.keys():
-            source_item = self.sources[source_key]
-            if source_item.is_checked:
-                for item_key in self.types_dict.keys():
-                    type_item = self.types_dict[item_key]
-                    if type_item.is_checked and type_item.total_count > 0:
-                        item_params = InsightCloudItemsParams(source_item.source_params, source_key, item_key)
-                        task = JSONItemRunnable(username, password, username, password, item_params)
-                        task.json_item_object.task_complete.connect(self.on_new_json_items)
-                        task.json_item_object.task_cancel.connect(self.cancel_json_threads)
-                        self.json_thread_pool.start(task)
-                    else:
-                        if self.json_progress:
-                            self.json_progress.setValue(self.json_progress.value() + 1)
-            else:
-                if self.json_progress:
-                    self.json_progress.setValue(self.json_progress.value() + len(self.types_dict.keys()))
+            for item_params in vectors_items_params:
+                task = JSONItemRunnable(username, password, username, password, item_params)
+                task.json_item_object.task_complete.connect(self.on_new_json_items)
+                task.json_item_object.task_cancel.connect(self.cancel_json_threads)
+                self.json_thread_pool.start(task)
+        else:
+            self.iface.messageBar().pushMessage("Info", "Nothing to export.")
 
     def is_exporting(self):
         """
@@ -768,6 +767,18 @@ class VectorsDialogTool(QObject):
                 file_obj.write(GEOJSON_ENDING)
                 file_obj.close()
 
+    def get_vectors_items_params(self):
+        vectors_items_params = []
+        for source_key in self.sources.keys():
+                source_item = self.sources[source_key]
+                if source_item.is_checked:
+                    for item_key in self.types_dict.keys():
+                        type_item = self.types_dict[item_key]
+                        if type_item.is_checked and type_item.total_count > 0:
+                            vectors_items_params.append(VectorsItemsParams(source_item.source_params, source_key, item_key))
+        return vectors_items_params
+
+
 class SourceObject(QObject):
     """
     QObject for holding the signal to emit new sources
@@ -789,7 +800,7 @@ class SourceRunnable(QRunnable):
         :param password: Password for OAuth2 authentication
         :param client_id: Client ID for OAuth2 authentication
         :param client_secret: Client Secret for OAuth2 authentication
-        :param source_params: InsightCloudSourceParams for the search
+        :param source_params: VectorsSourcesParams for the search
         :return: SourceRunnable
         """
         QRunnable.__init__(self)
@@ -805,7 +816,7 @@ class SourceRunnable(QRunnable):
         Runs the sources query and emits the results
         :return: None
         """
-        query = InsightCloudQuery(self.username, self.password)
+        query = VectorQuery(self.username, self.password)
         query.log_in()
         new_sources = query.query_sources(source_params=self.source_params)
         self.source_object.task_complete.emit(self.source_params, new_sources)
@@ -831,7 +842,7 @@ class GeometryRunnable(QRunnable):
         :param password: Password for OAuth2 authentication
         :param client_id: Client ID for OAuth2 authentication
         :param client_secret: Client Secret for OAuth2 authentication
-        :param geometry_params: InsightCloudGeometryParams for the geometry search
+        :param geometry_params: VectorsGeometriesParams for the geometry search
         :return: GeometryRunnable
         """
         QRunnable.__init__(self)
@@ -847,7 +858,7 @@ class GeometryRunnable(QRunnable):
         Runs the geometry query and emits the results
         :return: None
         """
-        query = InsightCloudQuery(self.username, self.password)
+        query = VectorQuery(self.username, self.password)
         query.log_in()
         new_geometries = query.query_geometries(geometry_params=self.geometry_params)
         self.geometry_object.task_complete.emit(self.geometry_params, new_geometries)
@@ -873,7 +884,7 @@ class TypeRunnable(QRunnable):
         :param password: Password for OAuth2 authentication
         :param client_id: Client ID for OAuth2 authentication
         :param client_secret: Client Secret for OAuth2 authentication
-        :param type_params: InsightCloudTypesParams for the types query
+        :param type_params: VectorsTypesParams for the types query
         :return: TypeRunnable
         """
         QRunnable.__init__(self)
@@ -889,7 +900,7 @@ class TypeRunnable(QRunnable):
         Runs the types query and emits the results
         :return: None
         """
-        query = InsightCloudQuery(self.username, self.password)
+        query = VectorQuery(self.username, self.password)
         query.log_in()
         new_types = query.query_types(self.type_params)
         self.type_object.task_complete.emit(self.type_params, new_types)
@@ -915,7 +926,7 @@ class ItemRunnable(QRunnable):
         :param password: Password for OAuth2 authentication
         :param client_id: Client ID for OAuth2 authentication
         :param client_secret: Client Secret for OAuth2 authentication
-        :param item_params: InsightCloudItemParams for querying items
+        :param item_params: VectorsItemsParams for querying items
         :return: ItemRunnable
         """
         QRunnable.__init__(self)
@@ -931,7 +942,7 @@ class ItemRunnable(QRunnable):
         Runs the items query and emits the results
         :return: None
         """
-        query = InsightCloudQuery(self.username, self.password)
+        query = VectorQuery(self.username, self.password)
         query.log_in()
         new_items = query.query_items(self.item_params)
         self.item_object.task_complete.emit(self.item_params, new_items)
@@ -991,7 +1002,7 @@ class JSONItemRunnable(QRunnable):
         :param password: Password for OAuth2 authentication
         :param client_id: Client ID for OAuth2 authentication
         :param client_secret: Client Secret for OAuth2 authentication
-        :param items_params: The InsightCloudItemParams for querying for items
+        :param items_params: The VectorsItemsParams for querying for items
         :return: JSONItemRunnable
         """
         QRunnable.__init__(self)
@@ -1008,7 +1019,7 @@ class JSONItemRunnable(QRunnable):
         :return: None
         """
         try:
-            query = InsightCloudQuery(self.username, self.password)
+            query = VectorQuery(self.username, self.password)
             query.log_in()
             new_items = query.query_items(self.items_params, True)
             self.json_item_object.task_complete.emit(self.items_params, new_items)

@@ -75,9 +75,9 @@ ITEMS_TO_RETURN = 500
 
 TAG_NAME = 'DGX'
 
-class InsightCloudSourcesParams:
+class VectorsSourcesParams:
     """
-    Class for holding query params for InsightCloud source queries
+    Class for holding query params for source queries
     """
 
     def __init__(self, top, right, bottom, left, query=None):
@@ -87,45 +87,45 @@ class InsightCloudSourcesParams:
         self.left = left
         self.query = query
 
-class InsightCloudGeometriesParams(InsightCloudSourcesParams):
+class VectorsGeometriesParams(VectorsSourcesParams):
     """
-    Class for holding query params for InsightCloud geometry queries
+    Class for holding query params for geometry queries
     """
 
     def __init__(self, sources_params, source):
-        InsightCloudSourcesParams.__init__(self, sources_params.top, sources_params.right, sources_params.bottom,
+        VectorsSourcesParams.__init__(self, sources_params.top, sources_params.right, sources_params.bottom,
                                            sources_params.left, sources_params.query)
         self.sources_params = sources_params
         self.source = source
 
-class InsightCloudTypesParams(InsightCloudGeometriesParams):
+class VectorsTypesParams(VectorsGeometriesParams):
     """
-    Class for holding query params for InsightCloud types queries
+    Class for holding query params for types queries
     """
 
     def __init__(self, geometries_params, geometry):
-        InsightCloudGeometriesParams.__init__(self, geometries_params.sources_params, geometries_params.source)
+        VectorsGeometriesParams.__init__(self, geometries_params.sources_params, geometries_params.source)
         self.geometries_params = geometries_params
         self.geometry = geometry
 
-class InsightCloudItemsParams(InsightCloudSourcesParams):
+class VectorsItemsParams(VectorsSourcesParams):
     """
-    Class for holding query params for InsightCloud items queries
+    Class for holding query params for items queries
     """
 
     def __init__(self, sources_params, source, type_name):
-        InsightCloudSourcesParams.__init__(self, sources_params.top, sources_params.right, sources_params.bottom,
+        VectorsSourcesParams.__init__(self, sources_params.top, sources_params.right, sources_params.bottom,
                                            sources_params.left, sources_params.query)
         self.source = source
         self.type_name = type_name
 
-class InsightCloudQuery(OAuth2Query):
+class VectorQuery(OAuth2Query):
     """
-    Class for handling queries to InsightCloud vector data
+    Class for handling queries to vector data
     """
 
     def __init__(self, username, password, grant_type='password'):
-        super(self.__class__, self).__init__(username, password, username, password, grant_type)
+        super(VectorQuery, self).__init__(username, password, username, password, grant_type)
 
     def prep_param(self, param):
         """

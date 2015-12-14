@@ -55,7 +55,7 @@ SOURCES = \
 	Vectors/VectorsBBoxTool.py \
 	Vectors/VectorsCASHTMLParser.py \
 	Vectors/VectorsDialogTool.py \
-	VectorsInsightCloudQuery.py \
+	VectorsQuery.py \
 	Vectors/VectorsProcessForm.py \
 	Vectors/VectorsSettingsTool.py \
 	Vectors/VectorsTool.py
@@ -81,7 +81,7 @@ PY_FILES = \
 	Vectors/VectorsBBoxTool.py \
 	Vectors/VectorsCASHTMLParser.py \
 	Vectors/VectorsDialogTool.py \
-	VectorsInsightCloudQuery.py \
+	VectorsQuery.py \
 	Vectors/VectorsProcessForm.py \
 	Vectors/VectorsSettingsTool.py \
 	Vectors/VectorsTool.py

@@ -92,7 +92,8 @@ class BBoxTool(QgsMapToolEmitPoint):
         :param mouse_event: The mouse event holding the cursor information
         :return: None
         """
-        self.released.emit(self.top, self.bottom, self.left, self.right)
+        if (self.top is not None) and (self.bottom is not None) and (self.left is not None) and (self.right is not None):
+            self.released.emit(self.top, self.bottom, self.left, self.right)
         self.iface.mapCanvas().unsetMapTool(self)
 
     def canvasMoveEvent(self, mouse_event):
