@@ -487,7 +487,7 @@ class CatalogFilterStatus(CatalogFilter):
             if unordered:
                 query_filter += (" OR " if query_filter else "") + "(ordered <> 'true' AND available <> 'true')"
         if query_filter:
-            query_filters.append("(%s)" % query_filter)
+            query_filter.format("(%s)" % query_filter)
             return [query_filter]
         else:
             return []
