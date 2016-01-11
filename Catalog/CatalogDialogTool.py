@@ -67,6 +67,7 @@ class CatalogDialogTool(QObject):
         self.dialog_ui.reset_button.clicked.connect(self.reset_button_clicked)
         self.dialog_ui.export_button.clicked.connect(self.export_button_clicked)
         self.bbox_tool.released.connect(self.search)
+        self.model = None
 
     def init_progress_bar(self, progress_max):
         """
@@ -227,7 +228,7 @@ class CatalogDialogTool(QObject):
     def export(self):
         self.export_thread_pool.waitForDone(0)
         acquisitions = None
-        if self.model:
+        if self.model is not None:
             acquisitions = self.model.data
 
         if not acquisitions:
