@@ -27,10 +27,44 @@
     </sizepolicy>
    </property>
    <layout class="QGridLayout" name="widget_layout">
+    <item row="1" column="0">
+     <layout class="QHBoxLayout" name="button_layout">
+      <item>
+       <widget class="QPushButton" name="aoi_button">
+        <property name="text">
+         <string>Draw AOI</string>
+        </property>
+        <property name="default">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="reset_button">
+        <property name="text">
+         <string>Reset</string>
+        </property>
+        <property name="default">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="export_button">
+        <property name="text">
+         <string>Export</string>
+        </property>
+        <property name="default">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
     <item row="0" column="0">
      <widget class="QTabWidget" name="tab_widget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="filters_tab">
        <attribute name="title">
@@ -83,41 +117,97 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="material_set_tab">
+       <attribute name="title">
+        <string>Material Set</string>
+       </attribute>
+       <widget class="QListView" name="listView">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>21</y>
+          <width>151</width>
+          <height>151</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QListView" name="listView_2">
+        <property name="geometry">
+         <rect>
+          <x>185</x>
+          <y>21</y>
+          <width>271</width>
+          <height>151</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label">
+        <property name="geometry">
+         <rect>
+          <x>30</x>
+          <y>0</y>
+          <width>111</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Sets</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_2">
+        <property name="geometry">
+         <rect>
+          <x>220</x>
+          <y>0</y>
+          <width>91</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Imagery In Set</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="pushButton">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>180</y>
+          <width>61</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Create</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="pushButton_2">
+        <property name="geometry">
+         <rect>
+          <x>100</x>
+          <y>180</y>
+          <width>61</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Remove</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="pushButton_3">
+        <property name="geometry">
+         <rect>
+          <x>350</x>
+          <y>180</y>
+          <width>101</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Remove Image</string>
+        </property>
+       </widget>
+      </widget>
      </widget>
-    </item>
-    <item row="1" column="0">
-     <layout class="QHBoxLayout" name="button_layout">
-      <item>
-       <widget class="QPushButton" name="aoi_button">
-        <property name="text">
-         <string>Draw AOI</string>
-        </property>
-        <property name="default">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="reset_button">
-        <property name="text">
-         <string>Reset</string>
-        </property>
-        <property name="default">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="export_button">
-        <property name="text">
-         <string>Export</string>
-        </property>
-        <property name="default">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-     </layout>
     </item>
    </layout>
   </widget>
