@@ -1,7 +1,8 @@
 ##Postman Installation Procedure
 To see the step by step instructions with visuals, see the [Postman Lesson](http://gbdxdocs.digitalglobe.com/docs/lesson-postman-api-requests).
+
 ###Get the Postman Files
-Collections associated with the QGIS Plugin are kept in the Postman Collections directory of the open source project. For the full list of collections, [go here]()<br>
+Collections associated with the QGIS Plugin are kept in the Postman Collections directory of the open source project. For the full list of collections, [go here](https://github.com/DigitalGlobe/Postman).<br>
 
 * Download the collections. If solely working with the associated collections, these are packaged with the rest of the project. Otherwise, the collections will be in a stand alone zip file.<br>
 
@@ -35,7 +36,7 @@ To type in the environment variables from here, choose the Back button, then cho
 ###Get a Token
 Before you can start making API requests using Postman, you need to get your Bearer Token (also referred to as an OAuth2 Token). If you've filled in your environment variables, you can use Postman to get your token.
 
-* On the left hand side under Collections, click "GBDX". You'll see a list of files. Under "Auth" select the Post "Get User Token".
+* On the left hand side under Collections, click "App-QGIS". You'll see a list of files. Under "Auth" select the Post "Get User Token".
 
 Since you've already added your environment variables, you don't need to fill in the values here. Click Send.
 
