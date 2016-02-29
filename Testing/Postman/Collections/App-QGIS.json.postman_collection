@@ -1,0 +1,209 @@
+{
+	"id": "99af1330-8e7e-df70-4eea-9069f006bcb3",
+	"name": "App - QGIS",
+	"description": "API calls associated with the QGIS Plugin.",
+	"order": [],
+	"folders": [
+		{
+			"id": "314997b8-d1d6-5d48-8441-bc651e966aad",
+			"name": "Auth",
+			"description": "",
+			"order": [
+				"39f3fbf8-0d4f-6b3f-2d24-ac9420d5da9c",
+				"51acc73a-0496-18da-7c8a-495973b3b781"
+			],
+			"owner": 0,
+			"collectionId": "99af1330-8e7e-df70-4eea-9069f006bcb3"
+		},
+		{
+			"id": "aaa4986b-fd50-d3ea-c438-2e5855623a77",
+			"name": "UVI Workflow",
+			"description": "QGIS UVI call progression.",
+			"order": [
+				"1ea29a9f-505f-5629-1dbf-4294a494aded",
+				"ab27ae20-d4d1-67b5-f6b7-005c703183f5",
+				"aee7bb2a-6f5c-f506-d0cd-a97eca63bff9",
+				"b224f6e7-37db-5a02-02a3-c3ff9e502ab0",
+				"8af5bb94-8f04-d0ee-aa6a-9d6b2c0e2d53"
+			],
+			"owner": 0
+		}
+	],
+	"timestamp": 1456416953930,
+	"owner": 0,
+	"remoteLink": "",
+	"public": false,
+	"requests": [
+		{
+			"id": "1ea29a9f-505f-5629-1dbf-4294a494aded",
+			"headers": "Authorization: Bearer {{token}}\n",
+			"url": "https://vector.geobigdata.io/insight-vector/api/esri/sources?left=32.3964&right=37.2633&upper=42.631&lower=34.7208",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "GET",
+			"data": [],
+			"dataMode": "params",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1456425112578,
+			"name": "1. List Vector Sources",
+			"description": "Lists the available vector index ingestion sources for a given bounding box.",
+			"collectionId": "99af1330-8e7e-df70-4eea-9069f006bcb3",
+			"responses": []
+		},
+		{
+			"id": "39f3fbf8-0d4f-6b3f-2d24-ac9420d5da9c",
+			"headers": "Authorization: Basic {{apikey}}\n",
+			"url": "https://geobigdata.io/auth/v1/oauth/token/",
+			"pathVariables": {},
+			"preRequestScript": "",
+			"method": "POST",
+			"collectionId": "99af1330-8e7e-df70-4eea-9069f006bcb3",
+			"data": [
+				{
+					"key": "grant_type",
+					"value": "password",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "username",
+					"value": "{{username}}",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "password",
+					"value": "{{password}}",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"name": "Get user token",
+			"description": "",
+			"descriptionFormat": "html",
+			"time": 1456414417439,
+			"version": 2,
+			"responses": [],
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": "{}",
+			"folder": "314997b8-d1d6-5d48-8441-bc651e966aad",
+			"isFromCollection": true,
+			"collectionRequestId": "fc61f807-64d0-2cce-0aa9-fa2884f12729"
+		},
+		{
+			"id": "51acc73a-0496-18da-7c8a-495973b3b781",
+			"headers": "Authorization: Bearer {{token}}\n",
+			"url": "https://vector.geobigdata.io/user-profile/api/version",
+			"pathVariables": {},
+			"preRequestScript": "",
+			"method": "GET",
+			"collectionId": "99af1330-8e7e-df70-4eea-9069f006bcb3",
+			"data": [],
+			"dataMode": "params",
+			"name": "Hit Service",
+			"description": "",
+			"descriptionFormat": "html",
+			"time": 1456416117368,
+			"version": 2,
+			"responses": [],
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": "{}",
+			"folder": "314997b8-d1d6-5d48-8441-bc651e966aad",
+			"isFromCollection": true,
+			"collectionRequestId": "76feb4bc-a320-2f10-d9bc-a3baa03745df"
+		},
+		{
+			"id": "8af5bb94-8f04-d0ee-aa6a-9d6b2c0e2d53",
+			"headers": "Authorization: Bearer {{token}}\n",
+			"url": "https://vector.geobigdata.io/insight-vector/api/vectors/paging",
+			"pathVariables": {},
+			"preRequestScript": "",
+			"method": "POST",
+			"collectionId": "99af1330-8e7e-df70-4eea-9069f006bcb3",
+			"data": [
+				{
+					"key": "pagingId",
+					"value": "Copy the pagingId from Get Paging ID here - no quotes",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"name": "5. Retrieve Page of Vector Items",
+			"description": "Using Paging Id from Get Paging ID API call, retrieve a page of available vector items.",
+			"descriptionFormat": "html",
+			"time": 1456742029365,
+			"version": 2,
+			"responses": [],
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"folder": "aaa4986b-fd50-d3ea-c438-2e5855623a77"
+		},
+		{
+			"id": "ab27ae20-d4d1-67b5-f6b7-005c703183f5",
+			"headers": "Authorization: Bearer {{token}}\n",
+			"url": "https://vector.geobigdata.io/insight-vector/api/esri/OSM/geometries?left=32.3964&right=37.2633&upper=42.631&lower=34.7208",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "GET",
+			"data": [],
+			"dataMode": "params",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1456417139422,
+			"name": "2. List Vector Geometry",
+			"description": "Lists the available vector geometry(ies) for a given vector index ingestion source and bounding box.",
+			"collectionId": "99af1330-8e7e-df70-4eea-9069f006bcb3",
+			"responses": []
+		},
+		{
+			"id": "aee7bb2a-6f5c-f506-d0cd-a97eca63bff9",
+			"headers": "Authorization: Bearer {{token}}\n",
+			"url": "https://vector.geobigdata.io/insight-vector/api/esri/OSM/Point/types?left=32.3964&right=37.2633&upper=42.631&lower=34.7208",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "GET",
+			"data": [],
+			"dataMode": "params",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1456417149688,
+			"name": "3. List Vector Types",
+			"description": "Lists the available vector type(s) for a given geometry, vector index ingestion source, and bounding box.",
+			"collectionId": "99af1330-8e7e-df70-4eea-9069f006bcb3",
+			"responses": []
+		},
+		{
+			"id": "b224f6e7-37db-5a02-02a3-c3ff9e502ab0",
+			"headers": "Authorization: Bearer {{token}}\n",
+			"url": "https://vector.geobigdata.io/insight-vector/api/vectors/OSM/Building/paging?left=32.3964&right=37.2633&upper=42.631&lower=34.7208&ttl=5m&count=500",
+			"pathVariables": {},
+			"preRequestScript": "",
+			"method": "GET",
+			"collectionId": "99af1330-8e7e-df70-4eea-9069f006bcb3",
+			"data": [],
+			"dataMode": "params",
+			"name": "4. Get Paging ID",
+			"description": "Submit request for paging ID to be used for subsequent paging requests.",
+			"descriptionFormat": "html",
+			"time": 1456742006448,
+			"version": 2,
+			"responses": [],
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"folder": "aaa4986b-fd50-d3ea-c438-2e5855623a77"
+		}
+	]
+}
