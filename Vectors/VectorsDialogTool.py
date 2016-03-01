@@ -218,10 +218,10 @@ class VectorsDialogTool(QObject):
             should_add = True
             self.items[source][type_key] = []
         if should_add:
-            username, password, max_items_to_return = SettingsOps.get_settings()
+            username, password, api_key, max_items_to_return = SettingsOps.get_settings()
             item_params = VectorsItemsParams(type_params.sources_params,
                                                   source, type_key)
-            item_runnable = ItemRunnable(username, password, username, password, item_params)
+            item_runnable = ItemRunnable(username, password, api_key, item_params)
             item_runnable.item_object.task_complete.connect(self.on_new_items)
             self.search_thread_pool.start(item_runnable)
 
@@ -479,11 +479,11 @@ class VectorsDialogTool(QObject):
         """
         self.search_thread_pool.waitForDone(0)
         # self.init_vector_layers()
-        username, password, max_items_to_return = SettingsOps.get_settings()
+        username, password, api_key, max_items_to_return = SettingsOps.get_settings()
         errors = []
-        SettingsOps.validate_stored_info(username, password, max_items_to_return, errors)
+        SettingsOps.validate_stored_info(username, password, api_key, max_items_to_return, errors)
         if len(errors) == 0:
-            source_runnable = SourceRunnable(username, password, username, password, DEFAULT_ORDER_PARAMS)
+            source_runnable = SourceRunnable(username, password, api_key, DEFAULT_ORDER_PARAMS)
             source_runnable.source_object.task_complete.connect(self.on_new_source)
             self.init_progress_bar()
             self.search_thread_pool.start(source_runnable)
@@ -508,9 +508,9 @@ class VectorsDialogTool(QObject):
         self.written_first_point = False
         self.written_first_polygon = False
 
-        username, password, max_items_to_return = SettingsOps.get_settings()
-        if VectorsProcessForm.validate_stored_settings(self.iface, username, password, username, password, max_items_to_return):
-            source_runnable = SourceRunnable(username, password, username, password, search_params)
+        username, password, api_key, max_items_to_return = SettingsOps.get_settings()
+        if VectorsProcessForm.validate_stored_settings(self.iface, username, password, api_key, max_items_to_return):
+            source_runnable = SourceRunnable(username, password, api_key, search_params)
             source_runnable.source_object.task_complete.connect(self.on_new_source)
             self.init_progress_bar()
             self.search_thread_pool.start(source_runnable)
@@ -521,8 +521,8 @@ class VectorsDialogTool(QObject):
         :param geometry_params: The VectorsGeometriesParams for the search
         :return: None
         """
-        username, password, max_items_to_return = SettingsOps.get_settings()
-        geometry_runnable = GeometryRunnable(username, password, username, password, geometry_params)
+        username, password, api_key, max_items_to_return = SettingsOps.get_settings()
+        geometry_runnable = GeometryRunnable(username, password, api_key, geometry_params)
         geometry_runnable.geometry_object.task_complete.connect(self.on_new_geometries)
         self.init_progress_bar()
         self.search_thread_pool.start(geometry_runnable)
@@ -533,8 +533,8 @@ class VectorsDialogTool(QObject):
         :param types_params: The VectorsTypesParams for the search
         :return: None
         """
-        username, password, max_items_to_return = SettingsOps.get_settings()
-        types_runnable = TypeRunnable(username, password, username, password, types_params)
+        username, password, api_key, max_items_to_return = SettingsOps.get_settings()
+        types_runnable = TypeRunnable(username, password, api_key, types_params)
         types_runnable.type_object.task_complete.connect(self.on_new_types)
         self.init_progress_bar()
         self.search_thread_pool.start(types_runnable)
@@ -545,8 +545,8 @@ class VectorsDialogTool(QObject):
         :param items_params: The VectorsItemsParams for the search
         :return: None
         """
-        username, password, max_items_to_return = SettingsOps.get_settings()
-        items_runnable = ItemRunnable(username, password, username, password, items_params)
+        username, password, api_key, max_items_to_return = SettingsOps.get_settings()
+        items_runnable = ItemRunnable(username, password, api_key, items_params)
         items_runnable.item_object.task_complete.connect(self.on_new_items)
         self.init_progress_bar()
         self.search_thread_pool.start(items_runnable)
@@ -658,10 +658,10 @@ class VectorsDialogTool(QObject):
             bar_max = len(vectors_items_params)
             self.init_json_progress_bar(bar_max)
 
-            username, password,  max_items_to_return = SettingsOps.get_settings()
+            username, password, api_key, max_items_to_return = SettingsOps.get_settings()
 
             for item_params in vectors_items_params:
-                task = JSONItemRunnable(username, password, username, password, item_params)
+                task = JSONItemRunnable(username, password, api_key, item_params)
                 task.json_item_object.task_complete.connect(self.on_new_json_items)
                 task.json_item_object.task_cancel.connect(self.cancel_json_threads)
                 self.json_thread_pool.start(task)
@@ -701,8 +701,8 @@ class VectorsDialogTool(QObject):
         """
         errors = []
         # validate settings
-        username, password, max_items_to_return = SettingsOps.get_settings()
-        SettingsOps.validate_stored_info(username, password, max_items_to_return, errors)
+        username, password, api_key, max_items_to_return = SettingsOps.get_settings()
+        SettingsOps.validate_stored_info(username, password, api_key, max_items_to_return, errors)
         # must ensure there's something to export
         if not self.dialog_base.types_list_view.model() or not self.dialog_base.data_sources_list_view.model():
             errors.append("Please search for data before attempting to export.")
@@ -793,21 +793,19 @@ class SourceRunnable(QRunnable):
     Thread pool worker task for running sources queries
     """
 
-    def __init__(self, username, password, client_id, client_secret, source_params):
+    def __init__(self, username, password, api_key, source_params):
         """
         Constructor
         :param username: Username for OAuth2 authentication
         :param password: Password for OAuth2 authentication
-        :param client_id: Client ID for OAuth2 authentication
-        :param client_secret: Client Secret for OAuth2 authentication
+        :param api_key: API key for OAuth2 authentication
         :param source_params: VectorsSourcesParams for the search
         :return: SourceRunnable
         """
         QRunnable.__init__(self)
         self.username = username
         self.password = password
-        self.client_id = client_id
-        self.client_secret = client_secret
+        self.api_key = api_key
         self.source_params = source_params
         self.source_object = SourceObject()
 
@@ -816,7 +814,7 @@ class SourceRunnable(QRunnable):
         Runs the sources query and emits the results
         :return: None
         """
-        query = VectorQuery(self.username, self.password)
+        query = VectorQuery(self.username, self.password, self.api_key)
         query.log_in()
         new_sources = query.query_sources(source_params=self.source_params)
         self.source_object.task_complete.emit(self.source_params, new_sources)
@@ -835,21 +833,19 @@ class GeometryRunnable(QRunnable):
     Thread pool task for running geometry queries
     """
 
-    def __init__(self, username, password, client_id, client_secret, geometry_params):
+    def __init__(self, username, password, api_key, geometry_params):
         """
         Constructor
         :param username: Username for OAuth2 authentication
         :param password: Password for OAuth2 authentication
-        :param client_id: Client ID for OAuth2 authentication
-        :param client_secret: Client Secret for OAuth2 authentication
+        :param api_key: API key for OAuth2 authentication
         :param geometry_params: VectorsGeometriesParams for the geometry search
         :return: GeometryRunnable
         """
         QRunnable.__init__(self)
         self.username = username
         self.password = password
-        self.client_id = client_id
-        self.client_secret = client_secret
+        self.api_key = api_key
         self.geometry_params = geometry_params
         self.geometry_object = GeometryObject()
 
@@ -858,7 +854,7 @@ class GeometryRunnable(QRunnable):
         Runs the geometry query and emits the results
         :return: None
         """
-        query = VectorQuery(self.username, self.password)
+        query = VectorQuery(self.username, self.password, self.api_key)
         query.log_in()
         new_geometries = query.query_geometries(geometry_params=self.geometry_params)
         self.geometry_object.task_complete.emit(self.geometry_params, new_geometries)
@@ -877,21 +873,19 @@ class TypeRunnable(QRunnable):
     Thread pool task for running types queries
     """
 
-    def __init__(self, username, password, client_id, client_secret, type_params):
+    def __init__(self, username, password, api_key, type_params):
         """
         Constructor
         :param username: Username for OAuth2 authentication
         :param password: Password for OAuth2 authentication
-        :param client_id: Client ID for OAuth2 authentication
-        :param client_secret: Client Secret for OAuth2 authentication
+        :param api_key: API key for OAuth2 authentication
         :param type_params: VectorsTypesParams for the types query
         :return: TypeRunnable
         """
         QRunnable.__init__(self)
         self.username = username
         self.password = password
-        self.client_id = client_id
-        self.client_secret = client_secret
+        self.api_key = api_key
         self.type_params = type_params
         self.type_object = TypeObject()
 
@@ -900,7 +894,7 @@ class TypeRunnable(QRunnable):
         Runs the types query and emits the results
         :return: None
         """
-        query = VectorQuery(self.username, self.password)
+        query = VectorQuery(self.username, self.password, self.api_key)
         query.log_in()
         new_types = query.query_types(self.type_params)
         self.type_object.task_complete.emit(self.type_params, new_types)
@@ -919,21 +913,19 @@ class ItemRunnable(QRunnable):
     Thread pool task for querying items
     """
 
-    def __init__(self, username, password, client_id, client_secret, item_params):
+    def __init__(self, username, password, api_key, item_params):
         """
         Constructor
         :param username: Username for OAuth2 authentication
         :param password: Password for OAuth2 authentication
-        :param client_id: Client ID for OAuth2 authentication
-        :param client_secret: Client Secret for OAuth2 authentication
+        :param api_key: API key for OAuth2 authentication
         :param item_params: VectorsItemsParams for querying items
         :return: ItemRunnable
         """
         QRunnable.__init__(self)
         self.username = username
         self.password = password
-        self.client_id = client_id
-        self.client_secret = client_secret
+        self.api_key = api_key
         self.item_params = item_params
         self.item_object = ItemObject()
 
@@ -942,7 +934,7 @@ class ItemRunnable(QRunnable):
         Runs the items query and emits the results
         :return: None
         """
-        query = VectorQuery(self.username, self.password)
+        query = VectorQuery(self.username, self.password, self.api_key)
         query.log_in()
         new_items = query.query_items(self.item_params)
         self.item_object.task_complete.emit(self.item_params, new_items)
@@ -995,21 +987,19 @@ class JSONItemRunnable(QRunnable):
     """
     Thread pool task for querying for items
     """
-    def __init__(self, username, password, client_id, client_secret, items_params):
+    def __init__(self, username, password, api_key, items_params):
         """
         Constructor
         :param username: Username for OAuth2 authentication
         :param password: Password for OAuth2 authentication
-        :param client_id: Client ID for OAuth2 authentication
-        :param client_secret: Client Secret for OAuth2 authentication
+        :param api_key: API key for OAuth2 authentication
         :param items_params: The VectorsItemsParams for querying for items
         :return: JSONItemRunnable
         """
         QRunnable.__init__(self)
         self.username = username
         self.password = password
-        self.client_id = client_id
-        self.client_secret = client_secret
+        self.api_key = api_key
         self.items_params = items_params
         self.json_item_object = JSONItemObject()
 
@@ -1019,7 +1009,7 @@ class JSONItemRunnable(QRunnable):
         :return: None
         """
         try:
-            query = VectorQuery(self.username, self.password)
+            query = VectorQuery(self.username, self.password, self.api_key)
             query.log_in()
             new_items = query.query_items(self.items_params, True)
             self.json_item_object.task_complete.emit(self.items_params, new_items)

@@ -15,8 +15,8 @@ USER_AGENT_STRING = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, 
                     'Ubuntu Chromium/41.0.2272.76 Chrome/41.0.2272.76 Safari/537.36'
 
 # oauth2 urls
-TOP_LEVEL_URL = 'https://iipbeta.digitalglobe.com/'
-LOGIN_URL = TOP_LEVEL_URL + "cas/oauth/token"
+TOP_LEVEL_URL = 'https://geobigdata.io/'
+LOGIN_URL = TOP_LEVEL_URL + "auth/v1/oauth/token"
 
 # json keys
 JSON_ENCODING = 'utf8'
@@ -37,16 +37,15 @@ class OAuth2Query(object):
     Class for querying to get data for Catalog
     """
 
-    def __init__(self, username, password, client_id, client_secret, grant_type='password'):
+    def __init__(self, username, password, api_key, grant_type='password'):
         self.username = username
         self.password = password
-        self.client_id = client_id
-        self.client_secret = client_secret
+        self.api_key = api_key
         self.grant_type = grant_type
         self.access_token = None
         self.token_type = None
         self.headers = {
-            HEADER_AUTHORIZATION: 'Basic ' + b64encode(self.client_id + ':' + self.client_secret),
+            HEADER_AUTHORIZATION: 'Basic ' + api_key,
             HEADER_USER_AGENT: USER_AGENT_STRING
         }
         self.opener = None
@@ -74,7 +73,7 @@ class OAuth2Query(object):
                     self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar))
                     
                     headers = self.headers
-                    headers[HEADER_AUTHORIZATION] = 'Basic ' + b64encode(self.client_id + ':' + self.client_secret)
+                    headers[HEADER_AUTHORIZATION] = 'Basic ' + self.api_key
             
                     try:
                         request = urllib2.Request(url=LOGIN_URL, data=encoded_data, headers=headers)

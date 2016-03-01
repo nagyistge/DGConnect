@@ -17,7 +17,7 @@ from ..Common.OAuth2Query import OAuth2Query
 
 from qgis.core import QgsFeature, QgsGeometry, QgsPoint, QgsFields, QgsField, QgsMessageLog
 
-INSIGHT_VECTOR_URL = "https://iipbeta.digitalglobe.com/insight-vector/"
+INSIGHT_VECTOR_URL = "https://vector.geobigdata.io/insight-vector/"
 SOURCES_QUERY = Template(INSIGHT_VECTOR_URL + "api/esri/sources?left=$left&right=$right&upper=$upper&lower=$lower")
 GEOMETRY_QUERY = Template(INSIGHT_VECTOR_URL +
                           "api/esri/$source/geometries?left=$left&right=$right&upper=$upper&lower=$lower")
@@ -124,8 +124,8 @@ class VectorQuery(OAuth2Query):
     Class for handling queries to vector data
     """
 
-    def __init__(self, username, password, grant_type='password'):
-        super(VectorQuery, self).__init__(username, password, username, password, grant_type)
+    def __init__(self, username, password, api_key, grant_type='password'):
+        super(VectorQuery, self).__init__(username, password, api_key, grant_type)
 
     def prep_param(self, param):
         """

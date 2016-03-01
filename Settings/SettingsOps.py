@@ -11,8 +11,7 @@ VALIDATION_MAX_EXPORT = 150000
 PLUGIN_NAME = "DGConnect"
 USERNAME = "dgx.username"
 PASSWORD = "dgx.password"
-CLIENT_ID = "dgx.client_id"
-CLIENT_SECRET = "dgx.client_secret"
+API_KEY = "dgx.api_key"
 MAX_ITEMS_TO_RETURN = "dgx.max_items_to_return"
 
 
@@ -34,6 +33,7 @@ def load_settings(ui):
 
     ui.username.setText(read_setting(PLUGIN_NAME + "/" + USERNAME))
     ui.password.setText(read_setting(PLUGIN_NAME + "/" + PASSWORD))
+    ui.api_key.setText(read_setting(PLUGIN_NAME + "/" + API_KEY))
     ui.max_items_to_return.setText(read_setting(PLUGIN_NAME + "/" + MAX_ITEMS_TO_RETURN))
 
 
@@ -44,6 +44,7 @@ def get_settings():
         max_settings_to_return = int(max_settings_to_return_str)
     return read_setting(PLUGIN_NAME + "/" + USERNAME), \
            read_setting(PLUGIN_NAME + "/" + PASSWORD), \
+           read_setting(PLUGIN_NAME + "/" + API_KEY), \
            max_settings_to_return
 
 
@@ -56,6 +57,7 @@ def save_settings_clicked(ui, iface, dialog):
     if validate_save_settings(ui, iface):
         write_setting(PLUGIN_NAME + "/" + USERNAME, ui.username.text())
         write_setting(PLUGIN_NAME + "/" + PASSWORD, ui.password.text())
+        write_setting(PLUGIN_NAME + "/" + API_KEY, ui.api_key.text())
         write_setting(PLUGIN_NAME + "/" + MAX_ITEMS_TO_RETURN, ui.max_items_to_return.text())
         iface.messageBar().pushMessage("Info", "Settings saved successfully!")
         dialog.accept()
@@ -115,9 +117,12 @@ def validate_info(ui, errors):
     if is_field_empty(ui.password):
         is_info_good = False
         errors.append("No password provided.")
+    if is_field_empty(ui.api_key):
+        is_info_good = False
+        errors.append("No API key provided.")
     # validate credentials by hitting insight-vector
     if is_info_good:
-        query = VectorQuery(username=ui.username.text(), password=ui.password.text())
+        query = VectorQuery(username=ui.username.text(), password=ui.password.text(), api_key=ui.api_key.text())
         query.log_in()
         if not query.is_login_successful:
             errors.append("Unable to verify credentials. See logs for more details.")
@@ -191,7 +196,7 @@ def write_setting(key, value):
     s.setValue(key, value)
 
 
-def validate_stored_info(username, password, max_items_to_return, errors):
+def validate_stored_info(username, password, api_key, max_items_to_return, errors):
     """
     Validates the username and password in the stored setting, writing any errors to the provided list
     :param username: Username for OAuth2 authentication
@@ -207,8 +212,11 @@ def validate_stored_info(username, password, max_items_to_return, errors):
     if not password or len(password) == 0:
         is_field_good = False
         errors.append("No password provided.")
+    if not api_key or len(api_key) == 0:
+        is_field_good = False
+        errors.append("No API key provided.")
     if is_field_good:
-        query = VectorQuery(username=username, password=password)
+        query = VectorQuery(username=username, password=password, api_key=api_key)
         query.log_in()
         if not query.is_login_successful:
             errors.append("Unable to verify credentials. See logs for details.")
