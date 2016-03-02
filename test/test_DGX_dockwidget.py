@@ -16,19 +16,19 @@ import unittest
 
 from PyQt4.QtGui import QDockWidget
 
-from DGX_dockwidget import DGXDockWidget
+from GBDX_dockwidget import GBDXDockWidget
 
 from utilities import get_qgis_app
 
 QGIS_APP = get_qgis_app()
 
 
-class DGXDockWidgetTest(unittest.TestCase):
+class GBDXDockWidgetTest(unittest.TestCase):
     """Test dockwidget works."""
 
     def setUp(self):
         """Runs before each test."""
-        self.dockwidget = DGXDockWidget(None)
+        self.dockwidget = GBDXDockWidget(None)
 
     def tearDown(self):
         """Runs after each test."""
@@ -39,7 +39,7 @@ class DGXDockWidgetTest(unittest.TestCase):
         pass
 
 if __name__ == "__main__":
-    suite = unittest.makeSuite(DGXDialogTest)
+    suite = unittest.makeSuite(GBDXDialogTest)
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite)
 

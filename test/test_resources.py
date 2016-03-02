@@ -18,7 +18,7 @@ from PyQt4.QtGui import QIcon
 
 
 
-class DGXDialogTest(unittest.TestCase):
+class GBDXDialogTest(unittest.TestCase):
     """Test rerources work."""
 
     def setUp(self):
@@ -31,12 +31,12 @@ class DGXDialogTest(unittest.TestCase):
 
     def test_icon_png(self):
         """Test we can click OK."""
-        path = ':/plugins/DGX/icon.png'
+        path = ':/plugins/GBDX/icon.png'
         icon = QIcon(path)
         self.assertFalse(icon.isNull())
 
 if __name__ == "__main__":
-    suite = unittest.makeSuite(DGXResourcesTest)
+    suite = unittest.makeSuite(GBDXResourcesTest)
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite)
 

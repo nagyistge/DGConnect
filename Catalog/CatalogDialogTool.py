@@ -91,7 +91,7 @@ class CatalogDialogTool(QObject):
         if self.footprint_layer:
             QgsMapLayerRegistry.instance().removeMapLayer(self.footprint_layer.id())
 
-        self.footprint_layer = QgsVectorLayer("Polygon?crs=EPSG:4326", "DGX Catalog Footprints", "memory")
+        self.footprint_layer = QgsVectorLayer("Polygon?crs=EPSG:4326", "Catalog Footprints", "memory")
         self.footprint_layer.setCrs(QgsCoordinateReferenceSystem(4326), True)
         self.footprint_layer.dataProvider().addAttributes(CatalogAcquisitionFeature.get_fields())
         QgsMapLayerRegistry.instance().addMapLayer(self.footprint_layer)

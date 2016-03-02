@@ -54,7 +54,7 @@ KEY_JSON_PROPERTIES = u'properties'
 KEY_JSON_TIMESTAMP = u'timestamp'
 
 # tag name
-TAG_NAME = 'DGX'
+TAG_NAME = 'GBDX'
 
 
 class GBDOrderParams:

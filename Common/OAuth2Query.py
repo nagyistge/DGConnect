@@ -30,7 +30,7 @@ HEADER_CONTENT_TYPE = 'Content-Type'
 CONTENT_TYPE_JSON = 'application/json'
 
 # tag name
-TAG_NAME = 'DGX'
+TAG_NAME = 'GBDX'
 
 class OAuth2Query(object):
     """

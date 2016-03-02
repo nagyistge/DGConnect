@@ -72,7 +72,7 @@ SLASH = '/'
 
 ITEMS_TO_RETURN = 500
 
-TAG_NAME = 'DGX'
+TAG_NAME = 'GBDX'
 
 class VectorsSourcesParams:
     """

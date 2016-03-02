@@ -9,10 +9,10 @@ VALIDATION_MAX_EXPORT = 150000
 
 # constants for plugin settings
 PLUGIN_NAME = "DGConnect"
-USERNAME = "dgx.username"
-PASSWORD = "dgx.password"
-API_KEY = "dgx.api_key"
-MAX_ITEMS_TO_RETURN = "dgx.max_items_to_return"
+USERNAME = "gbdx.username"
+PASSWORD = "gbdx.password"
+API_KEY = "gbdx.api_key"
+MAX_ITEMS_TO_RETURN = "gbdx.max_items_to_return"
 
 
 def cancel_clicked(ui):

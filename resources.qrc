@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/plugins/DGX" >
+    <qresource prefix="/plugins/GBDX" >
         <file>icon.png</file>
         <file>About.png</file>
         <file>Catalog.png</file>
