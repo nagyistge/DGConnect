@@ -31,7 +31,6 @@ ITEMS_POST_PAGING_ID = INSIGHT_VECTOR_URL + "api/vectors/paging"
 URL_CAS_LOGIN_SEGMENT = "login"
 
 KEY_HEADER_REFERRER = 'Referer'
-KEY_HEADER_PAGING_ID = 'Vector-Paging-Id'
 
 HEADER_CONTENT_TYPE = 'Content-Type'
 CONTENT_TYPE_JSON = 'application/json'
@@ -259,6 +258,17 @@ class VectorQuery(OAuth2Query):
                     request = urllib2.Request(ITEMS_POST_PAGING_ID, urllib.urlencode(data), headers)
                     response = self.get_opener().open(request)
                     self.is_login_successful = True
+                    response_body = response.read()
+
+                    paging_id = self.process_paging_request(response_body)
+                    new_data = self.process_paging_json_data(response_body, json_export)
+                    total_data[KEY_LINE] += new_data[KEY_LINE]
+                    total_data[KEY_POLYGON] += new_data[KEY_POLYGON]
+                    total_data[KEY_POINT] += new_data[KEY_POINT]
+
+                    continue_querying = len(new_data) >= ITEMS_TO_RETURN
+                    break;
+
                 except Exception, e:
                     self.is_login_successful = False
                     QgsMessageLog.instance().logMessage("Unable to post to url: " + ITEMS_POST_PAGING_ID +
@@ -267,14 +277,7 @@ class VectorQuery(OAuth2Query):
                                                         level=QgsMessageLog.CRITICAL)
                     if (NUM_TIMES_TO_TRY - i - 1) <= 0:
                         raise e
-                if response and self.is_login_successful:
-                    paging_id = response.info().getheader(KEY_HEADER_PAGING_ID)
-                    new_data = self.process_paging_json_data(response.read(), json_export)
-                    total_data[KEY_LINE] += new_data[KEY_LINE]
-                    total_data[KEY_POLYGON] += new_data[KEY_POLYGON]
-                    total_data[KEY_POINT] += new_data[KEY_POINT]
-                    continue_querying = len(new_data) >= ITEMS_TO_RETURN
-                    break
+
             if not self.is_login_successful:
                 continue_querying = False
         return total_data
@@ -321,7 +324,7 @@ class VectorQuery(OAuth2Query):
             KEY_POLYGON: [],
         }
         json_data = json.loads(response, strict=False)
-        for vector_item in json_data:
+        for vector_item in json_data[KEY_JSON_DATA]:
             new_item = None
             if json_export:
                 new_item = self.build_geojson_entry(vector_item)
