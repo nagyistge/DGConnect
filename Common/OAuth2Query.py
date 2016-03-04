@@ -36,30 +36,35 @@ class OAuth2Query(object):
     """
     Class for querying to get data for Catalog
     """
+    
+    token_lock = Lock()
+    headers = None
 
     def __init__(self, username, password, api_key, grant_type='password'):
         self.username = username
         self.password = password
         self.api_key = api_key
         self.grant_type = grant_type
-        self.access_token = None
-        self.token_type = None
-        self.headers = {
+        self.is_login_successful = False
+        self.opener = None
+        self.basic_header = {
             HEADER_AUTHORIZATION: 'Basic ' + api_key,
             HEADER_USER_AGENT: USER_AGENT_STRING
         }
-        self.opener = None
-        self.is_login_successful = False
-        self.token_lock = Lock()
 
     def log_in(self):
         """
         Log in to OAuth2 using the credentials provided to the constructor
         :return: None
         """
-        if not self.is_login_successful:
-            with self.token_lock:
-                if not self.is_login_successful:
+        if not self.opener:
+            # build up request with cookie jar and basic auth handler
+            cookie_jar = cookielib.LWPCookieJar()
+            self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar))
+
+        if not OAuth2Query.headers:
+            with OAuth2Query.token_lock:
+                if not OAuth2Query.headers:
                     # prep data
                     data = {
                         'username': self.username,
@@ -67,30 +72,33 @@ class OAuth2Query(object):
                         'grant_type': self.grant_type
                     }
                     encoded_data = urllib.urlencode(data)
-            
-                    # build up request with cookie jar and basic auth handler
-                    cookie_jar = cookielib.LWPCookieJar()
-                    self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar))
                     
-                    headers = self.headers
-                    headers[HEADER_AUTHORIZATION] = 'Basic ' + self.api_key
+                    basic_header = self.basic_header
+                    basic_header[HEADER_AUTHORIZATION] = 'Basic ' + self.api_key
             
                     try:
-                        request = urllib2.Request(url=LOGIN_URL, data=encoded_data, headers=headers)
+                        request = urllib2.Request(url=LOGIN_URL, data=encoded_data, headers=basic_header)
                         response = self.opener.open(request)
                         response_data = response.read()
                         json_data = json.loads(response_data, strict=False)
-                        self.access_token = json_data[KEY_ACCESS_TOKEN].encode(JSON_ENCODING)
-                        self.token_type = json_data[KEY_TOKEN_TYPE].encode(JSON_ENCODING)
-                        self.headers[HEADER_AUTHORIZATION] = "%s %s" % (self.token_type, self.access_token)
+                        
+                        access_token = json_data[KEY_ACCESS_TOKEN].encode(JSON_ENCODING)                    
+                        token_type = json_data[KEY_TOKEN_TYPE].encode(JSON_ENCODING)
+                        
+                        OAuth2Query.headers = {}
+                        OAuth2Query.headers[HEADER_AUTHORIZATION] = "%s %s" % (token_type, access_token)
+                        
                         self.is_login_successful = True
+                        
                     except Exception, e:
-                        QgsMessageLog.instance().logMessage("Exception detected during log in: " + str(e), TAG_NAME, level=QgsMessageLog.CRITICAL)
                         self.is_login_successful = False
+                        QgsMessageLog.instance().logMessage("Exception detected during log in: " + str(e), TAG_NAME, level=QgsMessageLog.CRITICAL)
+        else:
+            self.is_login_successful = True
 
     def get_opener(self):
         return self.opener
 
     def get_headers(self):
-        return self.headers
+        return OAuth2Query.headers
 
