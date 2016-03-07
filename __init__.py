@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- DGX
+ GBDX
                                  A QGIS plugin
- DGX is a DigitalGlobe product enabling data search, download and analytics capabilities for vector and raster commercial, open source and proprietary data sources.  
+ GBDX is a DigitalGlobe platform enabling data search, download and analytics capabilities for vector and raster commercial, open source and proprietary data sources.  
                              -------------------
         begin                : 2015-09-08
         copyright            : (C) 2015 by Michael Trotter/DigitalGlobe, Inc.
@@ -25,11 +25,11 @@
 
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name
-    """Load DGX class from file DGX.
+    """Load GBDX class from file GBDX.
 
     :param iface: A QGIS interface instance.
     :type iface: QgsInterface
     """
     #
-    from .DGX import DGX
-    return DGX(iface)
+    from .GBDX import GBDX
+    return GBDX(iface)

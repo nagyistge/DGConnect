@@ -1,7 +1,7 @@
 #/***************************************************************************
-# DGX
+# GBDX
 #
-# DGX is a DigitalGlobe product enabling data search, download and analytics capabilities for vector and raster commercial, open source and proprietary data sources.  
+# GBDX is a DigitalGlobe platform enabling data search, download and analytics capabilities for vector and raster commercial, open source and proprietary data sources.  
 #							 -------------------
 #		begin				: 2015-09-08
 #		git sha				: $Format:%H$
@@ -38,7 +38,7 @@ LOCALES =
 # translation
 SOURCES = \
 	__init__.py \
-	DGX.py \
+	GBDX.py \
 	About/About.py \
 	About/AboutDialog.py \
 	InfoCube/CSVOutput.py \
@@ -60,11 +60,11 @@ SOURCES = \
 	Vectors/VectorsSettingsTool.py \
 	Vectors/VectorsTool.py
 
-PLUGINNAME = DGX
+PLUGINNAME = GBDX
 
 PY_FILES = \
 	__init__.py \
-	DGX.py \
+	GBDX.py \
 	About/About.py \
 	About/AboutDialog.py \
 	InfoCube/CSVOutput.py \

@@ -91,7 +91,7 @@ class CatalogDialogTool(QObject):
         if self.footprint_layer:
             QgsMapLayerRegistry.instance().removeMapLayer(self.footprint_layer.id())
 
-        self.footprint_layer = QgsVectorLayer("Polygon?crs=EPSG:4326", "DGX Catalog Footprints", "memory")
+        self.footprint_layer = QgsVectorLayer("Polygon?crs=EPSG:4326", "Catalog Footprints", "memory")
         self.footprint_layer.setCrs(QgsCoordinateReferenceSystem(4326), True)
         self.footprint_layer.dataProvider().addAttributes(CatalogAcquisitionFeature.get_fields())
         QgsMapLayerRegistry.instance().addMapLayer(self.footprint_layer)
@@ -178,10 +178,10 @@ class CatalogDialogTool(QObject):
 
         # validate credentials if they changed
         errors = []
-        username, password, max_items_to_return = SettingsOps.get_settings()
-        credentials = [username, password]
+        username, password, api_key, max_items_to_return = SettingsOps.get_settings()
+        credentials = [username, password, api_key]
         if not self.previous_credentials or self.previous_credentials != credentials:
-            SettingsOps.validate_stored_info(username, password, max_items_to_return, errors)
+            SettingsOps.validate_stored_info(username, password, api_key, max_items_to_return, errors)
         self.previous_credentials = credentials
 
         # validate filters
@@ -204,7 +204,7 @@ class CatalogDialogTool(QObject):
             self.dialog_ui.table_view.selectionModel().selectionChanged.connect(self.selection_changed)
 
             if not self.query:
-                self.query = GBDQuery(username=username, password=password, client_id=username, client_secret=password)
+                self.query = GBDQuery(username=username, password=password, api_key=api_key)
 
             filters = self.filters.get_query_filters()
             time_begin = self.filters.get_datetime_begin()

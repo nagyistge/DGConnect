@@ -19,8 +19,8 @@ PLUGIN_NAME = "DGConnect"
 GBD_USERNAME = "gbd.username"
 GBD_PASSWORD = "gbd.password"
 GBD_API_KEY = "gbd.api.key"
-USERNAME = "dgx.username"
-PASSWORD = "dgx.password"
+USERNAME = "gbdx.username"
+PASSWORD = "gbdx.password"
 SELECT_FILE = "select.file"
 
 # file filter

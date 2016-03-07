@@ -92,7 +92,7 @@ class CatalogDialogUi(object):
         QtCore.QMetaObject.connectSlotsByName(DockWidget)
 
     def retranslateUi(self, DockWidget):
-        DockWidget.setWindowTitle(_translate("DockWidget", "DGX Catalog", None))
+        DockWidget.setWindowTitle(_translate("DockWidget", "Catalog", None))
         self.tab_widget.setTabText(self.tab_widget.indexOf(self.filters_tab), _translate("DockWidget", "Filters", None))
         self.tab_widget.setTabText(self.tab_widget.indexOf(self.results_tab), _translate("DockWidget", "Results", None))
         self.aoi_button.setText(_translate("DockWidget", "Draw AOI", None))

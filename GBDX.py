@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- DGX
+ GBDX
                                  A QGIS plugin
- DGX is a DigitalGlobe product enabling data search, download and analytics capabilities for vector and raster commercial, open source and proprietary data sources.  
+ GBDX is a DigitalGlobe platform enabling data search, download and analytics capabilities for vector and raster commercial, open source and proprietary data sources.  
                               -------------------
         begin                : 2015-09-08
         git sha              : $Format:%H$
@@ -37,7 +37,7 @@ from InfoCube.InfoCubeConnect import InfoCubeConnect
 from Vectors.VectorsTool import VectorsTool
 
 
-class DGX:
+class GBDX:
     @pyqtSlot()
     def on_about_close(self):
         if self.about:
@@ -70,7 +70,7 @@ class DGX:
         locale_path = os.path.join(
             self.plugin_dir,
             'i18n',
-            'DGX_{}.qm'.format(locale))
+            'GBDX_{}.qm'.format(locale))
 
         if os.path.exists(locale_path):
             self.translator = QTranslator()
@@ -81,11 +81,11 @@ class DGX:
 
         # Declare instance attributes
         self.actions = []
-        self.menu = self.tr(u'&DGX')
-        self.toolbar = self.iface.addToolBar(u'DGX')
-        self.toolbar.setObjectName(u'DGX')
+        self.menu = self.tr(u'&GBDX')
+        self.toolbar = self.iface.addToolBar(u'GBDX')
+        self.toolbar.setObjectName(u'GBDX')
 
-        #print "** INITIALIZING DGX"
+        #print "** INITIALIZING GBDX"
 
         self.about_is_active = False
         self.catalog_is_active = False
@@ -110,7 +110,7 @@ class DGX:
         :rtype: QString
         """
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
-        return QCoreApplication.translate('DGX', message)
+        return QCoreApplication.translate('GBDX', message)
 
 
     def add_action(
@@ -179,25 +179,25 @@ class DGX:
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
-        self.add_action(':/plugins/DGX/About.png',
+        self.add_action(':/plugins/GBDX/About.png',
                         text=self.tr(u'About'),
                         callback=self.run_about,
                         parent=self.iface.mainWindow())
         '''
-        self.add_action(':/plugins/DGX/InfoCube.png',
+        self.add_action(':/plugins/GBDX/InfoCube.png',
                         text=self.tr(u'InfoCube'),
                         callback=self.run_infocube,
                         parent=self.iface.mainWindow())
         '''
-        self.add_action(':/plugins/DGX/Vectors.png',
+        self.add_action(':/plugins/GBDX/Vectors.png',
                         text=self.tr(u'Vectors'),
                         callback=self.run_vectors,
                         parent=self.iface.mainWindow())
-        self.add_action(':/plugins/DGX/Catalog.png',
+        self.add_action(':/plugins/GBDX/Catalog.png',
                         text=self.tr(u'Catalog'),
                         callback=self.run_catalog,
                         parent=self.iface.mainWindow())
-        self.add_action(':/plugins/DGX/Settings.png',
+        self.add_action(':/plugins/GBDX/Settings.png',
                         text=self.tr(u'Settings'),
                         callback=self.run_settings,
                         parent=self.iface.mainWindow())
@@ -207,7 +207,7 @@ class DGX:
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
 
-        #print "** CLOSING DGX"
+        #print "** CLOSING GBDX"
 
         # disconnects
 
@@ -239,11 +239,11 @@ class DGX:
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
 
-        #print "** UNLOAD DGX"
+        #print "** UNLOAD GBDX"
 
         for action in self.actions:
             self.iface.removePluginMenu(
-                self.tr(u'&DGX'),
+                self.tr(u'&GBDX'),
                 action)
             self.iface.removeToolBarIcon(action)
         # remove the toolbar

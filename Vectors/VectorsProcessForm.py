@@ -34,19 +34,18 @@ def select_file_clicked(ui):
     file_name = file_ui.getSaveFileName(None, "Choose output file", str(expanduser("~")), SELECT_FILTER)
     ui.select_file.setText(file_name)
 
-def validate_stored_settings(iface, username, password, client_id, client_secret, max_items_to_return):
+def validate_stored_settings(iface, username, password, api_key, max_items_to_return):
     """
     Validates the settings in the stored settings
     :param iface: QGIS interface to push messages to
     :param username: Username for OAuth2 authentication
     :param password: Password for OAuth2 authentication
-    :param client_id: Client ID for OAuth2 authentication
-    :param client_secret: Client Secret for OAuth2 authentication
+    :param api_key: API key for OAuth2 authentication
     :param max_items_to_return: Max items to return for export
     :return: True if no problems; False otherwise
     """
     errors = []
-    if SettingsOps.validate_stored_info(username, password, max_items_to_return, errors):
+    if SettingsOps.validate_stored_info(username, password, api_key, max_items_to_return, errors):
         return True
     else:
         iface.messageBar().pushMessage("Error", "Unable to validate settings due to:<br />" + "<br />".join(errors))

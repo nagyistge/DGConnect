@@ -21,8 +21,8 @@ USER_AGENT_STRING = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, 
 POLYGON_TEMPLATE = Template("POLYGON (($left $bottom, $left $top, $right $top, $right $bottom, $left $bottom))")
 
 # gbd urls
-TOP_LEVEL_URL = 'https://iipbeta.digitalglobe.com/'
-ACQUISITION_SEARCH_URL = TOP_LEVEL_URL + "raster-catalog/api/gbd/catalog/v1/search?includeRelationships=false"
+TOP_LEVEL_URL = 'https://geobigdata.io/'
+ACQUISITION_SEARCH_URL = TOP_LEVEL_URL + "/catalog/v1/search?includeRelationships=false"
 
 # data format for parsing
 ISO_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
@@ -54,7 +54,7 @@ KEY_JSON_PROPERTIES = u'properties'
 KEY_JSON_TIMESTAMP = u'timestamp'
 
 # tag name
-TAG_NAME = 'DGX'
+TAG_NAME = 'GBDX'
 
 
 class GBDOrderParams:
@@ -85,8 +85,8 @@ class GBDQuery(OAuth2Query):
     Class for querying GBD raster data
     """
 
-    def __init__(self, username, password, client_id, client_secret, grant_type='password'):
-        super(GBDQuery, self).__init__(username, password, client_id, client_secret, grant_type)
+    def __init__(self, username, password, api_key, grant_type='password'):
+        super(GBDQuery, self).__init__(username, password, api_key, grant_type)
 
     def acquisition_search(self, order_params):
         """
