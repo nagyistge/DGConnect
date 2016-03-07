@@ -52,7 +52,7 @@ class OAuth2Query(object):
             HEADER_USER_AGENT: USER_AGENT_STRING
         }
 
-    def log_in(self):
+    def log_in(self, ignore_existing_tokens=False):
         """
         Log in to OAuth2 using the credentials provided to the constructor
         :return: None
@@ -62,9 +62,9 @@ class OAuth2Query(object):
             cookie_jar = cookielib.LWPCookieJar()
             self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar))
 
-        if not OAuth2Query.headers:
+        if not OAuth2Query.headers or ignore_existing_tokens:
             with OAuth2Query.token_lock:
-                if not OAuth2Query.headers:
+                if not OAuth2Query.headers or ignore_existing_tokens:
                     # prep data
                     data = {
                         'username': self.username,

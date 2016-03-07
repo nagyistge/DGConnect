@@ -123,7 +123,7 @@ def validate_info(ui, errors):
     # validate credentials by hitting insight-vector
     if is_info_good:
         query = VectorQuery(username=ui.username.text(), password=ui.password.text(), api_key=ui.api_key.text())
-        query.log_in()
+        query.log_in(ignore_existing_tokens=True)
         if not query.is_login_successful:
             errors.append("Unable to verify credentials. See logs for more details.")
     # validate max items to return
@@ -217,7 +217,7 @@ def validate_stored_info(username, password, api_key, max_items_to_return, error
         errors.append("No API key provided.")
     if is_field_good:
         query = VectorQuery(username=username, password=password, api_key=api_key)
-        query.log_in()
+        query.log_in(ignore_existing_tokens=True)
         if not query.is_login_successful:
             errors.append("Unable to verify credentials. See logs for details.")
             is_field_good = False
