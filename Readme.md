@@ -13,7 +13,7 @@ This tools purpose is to provide a window into the GBDX platform capabilites to 
 2. Start QGIS
 3. With QGIS open click Plugins > Manage and Install plugins.
 ![](http://i.imgur.com/GrOwkNL.png)
-4. Scroll down until you find the GBDX plugin and put check the box next to it.![](http://i.imgur.com/0GMgegs.png)
+4. In the search bar, type "gbdx" and put check the box next to the GBDX Plugin.![](https://www.filepicker.io/api/file/tl3A2fX9QnyOxTQCxjvg)
 5. Click Close button
 
 Now GBDX will be under the menu item.
