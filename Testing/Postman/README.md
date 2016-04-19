@@ -1,5 +1,5 @@
 ##Postman Installation Procedure
-To see the step by step instructions with visuals, see the [Postman Lesson](http://gbdxdocs.digitalglobe.com/docs/lesson-postman-api-requests).
+To see the step by step instructions with visuals, see the [Postman Lesson](http://gbdxdocs.digitalglobe.com/docs/postman-instructions-collections).
 
 ###Get the Postman Files
 Collections associated with the QGIS Plugin are kept in the Postman Collections directory of the open source project. For the full list of collections, [go here](https://github.com/DigitalGlobe/Postman).<br>
