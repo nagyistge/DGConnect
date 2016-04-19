@@ -14,9 +14,10 @@ This tools purpose is to provide a window into the GBDX platform capabilites to 
 3. With QGIS open click Plugins > Manage and Install plugins.
 ![](http://i.imgur.com/GrOwkNL.png)
 4. In the search bar, type "gbdx" and put check the box next to the GBDX Plugin.![](https://www.filepicker.io/api/file/tl3A2fX9QnyOxTQCxjvg)
-5. Click Close button
-
-Now GBDX will be under the menu item.
+5. Click Close button. A new toolbar is added and can be free or docked.
+6. Click on the gear icon to bring up the settings. Enter username, password, API Key, and adjust the Max Items to Return export restriction (maximum: 150000). [](https://www.filepicker.io/api/file/J2t1oG0QW5JSVEfdgPpQ) For directions on how to find your API key, [go here](http://gbdxdocs.digitalglobe.com/v1/docs/lesson-how-to-find-your-api-key-1). 
+7. Click Validate to confirm username, password, and API Key have been entered correctly.
+8. Click Save to save Settings. Click OK to exit out of Settings dialog.
 
 ## Account access ##
 
